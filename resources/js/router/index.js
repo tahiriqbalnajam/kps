@@ -72,13 +72,13 @@ export const constantRoutes = [
   {
     path: '/waqar',
     component: Layout,
-    redirect: '/profile/edit',
+    redirect: '/waqar/edit',
     children: [
       {
         path: 'edit',
         component: () => import('@/views/users/Waqar.vue'),
         name: 'Waqar',
-        meta: {title: 'userProfile', bootstrapIcon: 'person-circle', noCache: true},
+        meta: {title: 'waqar', bootstrapIcon: 'person-circle', noCache: true},
       },
     ],
   },

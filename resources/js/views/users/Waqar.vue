@@ -23,7 +23,7 @@ import {getCurrentInstance, onMounted, reactive, toRefs} from "vue"
 
 const userResource = new Resource('users')
 export default {
-  name: 'Waqar',
+  name: 'EditUser',
   components: { UserBio, UserCard, UserActivity },
   setup() {
     const resData = reactive({
