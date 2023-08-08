@@ -23,7 +23,7 @@ import {getCurrentInstance, onMounted, reactive, toRefs} from "vue"
 
 const userResource = new Resource('users')
 export default {
-  name: 'EditUser',
+  name: 'Waqar',
   components: { UserBio, UserCard, UserActivity },
   setup() {
     const resData = reactive({
@@ -39,7 +39,7 @@ export default {
       const id = proxy.$route.params && proxy.$route.params.id
       const currentUserId = useUserStore.id
       if (id === currentUserId) {
-        proxy.$route.$router.push('/profile/edit')
+        proxy.$route.$router.push('/waqar/edit')
         return
       }
       getUser(id)

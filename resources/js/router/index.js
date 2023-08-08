@@ -70,15 +70,15 @@ export const constantRoutes = [
     ],
   },
   {
-    path: '/waqar',
+    path: '/test-result',
     component: Layout,
-    redirect: '/waqar/edit',
+    redirect: '/test-result/edit',
     children: [
       {
         path: 'edit',
-        component: () => import('@/views/users/Waqar.vue'),
+        component: () => import('@/views/test-result/TestResult.vue'),
         name: 'Waqar',
-        meta: {title: 'waqar', bootstrapIcon: 'person-circle', noCache: true},
+        meta: {title: 'Test Result', bootstrapIcon: 'person-circle', noCache: true},
       },
     ],
   },

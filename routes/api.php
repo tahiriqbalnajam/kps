@@ -27,6 +27,7 @@ Route::get('sendsms', 'SmsQueueController@sendsms');
 Route::post('change_status', 'SmsQueueController@change_status');
 Route::apiResource('dashboard', 'dashboardController');
 Route::apiResource('attendance', 'StudentAttendanceController');
+Route::apiResource('exam_result', 'ExamResultController');
 Route::apiResource('subjects', 'SubjectController');
 Route::apiResource('subject_class', 'SubjectToClassController');
 Route::apiResource('exams', 'ExamController');
