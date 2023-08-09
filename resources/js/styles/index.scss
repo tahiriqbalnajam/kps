@@ -14,6 +14,10 @@ body {
   font: 14px 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
+a {
+  text-decoration: none;
+}
+
 //scroll
 @mixin main-show-wh() {
   /* css 声明 */
