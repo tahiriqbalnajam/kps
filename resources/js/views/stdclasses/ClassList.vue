@@ -29,13 +29,14 @@
       </el-table-column>
     </el-table>
     <pagination v-show="total>0" :total="total" :page.sync="query.page" :limit.sync="query.limit" @pagination="getList" />
-    <add-class v-if="addstdclasspop" :addeditclassprop="addstdclasspop" :classid="classid" @closeAddClass="closeAddClassPopup()" />
+    <add-class :addeditclassprop="addstdclasspop" :classid="classid" @closeAddClass="closeAddClassPopup()" />
   </div>
 </template>
 <script>
 import Pagination from '@/components/Pagination/index.vue';
 import AddClass from '@/views/stdclasses/AddClass.vue';
 import Resource from '@/api/resource';
+import { debounce } from 'lodash';
 const classesPro = new Resource('classes');
 export default {
   name: 'ClassList',
@@ -70,7 +71,7 @@ export default {
     this.getList();
   },
   methods: {
-    debounceInput: _.debounce(function (e) {
+    debounceInput: debounce(function (e) {
       this.getList();
     }, 500),
     async getList() {

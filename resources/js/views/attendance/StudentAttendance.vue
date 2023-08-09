@@ -12,8 +12,8 @@
       <el-date-picker
         v-model="attendance.date"
         type="date"
-        format="dd MMM, yyyy"
-        value-format="yyyy-MM-dd"
+        format="DD MMM, YYYY"
+        value-format="YYYY-MM-DD"
         placeholder="Pick a day" />
       <el-button type="primary" :loading="loading" :disabled="attendance.students.length <= 0" @click="submitAttendance">{{ loading ? 'Submitting ...' : 'Save Attendance' }}</el-button>
     </div>
@@ -34,7 +34,7 @@
       <el-table-column label="Roll No." prop="roll_no" />
       <el-table-column label="Student Name" prop="name" />
       <el-table-column>
-        <template slot-scope="scope">
+        <template #default="scope">
           <el-radio-group v-model="scope.row.attendance" size="small" text-color="" :fill="(scope.row.attendance == 'Present') ? '#67c23a' : (scope.row.attendance == 'Absent') ? '#f56c6c' : '#909399'">
             <el-radio-button label="Present" />
             <el-radio-button label="Absent" />
@@ -46,12 +46,12 @@
   </div>
 </template>
 <script>
-import Pagination from '@/components/Pagination';
+import Pagination from '@/components/Pagination/index.vue';
 import Resource from '@/api/resource';
 const classPro = new Resource('classes');
 const studentPro = new Resource('students');
 const attendPro = new Resource('attendance');
-import { addAttendance } from '@/api/student';
+import { debounce } from 'lodash';
 export default {
   name: '',
   components: { Pagination },
@@ -86,7 +86,7 @@ export default {
     this.getList();
   },
   methods: {
-    debounceInput: _.debounce(function (e) {
+    debounceInput: debounce(function (e) {
       this.getList();
     }, 500),
     async getList() {

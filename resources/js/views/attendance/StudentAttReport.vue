@@ -13,7 +13,7 @@
         v-model="query.month"
         type="month"
         format="MMM"
-        value-format="yyyy-MM-dd"
+        value-format="YYYY-MM-DD"
         placeholder="Pick a month" 
       />
       <el-button type="primary" :loading="loading"  @click="getReport()">{{ loading ? 'Submitting ...' : 'get report' }}</el-button>
@@ -25,18 +25,18 @@
       </tr>
       <tr v-for="student in attendance.students" :key="student.id">
         <td>{{ student.name }}</td>
-        <td v-for="att in student.attendance" :key="att.id" :class="{'absent': (att.status == 'absent')}">{{att.status | attend}}</td>
+        <td v-for="att in student.attendance" :key="att.id" :class="{'absent': (att.status == 'absent')}">{{att.status}}</td>
       </tr>
     </table>
   </div>
 </template>
 <script>
-import Pagination from '@/components/Pagination';
+import Pagination from '@/components/Pagination/index.vue';
 import Resource from '@/api/resource';
 import moment from 'moment';
+import { debounce } from 'lodash';
 const classPro = new Resource('classes');
 const attendPro = new Resource('attendance');
-import { addAttendance } from '@/api/student';
 export default {
   name: '',
   components: { Pagination },
@@ -81,7 +81,7 @@ export default {
     this.getList();
   },
   methods: {
-    debounceInput: _.debounce(function (e) {
+    debounceInput: debounce(function (e) {
       this.getList();
     }, 500),
     async getList() {

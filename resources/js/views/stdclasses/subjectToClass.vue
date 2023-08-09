@@ -7,15 +7,17 @@
     >
       <el-table-column label="Class" prop="name" />
       <el-table-column label="Subjects">
-        <template slot-scope="scope">
+        <template #default="scope">
           {{ ConcateIt(scope.row.subjects) }}
         </template>
       </el-table-column>
       <el-table-column align="right">
-        <template slot="header" slot-scope="scope">
+        <template slot="header" #default="scope">
           <el-input ref="search" v-model="query.keyword" size="mini" placeholder="Type to search" v-on:input="debounceInput" />
         </template>
-        <template slot-scope="scope">
+      </el-table-column>
+      <el-table-column align="right">
+        <template #default="scope">
           <el-button
             size="mini"
             @click="handleEdit(scope.row.id, scope.row.name)"
@@ -65,6 +67,7 @@
 <script>
 import Pagination from '@/components/Pagination/index.vue';
 import Resource from '@/api/resource';
+import { debounce } from 'lodash';
 const classesPro = new Resource('classes');
 const subjectsPro = new Resource('subjects');
 const stocPro = new Resource('subject_class');
@@ -102,7 +105,7 @@ export default {
     this.getList();
   },
   methods: {
-    debounceInput: _.debounce(function (e) {
+    debounceInput: debounce(function (e) {
       this.getList();
     }, 500),
     async getList() {

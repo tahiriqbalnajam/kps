@@ -1,15 +1,23 @@
 <template>
   <div class="app-container">
     <div class="filter-container">
-      <el-date-picker
-        v-model="query.attendance_date"
-        type="date"
-        format="dd/MM/yyyy"
-        value-format="yyyy-MM-dd"
-        placeholder="Pick a day"
-        :picker-options="pickerOptions"
-      />
-      <el-button type="primary" :loading="loading"  @click="getReport()">{{ loading ? 'Submitting ...' : 'Get report' }}</el-button>
+      <head-controls>
+        <el-form-item>
+          <el-col :span="4">
+            <el-date-picker
+              v-model="query.attendance_date"
+              type="date"
+              format="DD/MM/YYYY"
+              value-format="YYYY-MM-DD"
+              placeholder="Pick a day"
+              :picker-options="pickerOptions"
+            />
+          </el-col>
+          <el-col :span="2">
+            <el-button type="primary" :loading="loading"  @click="getReport()">{{ loading ? 'Submitting ...' : 'Get report' }}</el-button>
+          </el-col>
+        </el-form-item>
+      </head-controls>   
     </div>
     <el-table
       :data="attendance"
@@ -34,11 +42,13 @@
 <script>
 import Resource from '@/api/resource';
 import moment from 'moment';
+import { debounce } from 'lodash';
+import HeadControls from '@/components/HeadControls.vue';
 const attendPro = new Resource('attendance');
 import { getDailyClasswise } from '@/api/student';
 export default {
   name: '',
-  components: { },
+  components: { HeadControls},
   directives: { },
   filters: {
     dateformat: (date) => {
@@ -84,7 +94,7 @@ export default {
     this.getAttendance();
   },
   methods: {
-    debounceInput: _.debounce(function (e) {
+    debounceInput: debounce(function (e) {
       this.getList();
     }, 500),
     getReport() {

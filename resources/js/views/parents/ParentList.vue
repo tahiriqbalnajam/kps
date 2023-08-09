@@ -37,9 +37,10 @@
   </div>
 </template>
 <script>
-import Pagination from '@/components/Pagination';
+import Pagination from '@/components/Pagination/index.vue';
 import Resource from '@/api/resource';
-import AddParent from './AddParent';
+import AddParent from '@/views/parents/AddParent.vue';
+import { debounce } from 'lodash';
 const parentsPro = new Resource('parents');
 export default {
   name: 'ParentList',
@@ -73,7 +74,7 @@ export default {
     this.getList();
   },
   methods: {
-    debounceInput: _.debounce(function (e) {
+    debounceInput: debounce(function (e) {
       this.getList();
     }, 500),
     closeAddParent(parm) {

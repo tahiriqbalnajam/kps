@@ -53,11 +53,12 @@
   </div>
 </template>
 <script>
-import Pagination from '@/components/Pagination';
-import PayFee from './component/PayFee';
-import FeePrint from './component/FeePrint';
+import Pagination from '@/components/Pagination/index.vue';
+import PayFee from './component/PayFee.vue';
+import FeePrint from './component/FeePrint.vue';
 import Resource from '@/api/resource';
 import moment from 'moment';
+import { debounce } from 'lodash';
 const pendingfeePro = new Resource('pendingfee');
 const feePro = new Resource('fee');
 const smsPro = new Resource('smsqueue');
@@ -101,7 +102,7 @@ export default {
     this.getList();
   },
   methods: {
-    debounceInput: _.debounce(function (e) {
+    debounceInput: debounce(function (e) {
       this.getList();
     }, 500),
     donePayFee(data) {

@@ -1,7 +1,7 @@
 <template>
   <el-drawer
     title="Add/Edit Class"
-    :visible.sync="closepopup"
+    :modelValue="addeditclassprop"
     direction="rtl"
     custom-class="demo-drawer"
     ref="drawer"
@@ -37,6 +37,7 @@ export default {
       default: null,
     },
   },
+  emits: ['closeAddClass'],
   data() {
     return {
       closepopup: false,

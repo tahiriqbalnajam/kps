@@ -1,8 +1,7 @@
 <template>
   <div class="app-container">
     <div class="filter-container">
-      <el-card  body-style="" shadow="never">
-        <div class="flex">
+      <head-controls>
           <el-form-item>
             <el-col :span="4">
               <el-select v-model="query.filtercol" placeholder="Class" class="filter-item">
@@ -38,8 +37,7 @@
               </el-button>
             </el-col>
           </el-form-item>
-        </div>
-      </el-card>
+        </head-controls>
       <el-alert title="Record Update" type="success" v-if="alertRec"> </el-alert>
     </div>
     <el-card class="box-card">
@@ -130,11 +128,12 @@ import FeePrint from '@/views/fee/component/FeePrint.vue';
 import FeeDetail from '@/views/fee/component/FeeDetail.vue';
 import AddStudent from '@/views/students/AddStudent.vue';
 import { editClass } from '@/api/student.js';
+import HeadControls from '@/components/HeadControls.vue';
 const student = new Resource('students');
 const classes = new Resource('classes');
 export default {
   name: 'StudentList',
-  components: { Pagination, AddStudent,  PayFee, FeePrint, FeeDetail },
+  components: { Pagination, AddStudent,  PayFee, FeePrint, FeeDetail, HeadControls },
   directives: { },
   filters: {
     dateformat: (date) => {

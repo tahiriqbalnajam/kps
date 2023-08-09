@@ -55,8 +55,9 @@
   </div>
 </template>
 <script>
-import Pagination from '@/components/Pagination';
+import Pagination from '@/components/Pagination/index.vue';
 import Resource from '@/api/resource';
+import { debounce } from 'lodash';
 const feetypesPro = new Resource('feetypes');
 export default {
     name: 'FeeTypes',
@@ -90,7 +91,7 @@ export default {
       this.getList();
     },
     methods: {
-      debounceInput: _.debounce(function (e) {
+      debounceInput: debounce(function (e) {
         this.getList();
       }, 500),
       async getList() {
