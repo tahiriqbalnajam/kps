@@ -33,7 +33,7 @@
   </div>
 </template>
 <script>
-import Pagination from '@/components/Pagination';
+import Pagination from '@/components/Pagination/index.vue';
 import AddClass from '@/views/stdclasses/AddClass.vue';
 import Resource from '@/api/resource';
 const classesPro = new Resource('classes');

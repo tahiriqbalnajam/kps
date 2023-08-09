@@ -63,7 +63,7 @@
   </div>
 </template>
 <script>
-import Pagination from '@/components/Pagination';
+import Pagination from '@/components/Pagination/index.vue';
 import Resource from '@/api/resource';
 const classesPro = new Resource('classes');
 const subjectsPro = new Resource('subjects');

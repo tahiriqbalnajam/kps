@@ -16,7 +16,7 @@
       </el-form>
       <div class="demo-drawer__footer">
         <el-button @click="cancelAddClass()">Cancel</el-button>
-        <el-button type="primary"@click="onSubmit" :loading="loading">{{ loading ? 'Submitting ...' : 'Submit' }}</el-button>
+        <el-button type="primary" @click="onSubmit" :loading="loading">{{ loading ? 'Submitting ...' : 'Submit' }}</el-button>
       </div>
     </div>
   </el-drawer>
