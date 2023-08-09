@@ -29,6 +29,7 @@ class StudentController extends Controller
         $stdid = $request->get('id');
         $stdclass = $request->get('stdclass');
         $filtercol = $request->get('filtercol');
+        
         $all = ($request->get('filtercol') == 'all') ? true : false;
         //DB::enableQueryLog(); // Enable query log
         $students = Student::with('parents','stdclasses','class_session')

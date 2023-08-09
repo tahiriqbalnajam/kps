@@ -9,7 +9,7 @@ const students = new Resource('students');
 const formInline = reactive({
   examname: '',
   classes: '',
-  class_id: '',
+  stdclass: '',
   students: '',
 })
 
@@ -20,30 +20,44 @@ const query = reactive({
   filtercol: 'name',
   stdclass: '',
 })
+
+const exam = reactive({
+  examname: '',
+  class_id: '',
+  total_marks: '',
+  students: '',
+})
+
 const onSubmit = () => {
-    resource.store(formInline);
-    getTestResultName();
+  exam.examname = formInline.examname;
+  exam.class_id = formInline.stdclass;
+  exam.total_marks = formInline.total_marks;
+ 
+  exam.students = formInline.students;
+  resource.store(exam);
+
+  //exam.examname = formInline.examname;
+  //const { data } =  resource.list(exam);
+  //formInline.resource = data.resource.data;
 }
 
-const getTestResultName = async() => {
-    const{ data } = await classes.list();
-    formInline.classes = data.classes.data;
-  }
+
 
 const getClasses = async() => {
-    const{ data } = await classes.list();
-    formInline.classes = data.classes.data;
-  }
-const getstudents = async() => {
-  const { data } = await students.list(formInline);
-  formInline.students = data.students.data;
-  console.log(formInline.students);
+  const{ data } = await classes.list();
+  formInline.classes = data.classes.data;
 }
+
+const getstudents = async() => {
+  query.stdclass=formInline.stdclass
+  const { data } = await students.list(query);
+  formInline.students = data.students.data;
+ 
+}
+
 onMounted(() => {
   getClasses();
-
 });
-
 
 
 </script>
@@ -53,7 +67,7 @@ onMounted(() => {
       <el-input v-model="formInline.examname" placeholder="Exam Name" clearable />
     </el-form-item>
     <el-form-item label="Class Name">
-      <el-select v-model="formInline.class_id" placeholder="Select Class" clearable @change="getstudents()" >
+      <el-select v-model="formInline.stdclass" placeholder="Select Class" clearable @change="getstudents()" >
         <el-option
           v-for="item in formInline.classes"
           :key="item.id"
@@ -75,7 +89,7 @@ onMounted(() => {
       <el-table-column prop="name" label="Name" width="180" />
       <el-table-column prop="obtainedmarks" label="Obtained Marks" width="180" >
         <template #default="scope">
-          <el-input v-model="scope.row.obtained_marks" placeholder="Exam Name" clearable />
+          <el-input v-model="scope.row.obtained_marks" required placeholder="Enter Marks" clearable />
         </template>
       </el-table-column>
     </el-table>
