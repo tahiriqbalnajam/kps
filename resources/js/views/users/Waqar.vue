@@ -39,7 +39,7 @@ export default {
       const id = proxy.$route.params && proxy.$route.params.id
       const currentUserId = useUserStore.id
       if (id === currentUserId) {
-        proxy.$route.$router.push('/profile/edit')
+        proxy.$route.$router.push('/waqar/edit')
         return
       }
       getUser(id)
