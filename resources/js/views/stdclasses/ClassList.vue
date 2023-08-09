@@ -34,7 +34,7 @@
 </template>
 <script>
 import Pagination from '@/components/Pagination';
-import AddClass from './AddClass';
+import AddClass from '@/views/stdclasses/AddClass.vue';
 import Resource from '@/api/resource';
 const classesPro = new Resource('classes');
 export default {

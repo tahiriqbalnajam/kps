@@ -6,7 +6,8 @@
     custom-class="demo-drawer"
     ref="drawer"
     @close="cancelAddClass()"
-    size="60%">
+    size="60%"
+  >
     <div class="demo-drawer__content">
       <el-form :model="stdclass">
         <el-form-item label="Name" :label-width="formLabelWidth">
@@ -15,11 +16,12 @@
       </el-form>
       <div class="demo-drawer__footer">
         <el-button @click="cancelAddClass()">Cancel</el-button>
-        <el-button type="primary" @click="onSubmit" :loading="loading">{{ loading ? 'Submitting ...' : 'Submit' }}</el-button>
+        <el-button type="primary"@click="onSubmit" :loading="loading">{{ loading ? 'Submitting ...' : 'Submit' }}</el-button>
       </div>
     </div>
   </el-drawer>
 </template>
+
 <script>
 import Resource from '@/api/resource';
 const classesPro = new Resource('classes');
@@ -75,7 +77,7 @@ export default {
         this.cancelAddClass();
       }
       this.loading = false;
-    }
+    },
   }
 }
 </script>
@@ -91,4 +93,3 @@ export default {
     padding: 20px;
   }
 </style>
-

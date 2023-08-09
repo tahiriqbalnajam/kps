@@ -11,6 +11,7 @@ import 'bootstrap-icons/font/bootstrap-icons.scss'
 import Icon from './components/Icon/Icon.vue'
 import VueLodash from 'vue-lodash'
 import lodash from 'lodash'
+import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 
 const app = createApp(App)
 app.use(i18n)
@@ -21,6 +22,10 @@ app.use(ElementPlus, {
   size: Cookies.get('size') || 'medium', // set element-plus default size
   i18n: (key, value) => i18n.t(key, value),
 });
+
+for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+  app.component(key, component)
+}
 
 // pinia
 import {createPinia} from 'pinia'

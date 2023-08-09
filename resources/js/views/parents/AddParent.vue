@@ -2,7 +2,7 @@
   <el-drawer
     ref="drawer"
     title="Edit Record"
-    :visible.sync="closepopup"
+    :modelValue="closepopup"
     :rules="rules"
     direction="ltr"
     custom-class="demo-drawer"
@@ -55,6 +55,7 @@ export default {
       default: null,
     },
   },
+  emits: ['cancelAddParent'],
   data() {
     var name = (rule, value, callback) => {
       if (!value) {

@@ -2,7 +2,7 @@
   <el-drawer
     ref="drawer"
     title="Add Fee"
-    :visible.sync="closepopup"
+    :modelValue="closepopup"
     direction="rtl"
     custom-class="demo-drawer"
     size="50%"
@@ -39,7 +39,7 @@
             range-separator="To"
             start-placeholder="Start month"
             end-placeholder="End month"
-            value-format="yyyy-MM-dd"
+            value-format="YYYY-MM-DD"
             :picker-options="pickerOptions"
           />
         </el-form-item>

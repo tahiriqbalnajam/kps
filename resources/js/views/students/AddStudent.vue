@@ -1,6 +1,6 @@
 <template>
   <div>
-    <el-dialog title="Add Student" :visible.sync="customerForm">
+    <el-dialog title="Add Student" :modelValue="addeditstudentprop" :before-close="handleClose">
       <div class="form-container">
         <el-form
           ref="student"
@@ -53,8 +53,8 @@
           </el-form-item>
           <el-form-item label="DOB" prop="dob">
             <el-date-picker
-              format="dd/MM/yyyy"
-              value-format="yyyy-MM-dd"
+              format="DD/MM/YYYY"
+              value-format="YYYY-MM-DD"
               v-model="student.dob"
               type="date"
               placeholder="Pick a date of birth"
@@ -103,7 +103,7 @@
           </el-form-item>
         </el-form>
         <div slot="footer" class="dialog-footer">
-          <el-button @click="customerForm = false;">
+          <el-button @click="handleClose">
             Cancel
           </el-button>
           <el-button type="primary" :loading="loading" @click="handleSubmit('student')">
@@ -128,7 +128,7 @@ export default {
   components: {AddClass, AddParent },
   directives: { },
   props: {
-    addstudentpop: {
+    addeditstudentprop: {
       type: Boolean,
       required: true,
     },
@@ -137,6 +137,7 @@ export default {
       default: null,
     },
   },
+  emits: ['closeAddStudent'],
   data() {
     var roll_no = (rule, value, callback) => {
       if (!value) {
@@ -248,8 +249,8 @@ export default {
     }
   },
   methods: {
-    tellToParent() {
-      this.$emit('closeAddStudent', this.customerForm);
+    handleClose() {
+      this.$emit('closeAddStudent', this.addeditstudentprop);
     },
     async handleSubmit(formName) {
       this.loading = true;
@@ -264,7 +265,7 @@ export default {
                   message: 'Student info has been updated successfully',
                   duration: 5 * 1000,
                 });
-                this.tellToParent();
+                this.handleClose();
                 this.loading = false;
               })
               .catch(error => {

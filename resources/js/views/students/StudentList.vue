@@ -1,71 +1,96 @@
 <template>
   <div class="app-container">
     <div class="filter-container">
-      <el-select v-model="query.filtercol" placeholder="Class" class="filter-item">
-        <el-option v-for="filter in filtercol" :key="filter.col" :label="filter.display | uppercaseFirst" :value="filter.col" />
-      </el-select>
-      <el-input v-model="query.keyword" placeholder="Student info" style="width: 200px;" class="filter-item" v-on:input="debounceInput" />
-      <el-select v-model="query.stdclass" placeholder="Class" clearable style="width: 130px" class="filter-item" @change="handleFilter">
-        <el-option v-for="item in classes" :key="item.id" :label="item.name | uppercaseFirst" :value="item.id" />
-      </el-select>
-      <el-button  class="filter-item" type="primary" icon="el-icon-search" @click="handleFilter">
-        {{ $t('table.search') }}
-      </el-button>
-      <el-button :loading="downloadLoading" style="margin:0 0 20px 20px; display: inline-flex" type="danger" icon="el-icon-document" @click="handleDownload">
-        {{ $t('excel.export') }} Students Excel
-      </el-button>
-      <el-button class="filter-item" style="margin-left: 10px;" type="success" icon="el-icon-plus" @click="addStudent">
-        Add Student
-      </el-button>
-      <el-button :disabled="multiStudentOption.multiStudent.length <= 0" class="filter-item"  style="margin-left: 10px;" type="warning" icon="el-icon-edit" @click="dialogVisible = true">
-        Change Class
-      </el-button>
+      <el-card  body-style="" shadow="never">
+        <div class="flex">
+          <el-form-item>
+            <el-col :span="4">
+              <el-select v-model="query.filtercol" placeholder="Class" class="filter-item">
+                <el-option v-for="filter in filtercol" :key="filter.col" :label="filter.display | uppercaseFirst" :value="filter.col" />
+              </el-select>
+            </el-col>
+            <el-col :span="3">
+              <el-input v-model="query.keyword" placeholder="Student info" style="width: 200px;" class="filter-item" v-on:input="debounceInput" />
+            </el-col>
+            <el-col :span="2">
+              <el-select v-model="query.stdclass" placeholder="Class" clearable style="width: 130px" class="filter-item" @change="handleFilter">
+                <el-option v-for="item in classes" :key="item.id" :label="item.name | uppercaseFirst" :value="item.id" />
+              </el-select>
+            </el-col>
+            <el-col :span="1">
+              <el-button  class="filter-item" type="primary" :icon="Search"  @click="handleFilter">
+                {{ $t('table.search') }}
+              </el-button>
+            </el-col>
+            <el-col :span="2">
+              <el-button class="filter-item" style="margin-left: 10px;" type="success" :icon="User" @click="addStudentFunc()">
+                <el-icon :size="15"><UserFilled /></el-icon>Add Student
+              </el-button>
+            </el-col>
+            <el-col :span="2">
+              <el-button class="filter-item" :loading="downloadLoading"  type="danger" :icon="Search"  @click="handleDownload">
+                Students Excel
+              </el-button>
+            </el-col>
+            <el-col :span="2">
+              <el-button :disabled="multiStudentOption.multiStudent.length <= 0" class="filter-item"  style="margin-left: 10px;" type="warning" :icon="Edit"  @click="dialogVisible = true">
+                Change Class
+              </el-button>
+            </el-col>
+          </el-form-item>
+        </div>
+      </el-card>
       <el-alert title="Record Update" type="success" v-if="alertRec"> </el-alert>
     </div>
-    <el-table
-        :data="list"
-        style="width: 100%"
-        v-loading="listloading"
-        @selection-change="handleSelectionChange"
-      >
-      <el-table-column type="selection" width="55" />
-      <el-table-column label="Roll No." prop="roll_no" />
-      <el-table-column label="Name">
-        <template slot-scope="scope">
-          <el-popover trigger="hover" placement="top">
-            <p>B Form# {{ scope.row.b_form }}</p>
-            <div slot="reference" class="name-wrapper">
-              {{ scope.row.name }}
-            </div>
-          </el-popover>
-        </template>
-      </el-table-column>
-      <el-table-column label="Parent" prop="parents.name" />
-      <el-table-column label="Phone" prop="parents.phone" />
-      <el-table-column label="Class" prop="stdclasses.name" />
-      <el-table-column label="Gender" prop="gender" />
-      <el-table-column label="Fee" prop="monthly_fee" />
-      <el-table-column label="DOB">
-        <template slot-scope="scope">
-          {{ scope.row.dob | dateformat}}
-        </template>
-      </el-table-column>
-      <el-table-column align="right" fixed="right">
-        <template slot-scope="scope">
-          <el-dropdown size="mini" split-button type="danger" @click="payFee(scope.row.id, scope.row.name)" @command="handleCommand">
-            Pay Fee
-            <el-dropdown-menu slot="dropdown">
-              <el-dropdown-item icon="el-icon-money" :command="'feedetail~'+scope.row.id">Fee Detail</el-dropdown-item>
-              <el-dropdown-item icon="el-icon-edit" :command="'edit~'+scope.row.id">Edit Student</el-dropdown-item>
-              <el-dropdown-item icon="el-icon-delete" :command="'delete~'+scope.row.id">Delete Student</el-dropdown-item>
-            </el-dropdown-menu>
-          </el-dropdown>
-        </template>
-      </el-table-column>
-    </el-table>
+    <el-card class="box-card">
+  <el-table
+          :data="list"
+          style="width: 100%"
+          v-loading="listloading"
+          @selection-change="handleSelectionChange"
+        >
+        <el-table-column type="selection" width="55" />
+        <el-table-column label="Roll No." prop="roll_no" />
+        <el-table-column label="Name" prop="">
+          <template #default="scope">
+            <el-popover trigger="hover" placement="top">
+              <p>B Form# {{ scope.row.b_form }}</p>
+              <template #reference>
+                {{ scope.row.name }}
+              </template>
+            </el-popover>
+          </template>
+        </el-table-column>
+        <el-table-column label="Parent" prop="parents.name" />
+        <el-table-column label="Phone" prop="parents.phone" />
+        <el-table-column label="Class" prop="stdclasses.name" />
+        <el-table-column label="Gender" prop="gender" />
+        <el-table-column label="Fee" prop="monthly_fee" />
+        <el-table-column label="DOB">
+          <template #default="scope">
+            {{ scope.row.dob | dateformat}}
+          </template>
+        </el-table-column>
+        <el-table-column align="right" fixed="right">
+          <template #default="scope">
+            <el-dropdown split-button type="primary" @click="payFee(scope.row.id, scope.row.name)" size="small">
+              Pay Fee
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item icon="el-icon-money" :command="'feedetail~'+scope.row.id">Fee Detail</el-dropdown-item>
+                  <el-dropdown-item icon="el-icon-edit" :command="'edit~'+scope.row.id">Edit Student</el-dropdown-item>
+                  <el-dropdown-item icon="el-icon-delete" :command="'delete~'+scope.row.id">Delete Student</el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-card>
+    
     <el-dialog
       title="Change Class"
-      :visible.sync="dialogVisible"
+      :modelValue="dialogVisible"
       width="30%">
       <span>Enter Class Name</span>
       <el-select v-model="multiStudentOption.changeClass" placeholder="Select">
@@ -82,13 +107,21 @@
       </span>
     </el-dialog>
     <pagination v-show="total>0" :total="total" :page.sync="query.page" :limit.sync="query.limit" @pagination="getList" />
-    <add-student v-if="addstudentpop" :addeditstudentprop="addstudentpop" :stdid="stdid" @closeAddStudent="closeAddStudent()"/>
+    <add-student  :addeditstudentprop="addstudentpop" :stdid="stdid" @closeAddStudent="closeAddStudent()"/>
     <pay-fee v-if="openpayfee" :openpayfee="openpayfee" :stdid="stdid" @donePayFee="donePayFee" />
     <fee-detail v-if="openfeedetail" :openfeedetail="openfeedetail" :stdid="studentid" @doneFeeDetail="doneFeeDetail" />
     <fee-print v-if="openfeeprint" :feeid="feeid" :openfeeprint="openfeeprint" @doneFeePrint="doneFeePrint" />
   </div>
 </template>
 <script>
+import {
+  User,
+  Document,
+  Edit,
+  Message,
+  Search,
+  Star,
+} from '@element-plus/icons-vue'
 import moment from 'moment';
 import Pagination from '@/components/Pagination/index.vue';
 import Resource from '@/api/resource';
@@ -199,7 +232,7 @@ export default {
       this.stdid = id;
       this.addstudentpop = true;
     },
-    addStudent() {
+    addStudentFunc() {
       this.addstudentpop = true;
     },
     payFee(id, name) {
