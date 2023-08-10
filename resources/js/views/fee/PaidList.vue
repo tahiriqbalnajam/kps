@@ -3,7 +3,7 @@
     <div class="filter-container">
       <el-row :gutter="10">
         <el-col :xs="8" :sm="6" :md="4" :lg="18" :xl="18">
-          <el-input v-model="query.keyword" placeholder="Student name" style="width: 200px;" class="filter-item"/>
+          <el-input v-model="query.keyword" placeholder="Enter Student Name" style="width: 200px;" class="filter-item"/>
           <el-date-picker
             v-model="query.date"
             type="daterange"
