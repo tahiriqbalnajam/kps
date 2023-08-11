@@ -161,15 +161,22 @@ export const constantRoutes = [
     ],
   },
   {
-    path: '/test-result',
+    path: '/exam',
     component: Layout,
-    redirect: '/test-result/edit',
+    redirect: '/exam/test',
+    meta: {title: 'Exam', bootstrapIcon: 'journal-text', noCache: true},
     children: [
       {
+        path: 'test',
+        component: () => import('@/views/exam/TestList.vue'),
+        name: 'Add Test',
+        meta: {title: 'Test', bootstrapIcon: 'journal-text', noCache: true},
+      },
+      {
         path: 'edit',
-        component: () => import('@/views/test-result/TestResult.vue'),
+        component: () => import('@/views/exam/AddTest.vue'),
         name: 'Waqar',
-        meta: {title: 'Test Result', bootstrapIcon: 'person-circle', noCache: true},
+        meta: {title: 'Test Result', bootstrapIcon: 'calendar-plus', noCache: true},
       },
     ],
   },

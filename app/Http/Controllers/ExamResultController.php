@@ -8,9 +8,24 @@ use Illuminate\Support\Arr;
 use App\Laravue\JsonResponse;
 use App\Models\AddExamsReults;
 
+use DB;
+
 class ExamResultController extends Controller
 {
     const ITEM_PER_PAGE = 1000;
+    public function index(Request $request)
+    {
+        $searchParams = $request->all();
+        $limit = Arr::get($searchParams, 'limit', static::ITEM_PER_PAGE);
+        $keyword = $request->get('keyword');
+        //DB::enableQueryLog(); // Enable query log
+        $subjects = AddExam::where('examname', 'like', '%'.$keyword.'%')
+        ->paginate($limit);
+        //dd(DB::getQueryLog()); // Show results of log
+        return response()->json(new JsonResponse(['resource' => $subjects]));
+    }
+
+
     public function store(Request $request)
     {
         $exam = AddExam::create($request->all());
@@ -24,9 +39,9 @@ class ExamResultController extends Controller
         return response()->json(new JsonResponse(['examsreult' => $stuents_array]));
     }
 
-    public function show(GetExams $GetExams)
+    public function show(AddExamsReults $AddExamsReults)
     {
-        return response()->json(new JsonResponse(['GetExams' => $GetExams]));
+        return response()->json(new JsonResponse(['AddExamsReults' => $AddExamsReults]));
     }
    
 
