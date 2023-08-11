@@ -5,6 +5,7 @@
   const classes = new Resource('classes');
   let resource = new Resource('exam_result');
   const students = new Resource('students');
+  
   const formInline = reactive({
     examname: '',
     classes: '',
@@ -41,9 +42,6 @@
   
     exam.students = formInline.students;
     resource.store(exam);
-    //exam.examname = formInline.examname;
-    //const { data } =  resource.list(exam);
-    //formInline.resource = data.resource.data;
   }
 
   const getClasses = async() => {
@@ -57,21 +55,21 @@
     formInline.students = data.students.data;
   }
 
-  const closeAddTest = () => {
-    //this.$emit('closeAddTest');
-  }
-
-
-
+  const emit = defineEmits(['popupclosed'])
   onMounted(() => {
     getClasses();
   });
+
+  const handleClose = () => {
+    console.log('popup going to close')
+    emit('popupclosed')
+  }
 
 </script>
 <template>
 
   <div >
-    <el-dialog title="Add Test" :modelValue="addedittestprop" :before-close="$emit('closeAddTest')">
+    <el-dialog title="Add Test" :modelValue="addedittestprop" @close="handleClose">
       <el-form style="width: 100%" :inline="true" :model="formInline" class="demo-form-inline">
         <el-form-item label="Exam Name">
           <el-input v-model="formInline.examname" placeholder="Exam Name" clearable />

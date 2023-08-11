@@ -15,7 +15,9 @@ import HeadControls from '@/components/HeadControls.vue';
     resource: '',
   })
 
-  const addedittestprop = ref(false);
+  const rdata = reactive({
+    addedittestprop: false,
+  })
 
   const exam_result_students = async() => {
     const { data } = await resource.list();
@@ -23,17 +25,16 @@ import HeadControls from '@/components/HeadControls.vue';
     console.log(formInline);
   }
 
-
-  const  closeAddTest= () => {
-    alert('asdfs')
-    addedittestprop= ref(false);
+  const openPopup = () => {
+    console.log('pop called');
+    rdata.addedittestprop = true
   }
 
+  const popupClosed = () => {
+    console.log('pop closed');
+    rdata.addedittestprop = false
+  }
 
-  onMounted(() => {
-    
-    exam_result_students();
-  });
 
 </script>
 <template>
@@ -52,7 +53,7 @@ import HeadControls from '@/components/HeadControls.vue';
             </el-select>
           </el-col>
           <el-col :span="2">
-            <el-button class="filter-item" style="margin-left: 10px;" type="success" @click="addedittestprop = true">
+            <el-button class="filter-item" style="margin-left: 10px;" type="success" @click="openPopup">
               Add Test
             </el-button>
           </el-col>
@@ -67,7 +68,7 @@ import HeadControls from '@/components/HeadControls.vue';
         </el-table-column>
       </el-table>
     </el-card>
-    <add-test :addedittestprop="addedittestprop"  @closeAddTest="closeAddTest"/>
+    <add-test :addedittestprop="rdata.addedittestprop"  @popupclosed="popupClosed"/>
   </div>
 </template>
 <style  scoped>
