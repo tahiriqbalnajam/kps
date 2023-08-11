@@ -18,11 +18,21 @@ class ExamResultController extends Controller
         $searchParams = $request->all();
         $limit = Arr::get($searchParams, 'limit', static::ITEM_PER_PAGE);
         $keyword = $request->get('keyword');
-        //DB::enableQueryLog(); // Enable query log
-        $subjects = AddExam::where('examname', 'like', '%'.$keyword.'%')
+        $filtercol = $request->get('filtercol');
+        echo $filtercol;
+        
+        $students = AddExamsReults::with('student')
+        ->when(($filtercol == 'student' && !empty($keyword)), function ($query) use ($keyword) {
+                $students = AddExamsReults::with('student')->where('student.name', 'like', '%'.$keyword.'%');
+        })
+        
+        ->when(($filtercol == 'examname' && !empty($keyword)), function ($query) use ($keyword) {
+            $students = AddExam::where('examname', 'like', '%'.$keyword.'%');
+        })
+
         ->paginate($limit);
         //dd(DB::getQueryLog()); // Show results of log
-        return response()->json(new JsonResponse(['resource' => $subjects]));
+        return response()->json(new JsonResponse(['resource' => $students]));
     }
 
 
@@ -38,6 +48,7 @@ class ExamResultController extends Controller
         $result_exam_student= AddExamsReults::insert($stuents_array);
         return response()->json(new JsonResponse(['examsreult' => $stuents_array]));
     }
+
 
     public function show(AddExamsReults $AddExamsReults)
     {

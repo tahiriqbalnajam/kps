@@ -8,23 +8,49 @@ import HeadControls from '@/components/HeadControls.vue';
   const resource = new Resource('exam_result');
   const students = new Resource('students');
 
+
+  const getexamsstudents = new Resource('exam_result');
+
   const formInline = reactive({
     examname: '',
     classes: '',
     stdclass: '',
     resource: '',
+    getexamsstudents: '',
   })
 
   const rdata = reactive({
     addedittestprop: false,
   })
 
+
+  const query = reactive({
+    page: 1,
+    limit: 15,
+    keyword: '',
+    filtercol: 'examname',
+    stdclass: '',
+  })
+
+  const query2 = reactive({
+    page: 1,
+    limit: 15,
+    keyword: '',
+    filtercol: 'student',
+    stdclass: '',
+  })
+
   const exam_result_students = async() => {
-    const { data } = await resource.list();
+    const { data } = await resource.list(query);
     formInline.resource = data.resource.data;
     console.log(formInline);
   }
 
+  const getexamsstudentsfun = async() => {
+    const { data } = await getexamsstudents.list(query2);
+    formInline.getexamsstudents = data.getexamsstudents.data;
+  }
+  
   const openPopup = () => {
     console.log('pop called');
     rdata.addedittestprop = true
@@ -34,6 +60,11 @@ import HeadControls from '@/components/HeadControls.vue';
     console.log('pop closed');
     rdata.addedittestprop = false
   }
+
+  onMounted(() => {
+    getexamsstudentsfun();
+    //exam_result_students();
+  });
 
 
 </script>
@@ -62,9 +93,15 @@ import HeadControls from '@/components/HeadControls.vue';
     </div>
     <el-card class="box-card">
       <el-table :data="formInline.resource" style="width: 100%">
-        <el-table-column prop="id" label="ID" width="180" />
-        <el-table-column prop="examname" label="Exam Name" width="180" />
-        <el-table-column prop="total_marks" label="Total Marks" width="180" >
+        <el-table-column prop="id" label="ID"  />
+        <el-table-column prop="examname" label="Exam Name"  />
+        <el-table-column prop="total_marks" label="Total Marks"  />
+
+        <el-table-column>
+            <el-button-group>
+              <el-button type="primary" :icon="Edit">Class Wise</el-button>
+              <el-button type="primary" :icon="Share">Student Wise</el-button>
+            </el-button-group>
         </el-table-column>
       </el-table>
     </el-card>

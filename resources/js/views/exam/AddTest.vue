@@ -13,6 +13,10 @@
     students: '',
   })
 
+  const localdata = reactive({
+    loading: false
+  })
+  
   const query = reactive({
     page: 1,
     limit: 15,
@@ -42,6 +46,7 @@
   
     exam.students = formInline.students;
     resource.store(exam);
+    handleClose();
   }
 
   const getClasses = async() => {

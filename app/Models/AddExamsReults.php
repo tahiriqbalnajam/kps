@@ -14,4 +14,8 @@ class AddExamsReults extends Model
     {
         return $this->belongsToMany(Subject::class, 'student_id', 'class_id', 'total_marks', 'obtained_marks');
     }
+
+    public function student(){
+        return $this->belongsTo(student::class,'student_id');
+    }
 }
