@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Exam;
 use Illuminate\Support\Arr;
 use App\Laravue\JsonResponse;
+use App\Models\ExamResult;
 
 class ExamController extends Controller
 {
@@ -21,7 +22,7 @@ class ExamController extends Controller
         $limit = Arr::get($searchParams, 'limit', static::ITEM_PER_PAGE);
         $keyword = $request->get('keyword');;
         //DB::enableQueryLog(); // Enable query log
-        $subjects = Exam::where('title', 'like', '%'.$keyword.'%')
+        $subjects = Exam::with('classes','results', 'results.student')
         ->paginate($limit);
         //dd(DB::getQueryLog()); // Show results of log
         return response()->json(new JsonResponse(['exams' => $subjects]));

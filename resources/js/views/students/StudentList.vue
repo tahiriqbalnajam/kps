@@ -184,7 +184,7 @@ export default {
   },
   created() {
     this.getList();
-    this.getClasses();
+    //this.getClasses();
   },
   methods: {
     handleCommand(command) {
