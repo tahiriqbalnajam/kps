@@ -148,6 +148,26 @@ export const constantRoutes = [
     ],
   },
   {
+    path: '/teacher',
+    component: Layout,
+    redirect: '/teacher/list',
+    meta: { title: 'Teachers', bootstrapIcon: 'person-gear', noCache: true },
+    children: [
+      {
+        path: 'list',
+        component: () => import('@/views/teachers/TeacherList.vue'),
+        name: 'Teachers',
+        meta: { title: 'Teachers', bootstrapIcon: 'person-lines-fill', noCache: true },
+      },
+      {
+        path: 'attendance',
+        component: () => import('@/views/teachers/AddAttendance.vue'),
+        name: 'Attendance',
+        meta: { title: 'Attendance', bootstrapIcon: 'chart', noCache: true },
+      },
+    ],
+  },
+  {
     path: '/profile',
     component: Layout,
     redirect: '/profile/edit',
