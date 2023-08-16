@@ -4,10 +4,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class AddExamsReults extends Model
+class ExamResult extends Model
 {
     public $timestamps = false;
-    protected $fillable = ['student_id', 'class_id', 'total_marks', 'obtained_marks'];
+    protected $fillable = ['student_id', 'class_id', 'total_marks', 'obtained_marks', 'exam_id'];
     protected $table = "exam_result_students";
 
     public function GetExams()
@@ -16,6 +16,12 @@ class AddExamsReults extends Model
     }
 
     public function student(){
-        return $this->belongsTo(student::class,'student_id');
+        return $this->belongsTo(student::class, 'student_id');
     }
+
+    public function exams(){
+        return $this->belongsTo(AddExam::class,'exam_id');
+    }
+
+    
 }
