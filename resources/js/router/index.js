@@ -148,6 +148,26 @@ export const constantRoutes = [
     ],
   },
   {
+    path: '/teacher',
+    component: Layout,
+    redirect: '/teacher/list',
+    meta: { title: 'Teachers', bootstrapIcon: 'person-gear', noCache: true },
+    children: [
+      {
+        path: 'list',
+        component: () => import('@/views/teachers/TeacherList.vue'),
+        name: 'Teachers',
+        meta: { title: 'Teachers', bootstrapIcon: 'person-lines-fill', noCache: true },
+      },
+      {
+        path: 'attendance',
+        component: () => import('@/views/teachers/AddAttendance.vue'),
+        name: 'Attendance',
+        meta: { title: 'Attendance', bootstrapIcon: 'chart', noCache: true },
+      },
+    ],
+  },
+  {
     path: '/profile',
     component: Layout,
     redirect: '/profile/edit',
@@ -161,15 +181,22 @@ export const constantRoutes = [
     ],
   },
   {
-    path: '/test-result',
+    path: '/exam',
     component: Layout,
-    redirect: '/test-result/edit',
+    redirect: '/exam/test',
+    meta: {title: 'Exam', bootstrapIcon: 'journal-text', noCache: true},
     children: [
       {
+        path: 'test',
+        component: () => import('@/views/exam/TestList.vue'),
+        name: 'Add Test',
+        meta: {title: 'Test', bootstrapIcon: 'journal-text', noCache: true},
+      },
+      {
         path: 'edit',
-        component: () => import('@/views/test-result/TestResult.vue'),
+        component: () => import('@/views/exam/AddTest.vue'),
         name: 'Waqar',
-        meta: {title: 'Test Result', bootstrapIcon: 'person-circle', noCache: true},
+        meta: {title: 'Test Result', bootstrapIcon: 'calendar-plus', noCache: true},
       },
     ],
   },

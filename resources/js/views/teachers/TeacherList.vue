@@ -1,7 +1,7 @@
 <template>
   <div class="app-container">
     <div class="filter-container">
-      <el-button class="filter-item" style="margin-left: 10px;" type="success" icon="el-icon-plus" @click="editnow = true">
+      <el-button class="filter-item" style="margin-left: 10px;" type="success" icon="el-icon-plus" @click="openAddNew()">
         Add Teacher
       </el-button>
     </div>
@@ -11,45 +11,63 @@
     >
       <el-table-column label="ID" prop="id" />
       <el-table-column label="Name" prop="name" />
-      <el-table-column label="NIC" prop="nic" />
+      <el-table-column label="Gender" prop="gender" />
+      <el-table-column label="Gender" prop="dob" />
+      <el-table-column label="NIC" prop="cnic" />
       <el-table-column label="Pay" prop="pay" />
       <el-table-column label="Phone" prop="phone" />
       <el-table-column label="Address" prop="address" />
       <el-table-column align="right">
-        <template slot="header" slot-scope="scope">
+        <template slot="header" #header="scope">
           <el-input ref="search" v-model="query.keyword" size="mini" placeholder="Type to search" v-on:input="debounceInput" />
         </template>
-        <template slot-scope="scope">
-          <el-button type="primary" @click="generateCard()" icon="el-icon-bank-card" />
+        <template #default="scope">
+          <el-button type="primary" @click="generateCard()" icon="el-icon-bank-card" circle><el-icon :size="15"><Check /></el-icon></el-button>
           <el-button
+            circle
             size="mini"
             @click="handleEdit(scope.row.id, scope.row.name)"
-            icon="el-icon-edit"
-          />
+          >
+            <el-icon :size="15"><Edit /></el-icon>
+          </el-button>
           <el-button
-            icon="el-icon-delete"
+            circle
             size="mini"
             type="danger"
             @click="handleDelete(scope.row.id, scope.row.name)"
-          />
+          ><el-icon :size="15"><Delete /></el-icon></el-button>
         </template>
       </el-table-column>
     </el-table>
     <pagination v-show="total>0" :total="total" :page.sync="query.page" :limit.sync="query.limit" @pagination="getList" />
     <el-drawer
       title="Edit Record"
-      :visible.sync="editnow"
+      :modelValue="editnow"
       direction="rtl"
       custom-class="demo-drawer"
       ref="drawer"
+      size="50%"
+      @close="editnow = false"
     >
       <div class="demo-drawer__content">
         <el-form :model="teacher">
           <el-form-item label="Name" :label-width="formLabelWidth">
             <el-input v-model="teacher.name" autocomplete="off" />
           </el-form-item>
+          <el-form-item label="Gender" prop="region" :label-width="formLabelWidth">
+            <el-select v-model="teacher.gender" placeholder="Gender">
+              <el-option label="Male" value="male" />
+              <el-option label="Female" value="female" />
+            </el-select>
+          </el-form-item>
           <el-form-item label="NIC#" :label-width="formLabelWidth">
-            <el-input v-model="teacher.nic" autocomplete="off" />
+            <el-input v-model="teacher.cnic" autocomplete="off" />
+          </el-form-item>
+          <el-form-item label="DOB" :label-width="formLabelWidth">
+            <el-date-picker v-model="teacher.dob" type="date"  placeholder="Pick a DOB" format="DD/MM/YYYY"  value-format="YYYY-MM-DD"/>
+          </el-form-item>
+          <el-form-item label="Decided Pay" :label-width="formLabelWidth">
+            <el-input-number v-model="teacher.pay" autocomplete="off" />
           </el-form-item>
           <el-form-item label="Education" :label-width="formLabelWidth">
             <el-input v-model="teacher.education" autocomplete="off" />
@@ -81,13 +99,21 @@
   </div>
 </template>
 <script>
-import QRCode from 'qrcode';
-import Pagination from '@/components/Pagination';
+import Pagination from '@/components/Pagination/index.vue';
 import Resource from '@/api/resource';
+import { debounce } from 'lodash';
 const resourcePro = new Resource('teachers');
+import {
+    Check,
+    Delete,
+    Edit,
+    Message,
+    Search,
+    Star,
+} from '@element-plus/icons-vue'
 export default {
   name: '',
-  components: { Pagination, QRCode },
+  components: { Pagination },
   directives: { },
   data() {
     return {
@@ -98,15 +124,27 @@ export default {
       downloading: false,
       editnow: false,
       showcard: false,
-      formLabelWidth: 250,
+      formLabelWidth: '150px',
       teacher: {
         id: '',
         name: '',
-        nic: '',
+        cnic: '',
         pay: '',
         education: '',
         phone: '',
         address: '',
+        dob:''
+      },
+      resetteacher: {
+        id: '',
+        name: '',
+        cnic: '',
+        pay: '',
+        education: '',
+        phone: '',
+        address: '',
+        dob:'',
+        gender:''
       },
       query: {
         page: 1,
@@ -122,9 +160,13 @@ export default {
     this.getList();
   },
   methods: {
-    debounceInput: _.debounce(function (e) {
+    debounceInput: debounce(function (e) {
       this.getList();
     }, 500),
+    openAddNew() {
+      this.teacher = {...this.resetteacher}
+      this.editnow = true;
+    },  
     async getList() {
       const { data } = await resourcePro.list(this.query);
       this.list = data.teachers.data;
@@ -135,7 +177,7 @@ export default {
     },
     async handleEdit(id, name) {
       const { data } = await resourcePro.get(id);
-      this.teacher = data.teacher;
+      this.teacher = data.teacher[0];
       this.editnow = true;
     },
     async handleDelete(id, name) {

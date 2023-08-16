@@ -49,6 +49,7 @@
     "lodash": "^4.17.21",
     "moment": "^2.29.4",
     "vue-lodash": "^2.1.2",
+    "vue-qrcode-reader": "^5.2.0",
     "xlsx": "^0.18.5"
   }
 }

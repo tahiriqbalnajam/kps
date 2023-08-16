@@ -2,47 +2,93 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Models\User;
 use App\Models\Teacher;
 use Illuminate\Support\Arr;
+use Illuminate\Http\Request;
 use App\Laravue\JsonResponse;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
+use App\Models\Log;
+use App\Models\Permission;
+use App\Models\Role;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class TeacherController extends Controller
 {
     const ITEM_PER_PAGE = 1000;
+
+    private $column_select = array('id','name', 'gender', 'education', 'pay', 'dob', 'cnic', 'phone', 'address');
 
     public function index(Request $request)
     {
         $searchParams = $request->all();
         $limit = Arr::get($searchParams, 'limit', static::ITEM_PER_PAGE);
         $keyword = $request->get('keyword');;
-        $subjects = Teacher::where('name', 'like', '%'.$keyword.'%')
+        $data = User::select($this->column_select)->whereHas('roles', function ($q) {
+            $q->where('name', 'teacher');
+        })
+        ->where('name', 'like', '%'.$keyword.'%')
         ->paginate($limit);
         //dd(DB::getQueryLog()); // Show results of log
-        return response()->json(new JsonResponse(['teachers' => $subjects]));
+        return response()->json(new JsonResponse(['teachers' => $data]));
     }
 
     public function store(Request $request)
     {
-        $teacher = Teacher::create($request->all());
-        return response()->json(new JsonResponse(['teacher' => $teacher]));
+        $validator = Validator::make(
+            $request->all(),
+                [
+                    'name' => ['required'],
+                    'cnic' => 'required',
+                ]
+        );
+
+        if ($validator->fails()) {
+            return responseFailed($validator->errors()->first(), '500');
+        } else {
+        $params = $request->all();
+            DB::beginTransaction();
+            $user = User::create([
+                'name' => $params['name'],
+                'email' => 'teacher@school.test',
+                'password' => Hash::make('teacher123'),
+                'sex' => '0',
+                'education' => $params['education'],
+                'gender' => $params['gender'],
+                'pay' => $params['pay'],
+                'cnic' => $params['cnic'],
+                'phone' => $params['phone'],
+                'address' => $params['address'],
+                'dob' => $params['dob'] ?? null,
+                'description' => $params['description'] ?? ''
+            ]);
+            $role = Role::findByName('teacher');
+            $user->syncRoles($role);
+            $loginUser = Auth::user();            
+            DB::commit();
+            return response()->json(new JsonResponse(['teacher' => $user]));
+        }
+        
     }
 
-    public function show(Teacher $teacher)
+    public function show($id)
     {
-        return response()->json(new JsonResponse(['teacher' => $teacher]));
+        $user = User::select($this->column_select)->where('id', $id)->get();
+        return response()->json(new JsonResponse(['teacher' => $user]));
     }
 
-    public function update(Request $request, Teacher $teacher)
+    public function update(Request $request, $id)
     {
-        $input = $request->all();
-        $teacher->fill($input)->save();
-        return response()->json(new JsonResponse(['teacher' => $teacher]));
+        $user = User::where('id', $id)->update($request->all());
+        return response()->json(new JsonResponse(['teacher' => $user]));
     }
 
     public function destroy($id)
     {
-        Teacher::destroy($id);
+        User::destroy($id);
         return response()->json(new JsonResponse(['msg' => 'Deleted successfully.']));
     }
 }

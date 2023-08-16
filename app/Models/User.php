@@ -10,6 +10,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
+use App\Models\Teacher;
 
 
 /**
@@ -54,7 +55,7 @@ class User extends Authenticatable
      * @var array<int, string>
      */
     protected $fillable = [
-        'name', 'email', 'password', 'status', 'sex', 'birthday', 'description'
+        'name', 'email','sex','birthday', 'password', 'status', 'gender', 'dob', 'education', 'cnic', 'pay','address', 'phone', 'profession' 
     ];
 
     /**
@@ -62,7 +63,7 @@ class User extends Authenticatable
      *
      * @var array
      */
-    public $appends = ['age', 'sex_format'];
+    public $appends = [];
 
     /**
      * The attributes that should be hidden for serialization.
@@ -74,6 +75,12 @@ class User extends Authenticatable
         'updated_at',
         'deleted_at'
     ];
+
+
+    public function teacher()
+    {
+        return $this->hasOne(Teacher::class);
+    }
 
     /**
      * The attributes that should be cast.
