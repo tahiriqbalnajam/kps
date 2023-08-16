@@ -8,12 +8,8 @@ import HeadControls from '@/components/HeadControls.vue';
   const resource = new Resource('exams');
   const students = new Resource('students');
 
-
-
-
-const dialogTableVisible = ref(false)
 const dialogFormVisible = ref(false)
-const formLabelWidth = '140px'
+
 
 const form = reactive({
   name: '',
@@ -28,13 +24,6 @@ const form = reactive({
 
 
 
-
-
-  const getexamsstudents = new Resource('exam_result');
-
-
-  const getstudentss = new Resource('exam_result');
-
   const formInline = reactive({
     examname: '',
     classes: '',
@@ -42,11 +31,14 @@ const form = reactive({
     resource: '',
     getexamsstudents: '',
     getstudentss:'',
+    updateexamresult: '',
+
   })
 
   const rdata = reactive({
     addedittestprop: false,
     result_students: '',
+    result_examname: '',
   })
 
 
@@ -70,22 +62,20 @@ const form = reactive({
   const get_Exams = async() => {
     const { data } = await resource.list(query);
     formInline.resource = data.exams.data;
+  }
  
+  const updateExamResult= async() =>{
+    console.log(rdata.result_students);
+    const { data } = await resource.update(rdata.result_students.id, rdata.result_students.obtained_marks);
+    formInline.updateexamresult = data.resource.data;
   }
 
-  const exam_result_students = async() => {
-    const { data } = await resource.list(query2);
-    formInline.getexamsstudents = data.resource.data;
-
-
-  }
-
-  const getResultClaswise = async(examsid) => {
-    
+  const getResultClaswise = async(examsid, testname) => {
     const result = formInline.resource.filter(item => item.id == examsid);
-    console.log(result);
+    //console.log(result);
     rdata.result_students = result[0].results;
-    dialogFormVisible = true;
+    console.log(rdata.result_students);
+    rdata.result_examname = testname;
   }
 
   const openPopup = () => {
@@ -100,7 +90,6 @@ const form = reactive({
 
   onMounted(() => {
     get_Exams();
-    exam_result_students();
   });
 
 
@@ -137,7 +126,7 @@ const form = reactive({
         <el-table-column>
           <template #default="scope">
             <el-button-group>
-              <el-button type="primary"  :icon="Edit" @click="[getResultClaswise(scope.row.id),dialogFormVisible = true]">Class Wise</el-button>
+              <el-button type="primary"  :icon="Edit" @click="[getResultClaswise(scope.row.id, scope.row.examname),dialogFormVisible = true]">Class Wise</el-button>
               <el-button type="primary" :icon="Share">Student Wise</el-button>
             </el-button-group>
           </template>
@@ -145,19 +134,23 @@ const form = reactive({
       </el-table>
     </el-card>
 
-  <el-dialog v-model="dialogFormVisible" title="Shipping address">
+  <el-dialog v-model="dialogFormVisible" title="">
     <el-form :model="form">
       <el-table :data="rdata.result_students" style="width: 100%">
         <el-table-column prop="student.name" label="Student"/>
         <el-table-column prop="total_marks" label="Total Marks"  />
-        <el-table-column prop="obtained_marks" label="Obtain Marks"  />
+        <el-table-column prop="obtained_marks" label="Obtain Marks">
+          <template #default="scope">
+              <el-input v-model="scope.row.obtained_marks" required placeholder="Obtained Marks" clearable />
+            </template>
+          </el-table-column>
       </el-table>
     </el-form>
     <template #footer>
       <span class="dialog-footer">
         <el-button @click="dialogFormVisible = false">Cancel</el-button>
-        <el-button type="primary" @click="dialogFormVisible = false">
-          Confirm
+        <el-button type="primary" @click="[updateExamResult(),dialogFormVisible = false]">
+          Update
         </el-button>
       </span>
     </template>

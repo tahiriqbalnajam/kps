@@ -1,7 +1,5 @@
 <?php
-
 namespace App\Http\Controllers;
-
 use Illuminate\Http\Request;
 use App\Models\Exam;
 use Illuminate\Support\Arr;
@@ -36,7 +34,16 @@ class ExamController extends Controller
      */
     public function store(Request $request)
     {
-        Exam::create($request->all());
+        $exam = Exam::create($request->all());
+        print_r($exam);
+        $students = $request->students;
+        $exam_id = $exam->id;
+        $stuents_array = array();
+        foreach($students as $student) 
+            $stuents_array[] = array('exam_id' => $exam_id, 'student_id' => $student['id'], 'class_id' => $student['class_id'], 'total_marks' => $exam->total_marks, 'obtained_marks' => $student['obtained_marks'] );
+            
+        $result_exam_student= ExamResult::insert($stuents_array);
+        return response()->json(new JsonResponse(['examsreult' => $stuents_array]));
     }
 
     /**
@@ -57,9 +64,11 @@ class ExamController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
-    {
-        //
+    public function update(Request $request, $id){
+
+        $examresult = ExamResult::where('id', $id)->update($request->all());
+        return response()->json(new JsonResponse(['examresult' => $examresult]));
+        
     }
 
     /**
