@@ -1,7 +1,8 @@
 <template>
   <div class="app-container">
     <div class="filter-container">
-      <head-controls>
+      <el-card class="box-card">
+        <head-controls>
           <el-form-item>
             <el-col :span="4">
               <el-select v-model="query.filtercol" placeholder="Class" class="filter-item">
@@ -9,7 +10,7 @@
               </el-select>
             </el-col>
             <el-col :span="3">
-              <el-input v-model="query.keyword" placeholder="Parent info"  class="filter-item" v-on:input="debounceInput" />
+              <el-input v-model="query.keyword" placeholder="Parent info" class="filter-item" v-on:input="debounceInput" />
             </el-col>
             <el-col :span="1">
               <el-button  class="filter-item" type="primary" :icon="Search"  @click="handleFilter">
@@ -17,19 +18,25 @@
               </el-button>
             </el-col>
             <el-col :span="2">
-              <el-button class="filter-item" style="margin-left: 10px;" type="success" :icon="User" @click="addStudentFunc()">
-                <el-icon :size="15"><UserFilled /></el-icon>Add Student
-              </el-button>
+              <el-tooltip content="Add Student" placement="top">
+                <el-button class="filter-item" style="margin-left: 10px;" type="success" :icon="User" @click="addStudentFunc()">
+                  <el-icon><CirclePlus /></el-icon>
+                </el-button>
+              </el-tooltip>
             </el-col>
             <el-col :span="2">
-              <el-button class="filter-item" style="margin-left: 10px;" type="info" icon="el-icon-plus" @click="addparentpop = true">
-                Add Parent
-              </el-button>
+              <el-tooltip content="Add Parent" placement="top">
+                <el-button class="filter-item" style="margin-left: 10px;" type="info" :icon="Plus" @click="addparentpop = true" >
+                  <el-icon :size="15"><Plus /></el-icon>
+                </el-button>
+              </el-tooltip>
             </el-col>
             <el-col :span="2">
-              <el-button class="filter-item" :loading="downloadLoading"  type="danger" :icon="Search"  @click="handleDownload">
-                Parent Excel
+              <el-tooltip content="Parent Excel" placement="top">
+                <el-button class="filter-item" :loading="downloadLoading"  type="danger" :icon="Search"  @click="handleDownload">
+                  <el-icon><Download /></el-icon>
               </el-button>
+              </el-tooltip>
             </el-col>
             <el-col :span="2">
               <el-button :disabled="multiStudentOption.multiStudent.length <= 0" class="filter-item"  style="margin-left: 10px;" type="warning" :icon="Edit"  @click="dialogVisible = true">
@@ -38,6 +45,7 @@
             </el-col>
           </el-form-item>
         </head-controls>
+      </el-card>
       
     </div>
     <el-table
@@ -214,4 +222,16 @@ export default {
     height: 100%;
     padding: 20px;
   }
+</style>
+<style>
+.el-popper.is-customized {
+  /* Set padding to ensure the height is 32px */
+  padding: 6px 12px;
+  background: linear-gradient(90deg, rgb(159, 229, 151), rgb(204, 229, 129));
+}
+
+.el-popper.is-customized .el-popper__arrow::before {
+  background: linear-gradient(45deg, #b2e68d, #bce689);
+  right: 0;
+}
 </style>
