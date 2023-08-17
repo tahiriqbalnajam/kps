@@ -13,6 +13,13 @@
     students: '',
   })
 
+  const resetFormInline = () => {
+    formInline.examname = '';
+    formInline.classes = '';
+    formInline.stdclass = '';
+    formInline.students = '';
+  }
+
   const localdata = reactive({
     loading: false
   })
@@ -46,6 +53,7 @@
     console.log(formInline.students);
     exam.students = formInline.students;
     resource.store(exam);
+    resetFormInline();
     handleClose();
   }
 
@@ -66,7 +74,7 @@
   });
 
   const handleClose = () => {
-    console.log('popup going to close')
+    //addedittestprop = false;
     emit('popupclosed')
   }
 

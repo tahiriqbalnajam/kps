@@ -119,11 +119,11 @@
   }
 
   const deleteExam = async(examsid) => {
-    get_Exams();
+    //get_Exams();
     const examid = examsid;
     resource.destroy(examid);
    // resource.destroy(examid);
-    get_Exams();
+    await get_Exams();
   }
   
 
