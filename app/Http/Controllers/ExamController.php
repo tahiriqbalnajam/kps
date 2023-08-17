@@ -35,9 +35,7 @@ class ExamController extends Controller
     public function store(Request $request)
     {
         $exam = Exam::create($request->all());
-        
         $students = $request->students;
-        print_r($students);
         $exam_id = $exam->id;
         $stuents_array = array();
         foreach($students as $student) 
@@ -66,10 +64,19 @@ class ExamController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function update(Request $request, $id){
-        
-        $examresult = ExamResult::where('id', $id)->update($request->all());
-        return response()->json(new JsonResponse(['examresult' => $examresult]));
-        
+        $keyword = $request->get('filtercol');
+        $obtained_marks[] = array('obtained_marks' => $request->get('obtained_marks'));
+        $obtained_marks = array_values($obtained_marks)[0];
+        $examname[] = array('examname' => $request->get('examname'));
+        $examname = array_values($examname)[0];
+        if($keyword == 'update_exams'){
+            $examresult = Exam::where('id', $id)->update($examname);
+            return response()->json(new JsonResponse(['examresult' => $examresult]));
+        }
+        if($keyword == 'update_result'){
+            $examresult = ExamResult::where('id', $id)->update($obtained_marks);
+            return response()->json(new JsonResponse(['examresult' => $examresult]));
+        }
     }
 
     /**
@@ -78,9 +85,10 @@ class ExamController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($sffsdgd)
+    public function destroy($id)
     {
-        
+        Exam::destroy($id);
+        //return response()->json(new JsonResponse(['msg' => 'Deleted successfully.']));
       // print_r($sffsdgd);
         //ExamResult::destroy($id);
         //return response()->json(new JsonResponse(['msg' => 'Deleted successfully.']));

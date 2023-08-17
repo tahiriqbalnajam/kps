@@ -1,7 +1,8 @@
 <script setup>
-import HeadControls from '@/components/HeadControls.vue';
+  import HeadControls from '@/components/HeadControls.vue';
   import AddTest from '@/views/exam/AddTest.vue';
   import Pagination from '@/components/Pagination/index.vue';
+  import { ElNotification } from 'element-plus'
   import { onMounted, ref } from "vue";
   import { reactive } from 'vue';
   import Resource from '@/api/resource.js';
@@ -9,19 +10,19 @@ import HeadControls from '@/components/HeadControls.vue';
   const resource = new Resource('exams');
   const students = new Resource('students');
 
-const dialogFormVisible = ref(false)
-const dialogEditFormVisible = ref(false)
+  const dialogFormVisible = ref(false)
+  const dialogEditFormVisible = ref(false)
 
-const form = reactive({
-  name: '',
-  region: '',
-  date1: '',
-  date2: '',
-  delivery: false,
-  type: [],
-  resource: '',
-  desc: '',
-})
+  const form = reactive({
+    name: '',
+    region: '',
+    date1: '',
+    date2: '',
+    delivery: false,
+    type: [],
+    resource: '',
+    desc: '',
+  })
 
   const formInline = reactive({
     examname: '',
@@ -33,11 +34,19 @@ const form = reactive({
     updateexamresult: '',
   })
 
+  const updateexams= reactive({
+    filtercol: '',
+    examname: '',
+  })
+
   const rdata = reactive({
     addedittestprop: false,
     result_students: '',
     result_examname: '',
     result_classname: '',
+    total: 0,
+    listloading: false,
+    result_id: '',
   })
 
   const query = reactive({
@@ -58,12 +67,18 @@ const form = reactive({
   })
 
   const get_Exams = async() => {
+    rdata.listloading = true;
     const { data } = await resource.list(query);
+    rdata.listloading = false;
     formInline.resource = data.exams.data;
+    rdata.total = data.exams.total;
+   //console.log(formInline.resource);
   }
  
   const updateExamResult= async() =>{
-    console.log(rdata.result_students)
+    rdata.result_examname
+   // console.log(rdata.result_students)
+   updateexams.filtercol = 'update_result';
     rdata.result_students.forEach(element => {
       elementsave.ids = element.id;
   //    elementsave.exam_ids = element.exam_id;
@@ -74,10 +89,15 @@ const form = reactive({
 
     //console.log(elementsave);
     //resource.destroy(elementsave); 
-    resource.update(element.id, 'obtained_marks='+element.obtained_marks);
-
-    get_Exams();
+    updateexams.id = element.id;
+    updateexams.obtained_marks = element.obtained_marks;
+    resource.update(element.id, updateexams);
    });
+
+    updateexams.filtercol = 'update_exams';
+    updateexams.id = rdata.result_id;
+    updateexams.examname = rdata.result_examname;
+    resource.update(updateexams.id, updateexams);
 
 //resource.destroy(rdata.result_students);
 
@@ -89,17 +109,31 @@ const form = reactive({
     //formInline.updateexamresult = data.resource.data;
     //const { data } = await resource.update('41', 'obtained_marks=900');
     //formInline.updateexamresult = data.resource.data;
+    get_Exams();
+
+    ElNotification({
+      title: 'Success',
+      message: 'Record Has Been Updated',
+      type: 'success',
+    })
   }
+
+  const deleteExam = async(examsid) => {
+    get_Exams();
+    const examid = examsid;
+    resource.destroy(examid);
+   // resource.destroy(examid);
+    get_Exams();
+  }
+  
 
   const getResultClaswise = async(examsid, testname) => {
     const result = formInline.resource.filter(item => item.id == examsid);
     //console.log(result);
     rdata.result_students = result[0].results;
-    
     rdata.result_examname = result[0].examname;
-    rdata.result_classname = result[0].classes.name;
-    rdata.result_examname = "Exam Name:      "+rdata.result_examname+" Class: "+rdata.result_classname;
-
+    rdata.result_id = result[0].id;
+    rdata.result_classname = "class: " + result[0].classes.name;
   }
 
   const openPopup = () => {
@@ -123,7 +157,7 @@ const form = reactive({
   <div class="app-container">
     <div class="filter-container">
       <head-controls>
-        <el-form-item>
+        <el-form-item v-loading="listloading">
           <el-col :span="4">
             <el-select v-model="formInline.exam" placeholder="Select Class" class="filter-item" clearable>
               <el-option
@@ -154,14 +188,20 @@ const form = reactive({
               <el-button type="primary" :icon="Edit" @click="[getResultClaswise(scope.row.id, scope.row.examname),dialogFormVisible = true]">Class Wise</el-button>
               <el-button type="primary" :icon="Share">Student Wise</el-button>
               <el-button type="primary" :icon="Share" @click="[getResultClaswise(scope.row.id, scope.row.examname),dialogEditFormVisible = true]">Edit</el-button>
+              <el-button type="primary" :icon="Share" @click="[deleteExam(scope.row.id)]">Delete</el-button>
             </el-button-group>
           </template>
         </el-table-column>
       </el-table>
     </el-card>
 
-  <el-dialog v-model="dialogFormVisible" v-model:title="rdata.result_examname">
+  <el-dialog v-model="dialogFormVisible" v-model:title="rdata.result_classname">
     <el-form :model="form">
+      <el-form label-position="left"  style="max-width: 300px;">
+          <el-form-item label="Exam Name">
+            <el-input v-model="rdata.result_examname" />
+          </el-form-item>
+        </el-form>
       <el-table :data="rdata.result_students" style="width: 100%">
         <el-table-column prop="student.name" label="Student"/>
         <el-table-column prop="total_marks" label="Total Marks"  />
@@ -172,14 +212,19 @@ const form = reactive({
       <span class="dialog-footer">
         <el-button @click="dialogFormVisible = false">Cancel</el-button>
         <el-button type="primary" @click="dialogFormVisible = false">
-          Update
+          Print
         </el-button>
       </span>
     </template>
   </el-dialog>
 
-  <el-dialog v-model="dialogEditFormVisible" v-model:title="rdata.result_examname">
+  <el-dialog v-model="dialogEditFormVisible" v-model:title="rdata.result_classname">
     <el-form :model="form">
+      <el-form label-position="left"  style="max-width: 300px;">
+          <el-form-item label="Exam Name" prop="result_examname">
+            <el-input v-model="rdata.result_examname" />
+          </el-form-item>
+        </el-form>
       <el-table :data="rdata.result_students" style="width: 100%">
         <el-table-column prop="student.name" label="Student"/>
         <el-table-column prop="total_marks" label="Total Marks"  />
@@ -201,7 +246,7 @@ const form = reactive({
   </el-dialog>
 
 
-  <pagination v-show="total>0" :total="total" :page.sync="query.page" :limit.sync="query.limit" @pagination="get_Exams" />
+  <pagination v-show="rdata.total>0" :total="rdata.total" :page.sync="query.page" :limit.sync="query.limit" @pagination="get_Exams" />
     <add-test :addedittestprop="rdata.addedittestprop"  @popupclosed="popupClosed"/>
   </div>
 </template>
