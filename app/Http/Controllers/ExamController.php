@@ -35,8 +35,9 @@ class ExamController extends Controller
     public function store(Request $request)
     {
         $exam = Exam::create($request->all());
-        print_r($exam);
+        
         $students = $request->students;
+        print_r($students);
         $exam_id = $exam->id;
         $stuents_array = array();
         foreach($students as $student) 
@@ -65,7 +66,7 @@ class ExamController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function update(Request $request, $id){
-
+        
         $examresult = ExamResult::where('id', $id)->update($request->all());
         return response()->json(new JsonResponse(['examresult' => $examresult]));
         
@@ -77,9 +78,24 @@ class ExamController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy($sffsdgd)
     {
-        Exam::destroy($id);
-        return response()->json(new JsonResponse(['msg' => 'Deleted successfully.']));
+        
+      // print_r($sffsdgd);
+        //ExamResult::destroy($id);
+        //return response()->json(new JsonResponse(['msg' => 'Deleted successfully.']));
+
+        //$exam_id = $exam->id;
+       // echo $id;
+        //echo $exam_id;
+        //echo $student_id;
+      //  echo $class_id;
+       // echo $total_marks;
+      //  echo $obtained_marks;
+      //  $stuents_array = array();
+     //   foreach($students as $student) 
+     //       $stuents_array[] = array('exam_id' => $exam_id, 'student_id' => $student_id, 'class_id' => $class_id, 'total_marks' => $total_marks, 'obtained_marks' => $obtained_marks );
+    //    $result_exam_student= ExamResult::insert($stuents_array);
+      //  return response()->json(new JsonResponse(['examsreult' => $stuents_array]));
     }
 }
