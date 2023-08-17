@@ -61,9 +61,7 @@ class StudentController extends Controller
         ->when($stdclass, function ($query) use ($stdclass) {
             return $query->where('class_id', $stdclass);
         })
-
         ->paginate($limit);
-        
         //dd(DB::getQueryLog()); // Show results of log
         return response()->json(new JsonResponse(['students' => $students]));
     }
