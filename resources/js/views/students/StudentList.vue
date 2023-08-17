@@ -11,30 +11,36 @@
             <el-col :span="3">
               <el-input v-model="query.keyword" placeholder="Student info" style="width: 200px;" class="filter-item" v-on:input="debounceInput" />
             </el-col>
-            <el-col :span="2">
+            <el-col :span="3">
               <el-select v-model="query.stdclass" placeholder="Class" clearable style="width: 130px" class="filter-item" @change="handleFilter">
                 <el-option v-for="item in classes" :key="item.id" :label="item.name | uppercaseFirst" :value="item.id" />
               </el-select>
             </el-col>
-            <el-col :span="1">
+            <el-col :span="2">
               <el-button  class="filter-item" type="primary" :icon="Search"  @click="handleFilter">
                 {{ $t('table.search') }}
               </el-button>
             </el-col>
             <el-col :span="2">
-              <el-button class="filter-item" style="margin-left: 10px;" type="success" :icon="User" @click="addStudentFunc()">
-                <el-icon :size="15"><UserFilled /></el-icon>Add Student
-              </el-button>
+              <el-tooltip content="Add Student" placement="top">
+                <el-button class="filter-item" style="margin-left: 10px;" type="success" :icon="User" @click="addStudentFunc()">
+                  <el-icon :size="15"><UserFilled /></el-icon>
+                </el-button>
+              </el-tooltip>
             </el-col>
             <el-col :span="2">
-              <el-button class="filter-item" :loading="downloadLoading"  type="danger" :icon="Search"  @click="handleDownload">
-                Students Excel
-              </el-button>
+              <el-tooltip content="Students Excel" placement="top">
+                <el-button class="filter-item" :loading="downloadLoading"  type="danger" :icon="Search"  @click="handleDownload">
+                  <el-icon><Download /></el-icon>
+                </el-button>
+              </el-tooltip>
             </el-col>
             <el-col :span="2">
-              <el-button :disabled="multiStudentOption.multiStudent.length <= 0" class="filter-item"  style="margin-left: 10px;" type="warning" :icon="Edit"  @click="dialogVisible = true">
-                Change Class
-              </el-button>
+              <el-tooltip content="Change Class" placement="top">
+                <el-button :disabled="multiStudentOption.multiStudent.length <= 0" class="filter-item"  style="margin-left: 10px;" type="warning" :icon="Edit"  @click="dialogVisible = true">
+                  <el-icon><Sort /></el-icon>  
+                </el-button>
+              </el-tooltip>
             </el-col>
           </el-form-item>
         </head-controls>

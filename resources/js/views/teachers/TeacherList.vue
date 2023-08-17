@@ -1,9 +1,46 @@
 <template>
   <div class="app-container">
     <div class="filter-container">
-      <el-button class="filter-item" style="margin-left: 10px;" type="success" icon="el-icon-plus" @click="openAddNew()">
-        Add Teacher
-      </el-button>
+      <el-card class="box-card">
+        <head-controls>
+          <el-form-item>
+            <el-col :span="4">
+              <el-select v-model="query.filtercol" placeholder="Filter" class="filter-item">
+                <el-option v-for="filter in filtercol" :key="filter.col" :label="filter.display | uppercaseFirst" :value="filter.col" />
+              </el-select>
+            </el-col>
+            <el-col :span="3">
+              <el-input v-model="query.keyword" placeholder="Teacher info" class="filter-item" v-on:input="debounceInput" />
+            </el-col>
+            <el-col :span="1">
+              <el-button  class="filter-item" type="primary" :icon="Search"  @click="handleFilter">
+                {{ $t('table.search') }}
+              </el-button>
+            </el-col>
+            <el-col :span="2">
+              <el-tooltip content="Add Student" placement="top">
+                <el-button class="filter-item" style="margin-left: 10px;" type="success" :icon="User" @click="addStudentFunc()">
+                  <el-icon :size="15"><UserFilled /></el-icon>
+                </el-button>
+              </el-tooltip>
+            </el-col>
+            <el-col :span="2">
+              <el-tooltip content="Add Teacher" placement="top">
+                <el-button class="filter-item" style="margin-left: 10px;" type="info" :icon="el-icon-plus" @click="openAddNew()">
+                    <el-icon :size="15"><Plus /></el-icon>
+                </el-button>
+              </el-tooltip>
+            </el-col>
+            <el-col :span="2">
+              <el-tooltip content="Teacher Excel" placement="top">
+                <el-button class="filter-item" :loading="downloadLoading"  type="danger" :icon="Search"  @click="handleDownload">
+                  <el-icon><Download /></el-icon>
+              </el-button>
+              </el-tooltip>
+            </el-col>
+          </el-form-item>
+        </head-controls>
+      </el-card>
     </div>
     <el-table
       :data="list"
@@ -12,8 +49,8 @@
       <el-table-column label="ID" prop="id" />
       <el-table-column label="Name" prop="name" />
       <el-table-column label="Gender" prop="gender" />
-      <el-table-column label="Gender" prop="dob" />
-      <el-table-column label="NIC" prop="cnic" />
+      <el-table-column label="DOB" prop="dob" />
+      <el-table-column label="CNIC" prop="cnic" />
       <el-table-column label="Pay" prop="pay" />
       <el-table-column label="Phone" prop="phone" />
       <el-table-column label="Address" prop="address" />
@@ -40,6 +77,7 @@
       </el-table-column>
     </el-table>
     <pagination v-show="total>0" :total="total" :page.sync="query.page" :limit.sync="query.limit" @pagination="getList" />
+    <add-student  :addeditstudentprop="addstudentpop" :stdid="stdid" @closeAddStudent="closeAddStudent()"/>
     <el-drawer
       title="Edit Record"
       :modelValue="editnow"
@@ -100,6 +138,7 @@
 </template>
 <script>
 import Pagination from '@/components/Pagination/index.vue';
+import AddStudent from '@/views/students/AddStudent.vue';
 import Resource from '@/api/resource';
 import { debounce } from 'lodash';
 const resourcePro = new Resource('teachers');
@@ -113,10 +152,16 @@ import {
 } from '@element-plus/icons-vue'
 export default {
   name: '',
-  components: { Pagination },
+  components: { Pagination, AddStudent},
   directives: { },
+  filters: {
+    dateformat: (date) => {
+      return (!date) ? '' : moment(date).format('DD MMM, YYYY');
+    },
+  },
   data() {
     return {
+      downloadLoading: false,
       list: null,
       search: '',
       total: 0,
@@ -124,7 +169,15 @@ export default {
       downloading: false,
       editnow: false,
       showcard: false,
+      addstudentpop: false,
+      search: '',
       formLabelWidth: '150px',
+      filtercol: [
+        { col: 'name', display: 'Student Name' },
+        { col: 'cnic', display: 'CNIC' },
+        { col: 'phone', display: 'Phone#' },
+        { col: 'all', display: 'All' },
+      ],
       teacher: {
         id: '',
         name: '',
@@ -150,6 +203,7 @@ export default {
         page: 1,
         limit: 15,
         keyword: '',
+        filtercol: 'name',
         role: '',
       },
     };
@@ -217,6 +271,57 @@ export default {
           }
         });
       this.showcard = true;
+    },
+    closeAddStudent() {
+      this.addstudentpop = !this.addstudentpop;
+      this.stdid = null;
+      this.getList();
+    },
+    handleFilter() {
+      this.getList();
+    },
+    addStudentFunc() {
+      this.addstudentpop = true;
+    },
+    handleDownload() {
+      this.downloadLoading = true;
+      import('@/vendor/Export2Excel').then(excel => {
+        const tHeader = ['Name', 'Gender', 'DOB','CNIC','Pay','Phone','address'];
+        const filterVal = ['name', 'gender', 'dob','cnic','pay','phone','address'];
+        const list = this.formateData(this.list);
+        const data = this.formatJson(filterVal, list);
+        excel.export_json_to_excel({
+          header: tHeader,
+          data,
+          filename: 'paid_fee_today',
+        });
+      });
+    },
+    formateData(data) {
+      const formatedData = data.map(record => (
+        {
+          roll_no: record.roll_no,
+          name: record.name,
+          parent_name: record.parents.name,
+          phone: record.parents.phone,
+          class: record.stdclasses.name,
+          gender: record.gender,
+          fee: record.monthly_fee,
+          dob: record.dob,
+        }
+      )
+      );
+      this.downloadLoading = false;
+      return formatedData;
+    },
+    formatJson(filterVal, jsonData) {
+      return jsonData.map(v => filterVal.map(j => {
+        if (j === 'timestamp') {
+          return parseTime(v[j]);
+        } else {
+          return v[j];
+        }
+      }));
     },
   },
 };

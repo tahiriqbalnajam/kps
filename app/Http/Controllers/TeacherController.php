@@ -27,10 +27,31 @@ class TeacherController extends Controller
         $searchParams = $request->all();
         $limit = Arr::get($searchParams, 'limit', static::ITEM_PER_PAGE);
         $keyword = $request->get('keyword');;
+        $filtercol = $request->get('filtercol');
+        
+        $all = ($request->get('filtercol') == 'all') ? true : false;
         $data = User::select($this->column_select)->whereHas('roles', function ($q) {
             $q->where('name', 'teacher');
         })
-        ->where('name', 'like', '%'.$keyword.'%')
+        //->where('name', 'like', '%'.$keyword.'%')
+        ->when($all || ($filtercol == 'name' && !empty($keyword)), function ($query) use ($all, $keyword) {
+            if($all)
+                return $query->orWhere('name', 'like', '%' . $keyword . '%');
+            else
+                return $query->where('name', 'like', '%' . $keyword . '%');
+        })
+        ->when($all || ($filtercol == 'cnic' && !empty($keyword)), function ($query) use ($all, $keyword) {
+            if($all)
+                return $query->orWhere('cnic', 'like', '%' . $keyword . '%');
+            else
+                return $query->where('cnic', 'like', '%' . $keyword . '%');
+        })
+        ->when($all || ($filtercol == 'phone' && !empty($keyword)), function ($query) use ($all, $keyword) {
+            if($all)
+                return $query->orWhere('phone', 'like', '%' . $keyword . '%');
+            else
+                return $query->where('phone', 'like', '%' . $keyword . '%');
+        })
         ->paginate($limit);
         //dd(DB::getQueryLog()); // Show results of log
         return response()->json(new JsonResponse(['teachers' => $data]));
