@@ -219,6 +219,7 @@ export default {
       this.listloading = false;
       this.list = data.students.data;
       this.total = data.students.total;
+      alert(this.total);
     },
 
     async getClasses() {

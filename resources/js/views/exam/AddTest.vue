@@ -43,7 +43,7 @@
     exam.examname = formInline.examname;
     exam.class_id = formInline.stdclass;
     exam.total_marks = formInline.total_marks;
-  
+    console.log(formInline.students);
     exam.students = formInline.students;
     resource.store(exam);
     handleClose();

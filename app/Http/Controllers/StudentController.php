@@ -63,6 +63,7 @@ class StudentController extends Controller
         })
 
         ->paginate($limit);
+        
         //dd(DB::getQueryLog()); // Show results of log
         return response()->json(new JsonResponse(['students' => $students]));
     }
