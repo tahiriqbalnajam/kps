@@ -28,12 +28,12 @@ class StudentAttendanceController extends Controller
         $start_month = Carbon::createFromFormat('Y-m-d', $date)->firstOfMonth()->format('Y-m-d');
         $end_month = Carbon::createFromFormat('Y-m-d', $date)->lastOfMonth()->format('Y-m-d');
         $attendance = StudentAttendance::where('class_id', $class_id)
-                                        ->whereBetween('created_at',array($start_month,$end_month))
+                                        ->whereBetween('attendance_date',array($start_month,$end_month))
                                         ->orderBy('student_id')
                                         ->get();
 
         $students = Student::with(['attend' => function($query) use($class_id, $start_month, $end_month){
-            return $query->where('class_id', $class_id)->whereBetween('created_at',array($start_month,$end_month));
+            return $query->where('class_id', $class_id)->whereBetween('attendance_date',array($start_month,$end_month));
         }])->where('class_id', $class_id)->select('roll_no','name','id')->get();
 
         // $period = CarbonPeriod::create($start_month, $end_month);
@@ -82,7 +82,7 @@ class StudentAttendanceController extends Controller
                 'class_id' => $data['class_id'],
                 'student_id' => $data['id'],
                 'status' => $data['attendance'],
-                'created_at' =>  $date,
+                'attendance_date' =>  $date,
             ];
 
             if($data['attendance'] == 'Absent') {
@@ -108,12 +108,12 @@ class StudentAttendanceController extends Controller
 
     function dailyclasswise(Request $request) {
         $date = $request->attendance_date;
-        $attendance =  DB::select("SELECT 
+        $attendance =  DB::select("SELECT
         c.name, 
         count(st.id) as absent, 
-        (select count(id) from `student_attendances` where class_id = st.class_id and created_at = date('$date')) as total  FROM `student_attendances` st
+        (select count(id) from `student_attendances` where class_id = st.class_id and attendance_date = '$date') as total  FROM `student_attendances` st
         LEFT JOIN classes c on c.id = st.class_id
-        where (st.status = 'absent' || st.status = 'leave') and  created_at = date('$date')
+        where (st.status = 'absent' || st.status = 'leave') and  attendance_date = '$date'
         GROUP by st.class_id, c.name");
 
         return response()->json(new JsonResponse(['attendance' => $attendance]));
