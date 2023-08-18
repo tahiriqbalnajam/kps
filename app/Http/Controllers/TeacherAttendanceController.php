@@ -23,22 +23,22 @@ class TeacherAttendanceController extends Controller
         if($month) {
             $start_month = Carbon::createFromFormat('Y-m-d', $month)->firstOfMonth()->format('Y-m-d');
             $end_month = Carbon::createFromFormat('Y-m-d', $month)->lastOfMonth()->format('Y-m-d');
-            Teacher::with(['attendance' => function($query) use($start_month, $end_month){
+            $result = Teacher::with(['attendance' => function($query) use($start_month, $end_month){
                 return $query->whereBetween('created_at',array($start_month,$end_month));
-            }])->select('name','id')->get();
+            }])->get();
         } else {
-            $attendance = TeacherAttendance::when($month, function($query) use($start_month, $end_month) {
+            $result = TeacherAttendance::when($month, function($query) use($start_month, $end_month) {
                 $query->whereBetween('attendance_date',array($start_month,$end_month));
             })
             ->when($date, function($query) use($date) {
                 $query->where('attendance_date',$date);
             })
-            ->orderBy('teacher_id')->get();
+            ->orderBy('user_id')->get();
         }
         
         
         
-        return response()->json(new JsonResponse(['attendace' => $attendance]));
+        return response()->json(new JsonResponse(['attendace' => $result]));
     }
 
 
@@ -52,13 +52,13 @@ class TeacherAttendanceController extends Controller
         TeacherAttendance::where('attendance_date', $date)->delete();
         foreach($teachers as $data){
             $attendance[] = [
-                'teacher_id' => $data['id'],
+                'user_id' => $data['id'],
                 'status' => $data['attendance'],
                 'attendance_date' =>  $date,
             ];
 
             if($data['attendance'] == 'Absent') {
-                $sms['teacher_id'] = $data['id'];
+                $sms['user_id'] = $data['id'];
                 $sms['message'] = 'Dear teacher '.$data['name'].',  Your are absent today from school.';
                 $sms['phone'] = $this->format_phone($data['phone']);
                 SmsQueue::create($sms);

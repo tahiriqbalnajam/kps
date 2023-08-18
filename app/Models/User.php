@@ -11,6 +11,7 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 use App\Models\Teacher;
+use Parental\HasChildren;
 
 
 /**
@@ -26,7 +27,7 @@ use App\Models\Teacher;
  */
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable, SoftDeletes, HasRoles, Filterable;
+    use HasApiTokens, HasFactory, Notifiable, SoftDeletes, HasRoles, Filterable, HasChildren;
 
     /**
      * Set permissions guard to API by default
@@ -55,7 +56,7 @@ class User extends Authenticatable
      * @var array<int, string>
      */
     protected $fillable = [
-        'name', 'email','sex','birthday', 'password', 'status', 'gender', 'dob', 'education', 'cnic', 'pay','address', 'phone', 'profession' 
+        'type','name', 'email','sex','birthday', 'password', 'status', 'gender', 'dob', 'education', 'cnic', 'pay','address', 'phone', 'profession' 
     ];
 
     /**

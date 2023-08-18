@@ -30,9 +30,7 @@ class TeacherController extends Controller
         $filtercol = $request->get('filtercol');
         
         $all = ($request->get('filtercol') == 'all') ? true : false;
-        $data = User::select($this->column_select)->whereHas('roles', function ($q) {
-            $q->where('name', 'teacher');
-        })
+        $data = Teacher::select($this->column_select)
         //->where('name', 'like', '%'.$keyword.'%')
         ->when($all || ($filtercol == 'name' && !empty($keyword)), function ($query) use ($all, $keyword) {
             if($all)
@@ -72,7 +70,7 @@ class TeacherController extends Controller
         } else {
         $params = $request->all();
             DB::beginTransaction();
-            $user = User::create([
+            $user = Teacher::create([
                 'name' => $params['name'],
                 'email' => 'teacher@school.test',
                 'password' => Hash::make('teacher123'),

@@ -163,8 +163,14 @@ export const constantRoutes = [
         path: 'attendance',
         component: () => import('@/views/teachers/AddAttendance.vue'),
         name: 'Attendance',
-        meta: { title: 'Attendance', bootstrapIcon: 'chart', noCache: true },
+        meta: { title: 'Attendance', bootstrapIcon: 'calendar3', noCache: true },
       },
+      {
+        path: 'teacher-att-report',
+        component: () => import('@/views/teachers/TeacherAttReport.vue'),
+        name: 'Attendance Report',
+        meta: { title: 'Att Report', bootstrapIcon: 'calendar-check-fill', noCache: true },
+      }
     ],
   },
   {
