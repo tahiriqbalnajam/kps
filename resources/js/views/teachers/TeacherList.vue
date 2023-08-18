@@ -59,7 +59,6 @@
           <el-input ref="search" v-model="query.keyword" size="mini" placeholder="Type to search" v-on:input="debounceInput" />
         </template>
         <template #default="scope">
-          <el-button type="primary" @click="generateCard()" icon="el-icon-bank-card" circle><el-icon :size="15"><Check /></el-icon></el-button>
           <el-button
             circle
             size="mini"
