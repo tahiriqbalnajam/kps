@@ -54,7 +54,8 @@
           @selection-change="handleSelectionChange"
         >
         <el-table-column type="selection" width="55" />
-        <el-table-column label="Roll No." prop="roll_no" />
+       
+        <el-table-column label="Adm #" prop="adminssion_number" />
         <el-table-column label="Name" prop="">
           <template #default="scope">
             <el-popover trigger="hover" placement="top">
@@ -171,6 +172,7 @@ export default {
         changeClass: "",
       },
       filtercol: [
+        { col:  'adminssion_number', display: 'adminssion_number'},
         { col: 'roll_no', display: 'Roll No.' },
         { col: 'name', display: 'Student Name' },
         { col: 'parent_name', display: 'Parent Name' },
@@ -272,8 +274,8 @@ export default {
     handleDownload() {
       this.downloadLoading = true;
       import('@/vendor/Export2Excel').then(excel => {
-        const tHeader = ['Roll#', 'Name', 'Parent Name', 'Phone','Class','Gender','Fee','DOB'];
-        const filterVal = ['roll_no', 'name', 'parent_name', 'phone','class','gender','fee','dob'];
+        const tHeader = ['Roll#', 'Adm #', 'Name', 'Parent Name', 'Phone','Class','Gender','Fee','DOB'];
+        const filterVal = ['roll_no', 'adminssion_number', 'name', 'parent_name', 'phone','class','gender','fee','dob'];
         const list = this.formateData(this.list);
         const data = this.formatJson(filterVal, list);
         excel.export_json_to_excel({
@@ -286,6 +288,7 @@ export default {
     formateData(data) {
       const formatedData = data.map(record => (
         {
+          adminssion_number: record.adminssion_number,
           roll_no: record.roll_no,
           name: record.name,
           parent_name: record.parents.name,

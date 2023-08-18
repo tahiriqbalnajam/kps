@@ -104,7 +104,7 @@
         <el-form-item>
           <el-button type="primary" @click="onSubmit" :disabled="!formInline.students.length">Save</el-button>
         </el-form-item>
-        <el-table :data="formInline.students" style="width: 100%">
+        <el-table :data="formInline.students" height="400" style="width: 100%">
           <el-table-column prop="id" label="ID" width="180" />
           <el-table-column prop="name" label="Name" width="180" />
           <el-table-column prop="obtainedmarks" label="Obtained Marks" width="180" >
