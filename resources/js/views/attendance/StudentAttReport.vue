@@ -94,7 +94,7 @@ export default {
         let attendance = [];
         for (let i = 0; i < 31; i++) {
           let found = student.attend.find( att => {  
-            const date = moment(att.created_at); // Thursday Feb 2015
+            const date = moment(att.attendance_date); // Thursday Feb 2015
             const dow = date.date();
             return (dow-1) == i
           });

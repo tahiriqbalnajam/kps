@@ -1,14 +1,13 @@
 <?php
-
 namespace App\Models;
+use Parental\HasParent;
 
-use Illuminate\Database\Eloquent\Model;
+class Teacher extends User {
 
-class Teacher extends Model
-{
-    protected $fillable = ['name','nic', 'education', 'phone', 'address'];
-    public function user()
-    {
-        return $this->belongsTo('User');
+    use HasParent;
+
+    public function attendance() {
+        return $this->hasMany(TeacherAttendance::class);
     }
+
 }

@@ -6,12 +6,9 @@
   import { onMounted, ref } from "vue";
   import { reactive } from 'vue';
   import Resource from '@/api/resource.js';
-  const classes = new Resource('classes');
   const resource = new Resource('exams');
-  const students = new Resource('students');
-
-  const dialogFormVisible = ref(false)
-  const dialogEditFormVisible = ref(false)
+  const dialogFormVisible = ref(false);
+  const dialogEditFormVisible = ref(false);
 
   const form = reactive({
     name: '',
@@ -29,8 +26,6 @@
     classes: '',
     stdclass: '',
     resource: '',
-    getexamsstudents: '',
-    getstudentss:'',
     updateexamresult: '',
   })
 
@@ -123,7 +118,7 @@
     const examid = examsid;
     resource.destroy(examid);
    // resource.destroy(examid);
-    get_Exams();
+    await get_Exams();
   }
   
 
@@ -159,7 +154,7 @@
       <head-controls>
         <el-form-item v-loading="listloading">
           <el-col :span="4">
-            <el-select v-model="formInline.exam" placeholder="Select Class" class="filter-item" clearable>
+            <el-select v-model="formInline.exam" placeholder="Select Test" class="filter-item" clearable>
               <el-option
                   v-for="item in formInline.resource"
                   :key="item.id"
@@ -169,15 +164,18 @@
             </el-select>
           </el-col>
           <el-col :span="2">
-            <el-button class="filter-item" style="margin-left: 10px;" type="success" @click="openPopup">
-              Add Test
-            </el-button>
+            <el-tooltip content="Add Test" placement="top">
+              <el-button class="filter-item" style="margin-left: 10px;" type="success" @click="openPopup">
+                <el-icon><Plus /></el-icon>
+              </el-button>
+            </el-tooltip>
           </el-col>
         </el-form-item>
       </head-controls>
     </div>
     <el-card class="box-card">
-      <el-table :data="formInline.resource" style="width: 100%">
+      <testing />
+      <el-table :data="formInline.resource" height="600" style="width: 100%">
         <el-table-column prop="examname" label="Exam"  />
         <el-table-column prop="classes.name" label="Class"  />
         <el-table-column prop="total_marks" label="Total Marks"  />
@@ -185,10 +183,30 @@
         <el-table-column>
           <template #default="scope">
             <el-button-group>
-              <el-button type="primary" :icon="Edit" @click="[getResultClaswise(scope.row.id, scope.row.examname),dialogFormVisible = true]">Class Wise</el-button>
-              <el-button type="primary" :icon="Share">Student Wise</el-button>
-              <el-button type="primary" :icon="Share" @click="[getResultClaswise(scope.row.id, scope.row.examname),dialogEditFormVisible = true]">Edit</el-button>
-              <el-button type="primary" :icon="Share" @click="[deleteExam(scope.row.id)]">Delete</el-button>
+              <el-tooltip content="Class Wise" placement="top">
+                <el-button color="#626aef" :dark="isDark" @click="[getResultClaswise(scope.row.id, scope.row.examname),dialogFormVisible = true]">
+                  <el-icon><ScaleToOriginal /></el-icon>
+                </el-button>
+              </el-tooltip>
+
+              <el-tooltip content="Student Wise" placement="top">
+                <el-button color="#626aef" :dark="isDark" >
+                  <el-icon><UserFilled /></el-icon>
+                </el-button>
+              </el-tooltip>
+
+              <el-tooltip content="Edit Test" placement="top">
+                <el-button type="primary" @click="[getResultClaswise(scope.row.id, scope.row.examname),dialogEditFormVisible = true]">
+                  <el-icon><Edit /></el-icon>
+                </el-button>
+              </el-tooltip>
+
+              <el-tooltip content="Delete Test" placement="top">
+                <el-button type="danger" @click="[deleteExam(scope.row.id)]">
+                  <el-icon><Delete /></el-icon>
+                </el-button>
+              </el-tooltip>
+
             </el-button-group>
           </template>
         </el-table-column>
@@ -198,8 +216,8 @@
   <el-dialog v-model="dialogFormVisible" v-model:title="rdata.result_classname">
     <el-form :model="form">
       <el-form label-position="left"  style="max-width: 300px;">
-          <el-form-item label="Exam Name">
-            <el-input v-model="rdata.result_examname" />
+          <el-form-item label="Exam Name:">
+            <el-input readonly v-model="rdata.result_examname" />
           </el-form-item>
         </el-form>
       <el-table :data="rdata.result_students" style="width: 100%">
@@ -238,7 +256,7 @@
     <template #footer>
       <span class="dialog-footer">
         <el-button @click="dialogEditFormVisible = false">Cancel</el-button>
-        <el-button type="primary" @click="updateExamResult()">
+        <el-button type="primary" @click="[updateExamResult(),dialogEditFormVisible = false]">
           Update
         </el-button>
       </span>

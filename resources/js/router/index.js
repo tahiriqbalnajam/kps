@@ -47,12 +47,38 @@ export const constantRoutes = [
     path: '/students',
     component: Layout,
     redirect: '/students/index',
+    meta: { title: 'Students', bootstrapIcon: 'calendar-check-fill', noCache: true },
     children: [
       {
         path: 'index',
         component: () => import('@/views/students/StudentList.vue'),
-        name: 'Students',
-        meta: { title: 'Students',bootstrapIcon: 'person-bounding-box', icon: 'people', noCache: true },
+        name: 'List',
+        meta: { title: 'List',bootstrapIcon: 'person-bounding-box', icon: 'people', noCache: true },
+      },
+      {
+        path: '/attendance',
+        redirect: '/attendance/add',
+        meta: { title: 'Attendance', bootstrapIcon: 'calendar-check-fill', noCache: true },
+        children: [
+          {
+            path: 'add',
+            component: () => import('@/views/attendance/StudentAttendance.vue'),
+            name: 'Add Attendance',
+            meta: { title: 'Add Attendance', bootstrapIcon: 'calendar-plus', noCache: true },
+          },
+          {
+            path: 'student-report',
+            component: () => import('@/views/attendance/StudentAttReport.vue'),
+            name: 'Monthly/Classwise',
+            meta: { title: 'Monthly/Classwise', bootstrapIcon: 'calendar3', noCache: true },
+          },
+          {
+            path: 'daily-classwise',
+            component: () => import('@/views/attendance/AttReportDailyClasswise.vue'),
+            name: 'Daily/Classwise',
+            meta: { title: 'Daily/Classwise', bootstrapIcon: 'calendar3-range', noCache: true },
+          },
+        ],
       },
     ],
   },
@@ -121,32 +147,7 @@ export const constantRoutes = [
       },
     ],
   },
-  {
-    path: '/attendance',
-    component: Layout,
-    redirect: '/attendance/add',
-    meta: { title: 'Attendance', bootstrapIcon: 'calendar-check-fill', noCache: true },
-    children: [
-      {
-        path: 'add',
-        component: () => import('@/views/attendance/StudentAttendance.vue'),
-        name: 'Add Attendance',
-        meta: { title: 'Add Attendance', bootstrapIcon: 'calendar-plus', noCache: true },
-      },
-      {
-        path: 'student-report',
-        component: () => import('@/views/attendance/StudentAttReport.vue'),
-        name: 'Monthly/Classwise',
-        meta: { title: 'Monthly/Classwise', bootstrapIcon: 'calendar3', noCache: true },
-      },
-      {
-        path: 'daily-classwise',
-        component: () => import('@/views/attendance/AttReportDailyClasswise.vue'),
-        name: 'Daily/Classwise',
-        meta: { title: 'Daily/Classwise', bootstrapIcon: 'calendar3-range', noCache: true },
-      },
-    ],
-  },
+  
   {
     path: '/teacher',
     component: Layout,
@@ -163,21 +164,14 @@ export const constantRoutes = [
         path: 'attendance',
         component: () => import('@/views/teachers/AddAttendance.vue'),
         name: 'Attendance',
-        meta: { title: 'Attendance', bootstrapIcon: 'chart', noCache: true },
+        meta: { title: 'Attendance', bootstrapIcon: 'calendar3', noCache: true },
       },
-    ],
-  },
-  {
-    path: '/profile',
-    component: Layout,
-    redirect: '/profile/edit',
-    children: [
       {
-        path: 'edit',
-        component: () => import('@/views/users/SelfProfile.vue'),
-        name: 'SelfProfile',
-        meta: {title: 'userProfile', bootstrapIcon: 'person-circle', noCache: true},
-      },
+        path: 'teacher-att-report',
+        component: () => import('@/views/teachers/TeacherAttReport.vue'),
+        name: 'Attendance Report',
+        meta: { title: 'Att Report', bootstrapIcon: 'calendar-check-fill', noCache: true },
+      }
     ],
   },
   {
@@ -197,6 +191,19 @@ export const constantRoutes = [
         component: () => import('@/views/exam/AddTest.vue'),
         name: 'Waqar',
         meta: {title: 'Test Result', bootstrapIcon: 'calendar-plus', noCache: true},
+      },
+    ],
+  },
+  {
+    path: '/profile',
+    component: Layout,
+    redirect: '/profile/edit',
+    children: [
+      {
+        path: 'edit',
+        component: () => import('@/views/users/SelfProfile.vue'),
+        name: 'SelfProfile',
+        meta: {title: 'userProfile', bootstrapIcon: 'person-circle', noCache: true},
       },
     ],
   },

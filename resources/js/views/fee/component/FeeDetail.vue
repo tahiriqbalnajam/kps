@@ -2,7 +2,7 @@
   <el-drawer
     ref="drawer"
     title="Fee Details"
-    :visible.sync="closepopup"
+    :modelValue="closepopup"
     direction="rtl"
     custom-class="demo-drawer"
     size="80%"
@@ -20,8 +20,8 @@
         <tr v-for="fee in fees" :key="fee.id">
           <td>{{ fee.amount }}</td>
           <td>{{ fee.feetype.title }}</td>
-          <td>{{ fee.payment_from_date | monthformat }} to {{ fee.payment_to_date | monthformat }}</td>
-          <td>{{ fee.created_at | dataformat }}</td>
+          <td>{{ moment(fee.payment_from_date).format('MMM, YYYY')  }} to {{ moment(fee.payment_to_date).format('MMM, YYYY') }}</td>
+          <td>{{ moment(fee.created_at).format('MMM, YYYY')}}</td>
         </tr>
       </table>
       <div class="demo-drawer__footer">
@@ -82,6 +82,7 @@ export default {
   },
   mounted: function() {
     this.closepopup = this.openfeedetail;
+    this.query.id = this.stdid;
   },
   created() {
     this.query.id = this.stdid;

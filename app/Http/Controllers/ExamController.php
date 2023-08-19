@@ -88,6 +88,7 @@ class ExamController extends Controller
     public function destroy($id)
     {
         Exam::destroy($id);
+        return response()->json(new JsonResponse(['msg' => 'Deleted successfully.']));
         //return response()->json(new JsonResponse(['msg' => 'Deleted successfully.']));
       // print_r($sffsdgd);
         //ExamResult::destroy($id);
