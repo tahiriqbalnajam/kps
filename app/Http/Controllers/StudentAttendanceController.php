@@ -108,13 +108,58 @@ class StudentAttendanceController extends Controller
 
     function dailyclasswise(Request $request) {
         $date = $request->attendance_date;
-        $attendance =  DB::select("SELECT
-        c.name, 
-        count(st.id) as absent, 
-        (select count(id) from `student_attendances` where class_id = st.class_id and attendance_date = '$date') as total  FROM `student_attendances` st
-        LEFT JOIN classes c on c.id = st.class_id
-        where (st.status = 'absent' || st.status = 'leave') and  attendance_date = '$date'
-        GROUP by st.class_id, c.name");
+
+        $attendance = (DB::SELECT("SELECT c.name,
+        (select COUNT(s.id) from students s
+        WHERE c.id = s.class_id
+        GROUP by c.id
+        ) AS total_student,
+        (select COUNT(s.id) from students s
+        WHERE c.id = s.class_id AND s.gender = 'female'
+        GROUP by c.id
+        ) AS total_female,
+        (select COUNT(s.id) from students s
+        WHERE c.id = s.class_id AND s.gender = 'male'
+        GROUP by c.id
+        ) AS total_male,
+        (select COUNT(s.id) from students s
+         LEFT JOIN student_attendances sa 
+         ON sa.student_id = s.id
+        WHERE c.id = s.class_id AND s.id = sa.student_id AND sa.status = 'present' AND  sa.attendance_date = date('$date')
+        GROUP by c.id
+        ) AS total_present,
+        (select COUNT(s.id) from students s
+         LEFT JOIN student_attendances sa 
+         ON sa.student_id = s.id
+        WHERE c.id = s.class_id AND s.id = sa.student_id AND s.gender = 'male' AND sa.status = 'present' AND  sa.attendance_date = date('$date')
+        GROUP by c.id
+        ) AS male_present,
+        (select COUNT(s.id) from students s
+         LEFT JOIN student_attendances sa 
+         ON sa.student_id = s.id
+        WHERE c.id = s.class_id AND s.id = sa.student_id AND s.gender = 'female' AND sa.status = 'present' AND  sa.attendance_date = date('$date')
+        GROUP by c.id
+        ) AS female_present,
+        (select COUNT(s.id) from students s
+         LEFT JOIN student_attendances sa 
+         ON sa.student_id = s.id
+        WHERE c.id = s.class_id AND s.id = sa.student_id AND sa.status = 'absent' AND  sa.attendance_date = date('$date')
+        GROUP by c.id
+        ) AS total_absent,
+        (select COUNT(s.id) from students s
+         LEFT JOIN student_attendances sa 
+         ON sa.student_id = s.id
+        WHERE c.id = s.class_id AND s.id = sa.student_id AND s.gender = 'male' AND sa.status = 'absent' AND  sa.attendance_date = date('$date')
+        GROUP by c.id
+        ) AS male_absent,
+        (select COUNT(s.id) from students s
+         LEFT JOIN student_attendances sa 
+         ON sa.student_id = s.id
+        WHERE c.id = s.class_id AND s.id = sa.student_id AND s.gender = 'female' AND sa.status = 'absent' AND  sa.attendance_date = date('$date')
+        GROUP by c.id
+        ) AS female_absent
+        
+        FROM classes c"));
 
         return response()->json(new JsonResponse(['attendance' => $attendance]));
     }

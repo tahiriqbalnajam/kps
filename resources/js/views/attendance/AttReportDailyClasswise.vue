@@ -26,14 +26,23 @@
       :border="true"
       :summary-method="getSummaries"
       show-summary
-      empty-text="No data, Try an other date!"
+      empty-text="No data, Try an other date!" 
     >
       <el-table-column label="Class Name" prop="name" />
-      <el-table-column label="Absent/Leave" prop="absent" />
-      <el-table-column label="Total" prop="total" />
+      <el-table-column label="Register student" prop="total_student" />
+      <el-table-column label="Register girls" prop="total_female" />
+      <el-table-column label="Register boys" prop="total_male" />
+      <el-table-column label="Present student" prop="total_present" />
+      <el-table-column label="Present girls" prop="female_present" />
+      <el-table-column label="Present boys" prop="male_present" />
+      <el-table-column label="Present boys" prop="male_present" />
+      <el-table-column label="Absent student" prop="total_absent" />
+      <el-table-column label="Absent boys" prop="male_absent" />
+      <el-table-column label="Absent girls" prop="female_absent" />
+      <el-table-column label="Class Attendence%" prop="total" />
       <el-table-column label="Present %">
         <template slot-scope="scope">
-          {{ 100 - Math.round(scope.row.absent/scope.row.total*100) }}%
+          {{ 100 - Math.round(scope.row.total_absent/scope.row.total_student*100) }}%
         </template>
       </el-table-column>
     </el-table>
@@ -80,6 +89,7 @@ export default {
             date.setTime(date.getTime() - 3600 * 1000 * 24 * 7);
             picker.$emit('pick', date);
           },
+
         }],
       },
       attendance: null,
@@ -103,6 +113,7 @@ export default {
     async getAttendance() {
       const { data } = await getDailyClasswise(this.query);
       this.attendance = data.attendance;
+      //console.log( this.attendance);
     },
     todayDate() {
       var today = new Date();
