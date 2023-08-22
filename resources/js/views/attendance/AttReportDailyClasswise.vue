@@ -39,10 +39,9 @@
       <el-table-column label="Absent student" prop="total_absent" />
       <el-table-column label="Absent boys" prop="male_absent" />
       <el-table-column label="Absent girls" prop="female_absent" />
-      <el-table-column label="Class Attendence%" prop="total" />
-      <el-table-column label="Present %">
-        <template slot-scope="scope">
-          {{ 100 - Math.round(scope.row.total_absent/scope.row.total_student*100) }}%
+      <el-table-column label="Class Attendance%">
+        <template #default="scope">
+          {{ scope.row.total_present ? (100 - Math.round(scope.row.total_absent / scope.row.total_student * 100)) + '%' : '' }}
         </template>
       </el-table-column>
     </el-table>
@@ -131,11 +130,12 @@ export default {
           sums[index] = 'Total';
           return;
         }
-        if (index === 3) {
-          const totalabsent = this.attendance.map(item => item.absent).reduce((prev, curr) => prev + curr);
-          const total = this.attendance.map(item => item.total).reduce((prev, curr) => prev + curr);
+        if (index === 11) {
+          console.log( this.attendance);
+          const totalabsent = this.attendance.map(item => item.total_absent).reduce((prev, curr) => prev + curr);
+          const total = this.attendance.map(item => item.total_student).reduce((prev, curr) => prev + curr);
           const present = 100 - Math.round((totalabsent / total) * 100);
-          sums[index] = 'Total Present: ' + present + '%';
+          sums[index] = present + '%';
           return;
         }
         const values = data.map(item => Number(item[column.property]));

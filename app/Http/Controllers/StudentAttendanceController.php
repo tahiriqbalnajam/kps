@@ -85,12 +85,12 @@ class StudentAttendanceController extends Controller
                 'attendance_date' =>  $date,
             ];
 
-            if($data['attendance'] == 'Absent') {
-                $sms['student_id'] = $data['id'];
-                $sms['message'] = 'Dear, '.$data['parents']['name'].',  Your child \''.$data['name'].'\' is absent today';
-                $sms['phone'] = $this->format_phone($data['parents']['phone']);
-                SmsQueue::create($sms);
-            }
+          //  if($data['attendance'] == 'Absent') {
+          //      $sms['student_id'] = $data['id'];
+          //      $sms['message'] = 'Dear, '.$data['parents']['name'].',  Your child \''.$data['name'].'\' is absent today';
+          //      $sms['phone'] = $this->format_phone($data['parents']['phone']);
+          //      SmsQueue::create($sms);
+         //   }
         }
         StudentAttendance::insert($attendance);
     }
