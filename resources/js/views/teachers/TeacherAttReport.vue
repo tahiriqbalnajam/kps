@@ -56,6 +56,9 @@
                             placeholder="Pick a month" 
                         />
                     </el-col>
+                     <el-col :span="2">
+                        <el-button type="primary" :loading="loading"  @click="getList()">{{ loading ? 'Submitting ...' : 'Get report' }}</el-button>
+                      </el-col>
                 </el-form-item>
             </head-controls>
         </div>
