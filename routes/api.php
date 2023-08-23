@@ -34,13 +34,14 @@ Route::apiResource('subject_class', 'SubjectToClassController');
 Route::apiResource('exams', 'ExamController');
 Route::post('getdailyclasswise', 'StudentAttendanceController@dailyclasswise');
 Route::post('edit_class', 'StudentController@edit_class');
+Route::apiResource('transaction', 'TransactionController');
 Route::namespace('Api')->group(function() {
     Route::post('auth/login', 'AuthController@login');
+    Route::apiResource('getusers', 'UserController');
     Route::group(['middleware' => 'auth:sanctum'], function () {
         Route::post('auth/logout', 'AuthController@logout');
 
         Route::get('/user', 'AuthController@user');
-
         // Api resource routes
         Route::apiResource('roles', 'RoleController')->middleware('permission:' . Acl::PERMISSION_PERMISSION_MANAGE);
         Route::apiResource('users', 'UserController')->middleware('permission:' . Acl::PERMISSION_USER_MANAGE);

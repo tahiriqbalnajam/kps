@@ -173,6 +173,12 @@ export const constantRoutes = [
         meta: { title: 'Att Report', bootstrapIcon: 'calendar-check-fill', noCache: true },
       },
       {
+        path: 'teacher-salary-report',
+        component: () => import('@/views/teachers/SalaryReport.vue'),
+        name: 'Attendance Report',
+        meta: { title: 'Salaries', bootstrapIcon: 'calendar-check-fill', noCache: true },
+      },
+      {
         path: 'teacher-pay',
         component: () => import('@/views/teachers/TeacherPay.vue'),
         name: 'Teacher Pay',
@@ -197,6 +203,32 @@ export const constantRoutes = [
         component: () => import('@/views/exam/AddTest.vue'),
         name: 'Waqar',
         meta: {title: 'Test Result', bootstrapIcon: 'calendar-plus', noCache: true},
+      },
+    ],
+  },
+  {
+    path: '/accounts',
+    component: Layout,
+    redirect: '/accounts/index',
+    name: 'Accounts',
+    alwaysShow: true,
+    meta: {
+      title: 'Accounts',
+      icon: 'accounts',
+      permissions: ['view menu accounts'],
+    },
+    children: [
+      {
+        path: 'index',
+        component: () => import('@/views/accounts/Main.vue'),
+        name: 'Customer',
+        meta: { title: 'Accounts', icon: 'accounts', noCache: true },
+      },
+      {
+        path: 'transactions',
+        component: () => import('@/views/accounts/transactions.vue'),
+        name: 'Transactions',
+        meta: { title: 'Transactions', icon: 'el-icon-s-finance', noCache: true },
       },
     ],
   },
