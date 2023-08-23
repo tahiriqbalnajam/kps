@@ -5,8 +5,7 @@
   import Resource from '@/api/resource.js';
   import HeadControls from '@/components/HeadControls.vue';
   const  attendence = new Resource('teacher_attendance');
-  const dialogEditFormVisible = ref(false);
- 
+  
   const formInline = reactive({
     resource: '',
     teacher_select: '',
@@ -15,9 +14,21 @@
     type: '',
   })
 
+  const teacherInline = reactive({
+    resource: '',
+    type: '',
+  })
+
   const query = reactive({
     month: moment().format("YYYY-MM-DD"),
     type: '',
+    resource: '',
+  })
+
+  const query2 = reactive({
+    month: moment().format("YYYY-MM-DD"),
+    type: '',
+    resource: '',
   })
 
   const get_list  = async() => {
@@ -31,21 +42,23 @@
   }
 
   const generate_pay  = () => {
-    getteacher();
-    query.type = 'generatepay';
-    query.resource = formInline.resource;
-    attendence.store(query);
+    get_list();
+    query2.type = 'generatepay';
+    query2.resource = teacherInline.resource;
+    attendence.store(query2);
+    get_list();
   }
 
   const getteacher  = async() => {
     query.type = 'getteachers';
     const { data } = await attendence.list(query);
-    formInline.resource = data.teachers;
+    teacherInline.resource = data.teachers;
     //const teacherid = formInline.teacher_select;
-    formInline.resource = formInline.resource.filter(item => item.type == 'App\\Models\\Teacher');
+    teacherInline.resource = teacherInline.resource.filter(item => item.type == 'App\\Models\\Teacher');
     
   }
   onMounted(() => {
+    getteacher();
     get_list();
   });
 

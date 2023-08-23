@@ -91,8 +91,15 @@ class TeacherAttendanceController extends Controller
 
         if($type == 'generatepay'){
             $teachers_salary = $request->resource;
+            print_r($teachers_salary);
             $month = $request->month;
             $teacher_array = array();
+
+            $start_month = Carbon::createFromFormat('Y-m-d', $month)->firstOfMonth()->format('Y-m-d');
+            $end_month = Carbon::createFromFormat('Y-m-d', $month)->lastOfMonth()->format('Y-m-d');
+            $delete = (DB::DELETE("DELETE FROM teacher_pay
+            WHERE month BETWEEN '$start_month' AND '$end_month'"));
+            
             foreach($teachers_salary as $teacher_salary)
                 $teacher_array[] = array('estimated_pay' => $teacher_salary['pay']/31 *$teacher_salary['present'] , 'month' => $month, 'user_id' => $teacher_salary['id'] );
                 $result_teacher_array= TeacherPay::insert($teacher_array);
