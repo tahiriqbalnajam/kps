@@ -91,6 +91,7 @@ class TeacherAttendanceController extends Controller
 
         if($type == 'generatepay'){
             $teachers_salary = $request->resource;
+            print_r($teachers_salary);
             $month = $request->month;
             $teacher_array = array();
             foreach($teachers_salary as $teacher_salary)

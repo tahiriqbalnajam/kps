@@ -15,9 +15,21 @@
     type: '',
   })
 
+  const teacherInline = reactive({
+    resource: '',
+    type: '',
+  })
+
   const query = reactive({
     month: moment().format("YYYY-MM-DD"),
     type: '',
+    resource: '',
+  })
+
+  const query2 = reactive({
+    month: moment().format("YYYY-MM-DD"),
+    type: '',
+    resource: '',
   })
 
   const get_list  = async() => {
@@ -31,21 +43,25 @@
   }
 
   const generate_pay  = () => {
-    getteacher();
-    query.type = 'generatepay';
-    query.resource = formInline.resource;
-    attendence.store(query);
+    
+    query2.type = 'generatepay';
+    console.log(teacherInline.resource);
+    query2.resource = teacherInline.resource;
+    console.log(query2);
+    attendence.store(query2);
+    get_list();
   }
 
   const getteacher  = async() => {
     query.type = 'getteachers';
     const { data } = await attendence.list(query);
-    formInline.resource = data.teachers;
+    teacherInline.resource = data.teachers;
     //const teacherid = formInline.teacher_select;
-    formInline.resource = formInline.resource.filter(item => item.type == 'App\\Models\\Teacher');
+    teacherInline.resource = teacherInline.resource.filter(item => item.type == 'App\\Models\\Teacher');
     
   }
   onMounted(() => {
+    getteacher();
     get_list();
   });
 
