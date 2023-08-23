@@ -157,7 +157,26 @@ class StudentAttendanceController extends Controller
          ON sa.student_id = s.id
         WHERE c.id = s.class_id AND s.id = sa.student_id AND s.gender = 'female' AND sa.status = 'absent' AND  sa.attendance_date = date('$date')
         GROUP by c.id
-        ) AS female_absent
+        ) AS female_absent,
+
+        (select COUNT(s.id) from students s
+         LEFT JOIN student_attendances sa 
+         ON sa.student_id = s.id
+        WHERE c.id = s.class_id AND s.id = sa.student_id AND sa.status = 'leave' AND  sa.attendance_date = date('$date')
+        GROUP by c.id
+        ) AS total_onleave,
+        (select COUNT(s.id) from students s
+         LEFT JOIN student_attendances sa 
+         ON sa.student_id = s.id
+        WHERE c.id = s.class_id AND s.id = sa.student_id AND s.gender = 'male' AND sa.status = 'leave' AND  sa.attendance_date = date('$date')
+        GROUP by c.id
+        ) AS male_onleave,
+        (select COUNT(s.id) from students s
+         LEFT JOIN student_attendances sa 
+         ON sa.student_id = s.id
+        WHERE c.id = s.class_id AND s.id = sa.student_id AND s.gender = 'female' AND sa.status = 'leave' AND  sa.attendance_date = date('$date')
+        GROUP by c.id
+        ) AS female_onleave
         
         FROM classes c"));
 
