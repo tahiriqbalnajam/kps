@@ -1,7 +1,6 @@
 <template>
   <div class="app-container">
     <div class="filter-container">
-      <el-card class="box-card">
         <head-controls>
           <el-form-item>
             <el-col :span="4">
@@ -44,9 +43,7 @@
               </el-button>
             </el-col>
           </el-form-item>
-        </head-controls>
-      </el-card>
-      
+        </head-controls> 
     </div>
     <el-table
       :data="parents"
@@ -85,6 +82,7 @@ import Pagination from '@/components/Pagination/index.vue';
 import Resource from '@/api/resource';
 import AddParent from '@/views/parents/AddParent.vue';
 import AddStudent from '@/views/students/AddStudent.vue';
+import HeadControls from '@/components/HeadControls.vue';
 import { debounce } from 'lodash';
 const parentsPro = new Resource('parents');
 export default {
