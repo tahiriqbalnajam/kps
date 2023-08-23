@@ -26,10 +26,10 @@ class ParentController extends Controller
         $filtercol = $request->get('filtercol');
         //DB::enableQueryLog(); // Enable query log
         $parents = Parents::
-                    //when($keyword, function ($query) use ($keyword) {
-                    //    return $query->where('name', 'like', '%' . $keyword . '%');
-                    //})
-                    when($all || ($filtercol == 'name' && !empty($keyword)), function ($query) use ($all, $keyword) {
+                    when($keyword && !$filtercol, function ($query) use ($keyword) {
+                       return $query->where('name', 'like', '%' . $keyword . '%');
+                    })
+                    ->when($all || ($filtercol == 'name' && !empty($keyword)), function ($query) use ($all, $keyword) {
                         if($all)
                             return $query->orWhere('name', 'like', '%' . $keyword . '%');
                         else
