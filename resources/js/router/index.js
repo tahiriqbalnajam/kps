@@ -173,12 +173,6 @@ export const constantRoutes = [
         meta: { title: 'Att Report', bootstrapIcon: 'calendar-check-fill', noCache: true },
       },
       {
-        path: 'teacher-salary-report',
-        component: () => import('@/views/teachers/SalaryReport.vue'),
-        name: 'Attendance Report',
-        meta: { title: 'Salaries', bootstrapIcon: 'calendar-check-fill', noCache: true },
-      },
-      {
         path: 'teacher-pay',
         component: () => import('@/views/teachers/TeacherPay.vue'),
         name: 'Teacher Pay',

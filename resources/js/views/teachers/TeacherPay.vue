@@ -5,8 +5,7 @@
   import Resource from '@/api/resource.js';
   import HeadControls from '@/components/HeadControls.vue';
   const  attendence = new Resource('teacher_attendance');
-  const dialogEditFormVisible = ref(false);
- 
+  
   const formInline = reactive({
     resource: '',
     teacher_select: '',
@@ -43,11 +42,9 @@
   }
 
   const generate_pay  = () => {
-    
+    get_list();
     query2.type = 'generatepay';
-    console.log(teacherInline.resource);
     query2.resource = teacherInline.resource;
-    console.log(query2);
     attendence.store(query2);
     get_list();
   }
