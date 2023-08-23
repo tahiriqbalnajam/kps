@@ -122,6 +122,19 @@ export const constantRoutes = [
     ],
   },
   {
+    path: '/settings',
+    component: Layout,
+    redirect: '/settings/Setting',
+    children: [
+      {
+        path: 'settings',
+        component: () => import('@/views/settings/Setting.vue'),
+        name: 'Setting',
+        meta: { title: 'Setting', bootstrapIcon: 'setting', noCache: true },
+      },
+    ],
+  },
+  {
     path: '/fee',
     component: Layout,
     redirect: '/fee/paidlist',

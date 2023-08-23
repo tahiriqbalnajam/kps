@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Settings;
 use Illuminate\Http\Request;
 use App\Laravue\JsonResponse;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
+use Response;
 
 class SettingController extends Controller
 {
@@ -15,7 +18,8 @@ class SettingController extends Controller
      */
     public function index()
     {
-        $school_id = session('school_id');
+        // $school_id = session('school_id');
+        $school_id = 1;
         $settings = Settings::find($school_id);
         return response()->json(new JsonResponse(['settings' => $settings]));
     }
@@ -28,7 +32,16 @@ class SettingController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        // print_r($request->all());
+        $parm = $request->all();
+        $data = $parm['allowed_holiday'];
+        // Settings::update([
+        //    'teacher_leaves_allowed' => $data
+        // ]);
+        Settings::query()->update([
+            'teacher_leaves_allowed' => $data
+        ]);
+        //dd('yes');
     }
 
     /**
