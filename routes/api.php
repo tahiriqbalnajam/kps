@@ -34,7 +34,7 @@ Route::apiResource('subject_class', 'SubjectToClassController');
 Route::apiResource('exams', 'ExamController');
 Route::post('getdailyclasswise', 'StudentAttendanceController@dailyclasswise');
 Route::post('edit_class', 'StudentController@edit_class');
-Route::apiResource('transaction', 'TransactionController');
+Route::apiResource('transaction', 'TransactionsController');
 Route::namespace('Api')->group(function() {
     Route::post('auth/login', 'AuthController@login');
     Route::apiResource('getusers', 'UserController');

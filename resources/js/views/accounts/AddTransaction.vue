@@ -12,53 +12,57 @@
         <el-form ref="ruleForm" :model="transaction" :rules="rules" label-position="left">
           <el-row :gutter="20">
             <el-col :span="8">
-              <el-form-item label="Account Jama" prop="accjama">
-                <el-select
-                  v-model="transaction.jama_account"
-                  clearable
-                  filterable
-                  remote
-                  reserve-keyword
-                  default-first-option
-                  placeholder="Start typing or scaning for product"
-                  :remote-method="getAccounts"
-                  :loading="accounts_loading"
-                  class="selectproduct"
-                  label="Select Product"
-                  :input="debounceInput"
-                >
-                  <el-option
-                    v-for="account in accounts"
-                    :key="account.id"
-                    :label="account.name"
-                    :value="account.id"
-                  />
-                </el-select>
-              </el-form-item>
+              <el-card class="box-card" :body-style="{ padding: '20px 0px 5px 20px' }">
+                <el-form-item label="Account Jama" prop="accjama" class="blackcolor">
+                  <el-select
+                    v-model="transaction.jama_account"
+                    clearable
+                    filterable
+                    remote
+                    reserve-keyword
+                    default-first-option
+                    placeholder="Start typing or scaning for product"
+                    :remote-method="getAccounts"
+                    :loading="accounts_loading"
+                    class="selectproduct"
+                    label="Select Product"
+                    :input="debounceInput"
+                  >
+                    <el-option
+                      v-for="account in accounts"
+                      :key="account.id"
+                      :label="account.name"
+                      :value="account.id"
+                    />
+                  </el-select>
+                </el-form-item>
+              </el-card>   
             </el-col>
             <el-col :span="8">
-              <el-form-item label="Account Naam" prop="accnaam">
-                <el-select
-                  v-model="transaction.naam_account"
-                  clearable
-                  filterable
-                  remote
-                  reserve-keyword
-                  default-first-option
-                  placeholder="Start typing or scaning for product"
-                  :remote-method="getAccounts"
-                  :loading="accounts_loading"
-                  class="selectproduct"
-                  label="Select Product"
-                >
-                  <el-option
-                    v-for="account in accounts"
-                    :key="account.id"
-                    :label="account.name"
-                    :value="account.id"
-                  />
-                </el-select>
-              </el-form-item>
+              <el-card class="box-card-red" :body-style="{ padding: '20px 0px 5px 20px' }">
+                <el-form-item label="Account Naam" prop="accnaam" class="whitecolor">
+                    <el-select
+                      v-model="transaction.naam_account"
+                      clearable
+                      filterable
+                      remote
+                      reserve-keyword
+                      default-first-option
+                      placeholder="Start typing or scaning for product"
+                      :remote-method="getAccounts"
+                      :loading="accounts_loading"
+                      class="selectproduct"
+                      label="Select Product"
+                    >
+                      <el-option
+                        v-for="account in accounts"
+                        :key="account.id"
+                        :label="account.name"
+                        :value="account.id"
+                      />
+                    </el-select>
+                </el-form-item>
+              </el-card>
             </el-col>
             <el-col :span="8">
               <el-form-item label="Amount" prop="amount">
@@ -151,7 +155,7 @@ export default {
       this.accounts_loading = true;
       this.query.keyword = query;
       const { data } = await userRes.list(this.query);
-      this.accounts = data.users.data;
+      this.accounts = data;
       this.accounts_loading = false;
     },
     cancelForm() {
@@ -196,4 +200,17 @@ export default {
   .demo-drawer__content {
     padding: 20px;
   }
+  .box-card {
+    background: rgb(133 253 143);
+  }
+  .box-card-red {
+    background: rgb(247 7 7)
+  };
+  .blackcolor label{
+    color: #000;
+  }
+  .whitecolor label{
+    color: #fff;
+  }
+    
 </style>

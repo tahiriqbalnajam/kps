@@ -10,8 +10,8 @@
         start-placeholder="Start date"
         end-placeholder="End date"
         :picker-options="pickerOptions"
-        format="dd/MM/yyyy"
-        value-format="yyyy-MM-dd"
+        format="DD/MM/YYYY"
+        value-format="YYYY-MM-DD"
         style="width:415px"
         :default-value="defaultDate"
       />
@@ -31,7 +31,7 @@
             :row-class-name="tableRowClassName"
           >
             <el-table-column label="Date">
-              <template slot-scope="scope">
+              <template #default="scope">
                 {{ scope.row.created_at | dateformat }}
               </template>
             </el-table-column>
@@ -40,7 +40,7 @@
             <el-table-column label="Amount" prop="amount" />
             <el-table-column label="Details" prop="comments" />
             <el-table-column align="right">
-              <template slot-scope="scope">
+              <template #default="scope">
                 <el-button
                   v-if="scope.row.status == 'enable'"
                   size="mini"

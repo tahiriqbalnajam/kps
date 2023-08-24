@@ -47,13 +47,13 @@ export const constantRoutes = [
     path: '/students',
     component: Layout,
     redirect: '/students/index',
-    meta: { title: 'Students', bootstrapIcon: 'calendar-check-fill', noCache: true },
+    meta: { title: 'Students', bootstrapIcon: 'mortarboard-fill', noCache: true },
     children: [
       {
         path: 'index',
         component: () => import('@/views/students/StudentList.vue'),
         name: 'List',
-        meta: { title: 'List',bootstrapIcon: 'person-bounding-box', icon: 'people', noCache: true },
+        meta: { title: 'List',bootstrapIcon: 'mortarboard', icon: 'people', noCache: true },
       },
       {
         path: '/attendance',
@@ -118,19 +118,6 @@ export const constantRoutes = [
         component: () => import('@/views/parents/parentlist.vue'),
         name: 'Parents',
         meta: { title: 'Parents', bootstrapIcon: 'person-vcard-fill', noCache: true },
-      },
-    ],
-  },
-  {
-    path: '/settings',
-    component: Layout,
-    redirect: '/settings/Setting',
-    children: [
-      {
-        path: 'settings',
-        component: () => import('@/views/settings/Setting.vue'),
-        name: 'Setting',
-        meta: { title: 'Setting', bootstrapIcon: 'setting', noCache: true },
       },
     ],
   },
@@ -221,7 +208,7 @@ export const constantRoutes = [
     alwaysShow: true,
     meta: {
       title: 'Accounts',
-      icon: 'accounts',
+      bootstrapIcon: 'people-fill',
       permissions: ['view menu accounts'],
     },
     children: [
@@ -229,13 +216,26 @@ export const constantRoutes = [
         path: 'index',
         component: () => import('@/views/accounts/Main.vue'),
         name: 'Customer',
-        meta: { title: 'Accounts', icon: 'accounts', noCache: true },
+        meta: { title: 'Accounts', bootstrapIcon: 'people', noCache: true },
       },
       {
         path: 'transactions',
         component: () => import('@/views/accounts/transactions.vue'),
         name: 'Transactions',
-        meta: { title: 'Transactions', icon: 'el-icon-s-finance', noCache: true },
+        meta: { title: 'Transactions', bootstrapIcon: 'wallet2', noCache: true },
+      },
+    ],
+  },
+  {
+    path: '/settings',
+    component: Layout,
+    redirect: '/settings/Setting',
+    children: [
+      {
+        path: 'settings',
+        component: () => import('@/views/settings/Setting.vue'),
+        name: 'Setting',
+        meta: { title: 'Setting', bootstrapIcon: 'gear-fill', noCache: true },
       },
     ],
   },

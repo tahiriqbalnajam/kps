@@ -31,7 +31,7 @@ class AuthController extends BaseController
         if (empty($user) || !Hash::check($request->input('password'), $user->password)) {
             return responseFailed('These credentials do not match our records.', Response::HTTP_UNAUTHORIZED);
         }
-
+        session(['user_id' => $user->id]);
         $user->token = $user->createToken('laravel-vue-admin')->plainTextToken;
 
         return responseSuccess($user);
