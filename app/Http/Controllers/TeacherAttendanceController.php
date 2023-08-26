@@ -3,6 +3,7 @@ namespace App\Http\Controllers;
 use Carbon\Carbon;
 use App\Models\Teacher;
 use App\Models\SmsQueue;
+use App\Models\Settings;
 use Illuminate\Http\Request;
 use App\Laravue\JsonResponse;
 use App\Models\TeacherAttendance;
@@ -51,6 +52,8 @@ class TeacherAttendanceController extends Controller
         }
 
         if($type == 'teachers_salarygenerated'){
+            $school_id = 1;
+            $settings = Settings::find($school_id);
             $start_month = Carbon::createFromFormat('Y-m-d', $month)->firstOfMonth()->format('Y-m-d');
             $end_month = Carbon::createFromFormat('Y-m-d', $month)->lastOfMonth()->format('Y-m-d');
             $result = (DB::SELECT(" SELECT u.name, u.id, u.type, u.pay,
@@ -58,7 +61,7 @@ class TeacherAttendanceController extends Controller
              WHERE u.id = tp.user_id AND month BETWEEN '$start_month' AND '$end_month'
              LIMIT 1) AS estimated_pay
                 FROM users u"));
-            return response()->json(new JsonResponse(['teacherwithsalary' => $result]));
+            return response()->json(new JsonResponse(['teacherwithsalary' => $result, 'setting' => $settings]));
         }
         
 

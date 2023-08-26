@@ -11,6 +11,8 @@
     teacher_select: '',
     teacherr: '',
     estimated_pay: '',
+    month: '',
+    allowed_holidays: '',
     type: '',
   })
 
@@ -35,6 +37,8 @@
     query.type = 'teachers_salarygenerated';
     const { data } = await attendence.list(query);
     formInline.resource = data.teacherwithsalary;
+    formInline.resource.allowed_holidays = data.setting.teacher_leaves_allowed;
+    console.log(formInline.resource)
     formInline.resource = formInline.resource.filter(item => item.type == 'App\\Models\\Teacher');
     //const { data } = await attendence.list(query);
     //formInline.resource = data.attendace;
@@ -79,9 +83,9 @@
                      />
                  </el-col>
                  <el-col :span="4">
-                    <el-tooltip content="Generate Salary" placement="top">
+                    <el-tooltip content="Generate Salaries" placement="top">
                       <el-button type="primary" @click="generate_pay()">
-                        <el-icon><Edit /></el-icon>
+                        <el-icon><Money /></el-icon>
                       </el-button>
                   </el-tooltip>
                 </el-col>
@@ -92,11 +96,16 @@
       <el-table :data="formInline.resource" height="600" style="width: 100%">
         <el-table-column prop="name" label="Teacher"  />
         <el-table-column prop="pay" label="Total Pay"  />
+        <el-table-column prop="month" label="Pay/ Day">
+          <template #default="scope">
+            {{ scope.row.pay ? ( Math.round(scope.row.pay/30)) : '' }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="allowed_holidays" label="Allowed Holidays"  />
         <el-table-column prop="estimated_pay" label="Estimated Pay">
           <template #default="scope">
             {{ scope.row.estimated_pay ? (Math.round( scope.row.estimated_pay)) : '' }}
           </template>
-
         </el-table-column>
 
       </el-table>
