@@ -2,6 +2,7 @@
 namespace App\Http\Controllers;
 use Carbon\Carbon;
 use App\Models\Teacher;
+use App\Models\User;
 use App\Models\SmsQueue;
 use App\Models\Settings;
 use Illuminate\Http\Request;
@@ -56,12 +57,24 @@ class TeacherAttendanceController extends Controller
             $settings = Settings::find($school_id);
             $start_month = Carbon::createFromFormat('Y-m-d', $month)->firstOfMonth()->format('Y-m-d');
             $end_month = Carbon::createFromFormat('Y-m-d', $month)->lastOfMonth()->format('Y-m-d');
-            $result = (DB::SELECT(" SELECT u.name, u.id, u.type, u.pay,
-            (SELECT tp.estimated_pay FROM teacher_pay tp
-             WHERE u.id = tp.user_id AND month BETWEEN '$start_month' AND '$end_month'
-             LIMIT 1) AS estimated_pay
-                FROM users u"));
-            return response()->json(new JsonResponse(['teacherwithsalary' => $result, 'setting' => $settings]));
+            // $result = (DB::SELECT(" SELECT u.name, u.id, u.type, u.pay,
+            // (SELECT tp.estimated_pay FROM teacher_pay tp
+            //  WHERE u.id = tp.user_id AND month BETWEEN '$start_month' AND '$end_month'
+            //  LIMIT 1) AS estimated_pay
+            //     FROM users u"));
+            // DB::enableQueryLog();
+            $result = DB::table('users as u')
+                        ->join('teacher_pay as p', 'p.user_id', '=', 'u.id')
+                        //->leftjoin('teacher_attendances as ta', 'ta.user_id', '=', 'u.id')
+                        ->select('u.name','u.id','u.type','u.pay','p.estimated_pay','p.month')
+                        // ->selectRaw('(SELECT SUM(CASE WHEN status = "absent" THEN 1 ELSE 0 END) AS absent FROM teacher_attendances ta WHERE u.id = ta.user_id and attendance_date BETWEEN "2023-08-01" AND "2023-08-31" GROUP BY ta.user_id) AS absent')
+                        ->where('u.type','App\Models\Teacher')
+                        ->whereBetween('p.month',[$start_month,$end_month])
+                        ->get();
+            //            dd(DB::getQueryLog());
+                        $ans = ($result->count() > 0) ? 'Yes' : 'No';
+                       // $ans = 'yes';
+            return response()->json(new JsonResponse(['teacherwithsalary' => $result, 'has_generated' => $ans, 'setting' => $settings]));
         }
         
 
@@ -100,8 +113,8 @@ class TeacherAttendanceController extends Controller
 
             $start_month = Carbon::createFromFormat('Y-m-d', $month)->firstOfMonth()->format('Y-m-d');
             $end_month = Carbon::createFromFormat('Y-m-d', $month)->lastOfMonth()->format('Y-m-d');
-            $delete = (DB::DELETE("DELETE FROM teacher_pay
-            WHERE month BETWEEN '$start_month' AND '$end_month'"));
+            // $delete = (DB::DELETE("DELETE FROM teacher_pay
+           // WHERE month BETWEEN '$start_month' AND '$end_month'"));
             
             foreach($teachers_salary as $teacher_salary)
                 $teacher_array[] = array('estimated_pay' => $teacher_salary['pay']/31 *$teacher_salary['present'] , 'month' => $month, 'user_id' => $teacher_salary['id'] );
@@ -161,5 +174,19 @@ class TeacherAttendanceController extends Controller
     public function destroy(string $id)
     {
         //
+    }
+    public function check_salary_generated(Request $request)
+    {
+        $month = $request->month;
+        $start_month = Carbon::createFromFormat('Y-m-d', $month)->firstOfMonth()->format('Y-m-d');
+        $end_month = Carbon::createFromFormat('Y-m-d', $month)->lastOfMonth()->format('Y-m-d');
+        $result = DB::table('users as u')
+                        ->join('teacher_pay as p', 'p.user_id', '=', 'u.id')
+                        ->select('u.name','u.id','u.type','u.pay','p.estimated_pay','p.month')
+                        ->where('u.type','App\Models\Teacher')
+                        ->whereBetween('p.month',[$start_month,$end_month])
+                        ->get();
+                        $ans = ($result->count() > 0) ? 'Yes' : 'No';
+            return response()->json(new JsonResponse(['has_generated' => $ans]));
     }
 }

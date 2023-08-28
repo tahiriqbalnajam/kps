@@ -1,10 +1,11 @@
 <script setup>
-  import { reactive } from 'vue';
-  import { onMounted, ref } from "vue";
+  import { reactive, onMounted, computed } from 'vue';
+  import axios from 'axios';
   import moment from 'moment';
   import Resource from '@/api/resource.js';
   import HeadControls from '@/components/HeadControls.vue';
   const  attendence = new Resource('teacher_attendance');
+  import { checkSalaryGenerated } from '@/api/teacher';
   
   const formInline = reactive({
     resource: '',
@@ -14,6 +15,7 @@
     month: '',
     allowed_holidays: '',
     type: '',
+    has_generated:'',
   })
 
   const teacherInline = reactive({
@@ -26,6 +28,18 @@
     type: '',
     resource: '',
   })
+  // const handleDateChange = async() => {
+  //   get_list();
+  //   const content = tooltipContent.value;
+  // };
+  const handleDateChange = async() => {
+    console.log(query);
+      const { data } = await checkSalaryGenerated(query);
+      formInline.has_generated = data.has_generated
+      console.log(formInline.has_generated)
+      const content = tooltipContent.value;
+    };
+  // nadeem
 
   const query2 = reactive({
     month: moment().format("YYYY-MM-DD"),
@@ -37,10 +51,14 @@
     query.type = 'teachers_salarygenerated';
     const { data } = await attendence.list(query);
     formInline.resource = data.teacherwithsalary;
-    formInline.resource.allowed_holidays = data.setting.teacher_leaves_allowed;
-    console.log(formInline.resource)
-    formInline.resource = formInline.resource.filter(item => item.type == 'App\\Models\\Teacher');
-    //const { data } = await attendence.list(query);
+      for (let i = 0; i < formInline.resource.length; i++) {
+        const row = formInline.resource[i];
+        row.allowed_holidays = data.setting.teacher_leaves_allowed;
+      }
+      formInline.has_generated = data.has_generated
+    console.log(formInline.has_generated)
+    //formInline.resource = formInline.resource.filter(item => item.type == 'App\\Models\\Teacher');
+   // const { data } = await attendence.list(query);
     //formInline.resource = data.attendace;
     //getteacher();
   }
@@ -62,9 +80,12 @@
     
   }
   onMounted(() => {
-    getteacher();
+     getteacher();
     get_list();
   });
+  const tooltipContent = computed(() => {
+      return formInline.has_generated === 'Yes' ? 'Regenerate Salaries' : 'Generate Salaries';
+    });
 
 
 </script>
@@ -80,10 +101,11 @@
                          format="MMM"
                          value-format="YYYY-MM-DD"
                          placeholder="Pick a month" 
+                         @change="handleDateChange"
                      />
                  </el-col>
                  <el-col :span="4">
-                    <el-tooltip content="Generate Salaries" placement="top">
+                    <el-tooltip :content="tooltipContent" placement="top">
                       <el-button type="primary" @click="generate_pay()">
                         <el-icon><Money /></el-icon>
                       </el-button>
