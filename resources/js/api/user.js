@@ -28,6 +28,13 @@ class UserResource extends Resource {
       params: params
     });
   }
+
+  fetchAccDetails() {
+    return request({
+      url: '/get_accounts',
+      method: 'get',
+    });
+  }
 }
 
 export { UserResource as default };

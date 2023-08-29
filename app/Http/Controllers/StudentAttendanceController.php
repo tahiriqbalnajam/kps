@@ -57,6 +57,15 @@ class StudentAttendanceController extends Controller
 
     }
 
+    public function student_att_report(Request $request) {
+        $student_id = $request->student_id;
+        $attendance = DB::SELECT("SELECT student_id, DATE_FORMAT(attendance_date,'%m-%Y') as month, COUNT(student_id) as absent 
+                                    FROM `student_attendances` 
+                                    WHERE status = 'absent' AND attendance_date > now() - INTERVAL 12 month  AND student_id = ".$student_id."
+                                    GROUP BY month, student_id;");
+        return response()->json(new JsonResponse(['attendance' => $attendance]));
+    }
+
     /**
      * Show the form for creating a new resource.
      *[]

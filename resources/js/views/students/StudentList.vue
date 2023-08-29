@@ -5,7 +5,7 @@
           <el-form-item>
             <el-col :span="4">
               <el-select v-model="query.filtercol" placeholder="Class" class="filter-item">
-                <el-option v-for="filter in filtercol" :key="filter.col" :label="filter.display | uppercaseFirst" :value="filter.col" />
+                <el-option v-for="filter in filtercol" :key="filter.col" :label="upperFirst(filter.display)" :value="filter.col" />
               </el-select>
             </el-col>
             <el-col :span="3">
@@ -13,7 +13,7 @@
             </el-col>
             <el-col :span="3">
               <el-select v-model="query.stdclass" placeholder="Class" clearable style="width: 130px" class="filter-item" @change="handleFilter">
-                <el-option v-for="item in classes" :key="item.id" :label="item.name | uppercaseFirst" :value="item.id" />
+                <el-option v-for="item in classes" :key="item.id" :label="upperFirst(item.name)" :value="item.id" />
               </el-select>
             </el-col>
             <el-col :span="2">
@@ -192,9 +192,14 @@ export default {
   },
   created() {
     this.getList();
-    //this.getClasses();
+    this.getClasses();
   },
   methods: {
+    upperFirst(txt) {
+      if (txt) {
+        return txt.charAt(0).toUpperCase() + txt.slice(1)
+      }
+    },
     handleCommand(command) {
       let info = command.split('~');
       const method = info[0];

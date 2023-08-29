@@ -78,6 +78,12 @@ export const constantRoutes = [
             name: 'Daily/Classwise',
             meta: { title: 'Daily/Classwise', bootstrapIcon: 'calendar3-range', noCache: true },
           },
+          {
+            path: 'student-yearly',
+            component: () => import('@/views/attendance/AttReportStudentYearly.vue'),
+            name: 'Student Monthly',
+            meta: { title: 'Student Attendance Per Month', bootstrapIcon: 'calendar3-range', noCache: true },
+          },
         ],
       },
     ],

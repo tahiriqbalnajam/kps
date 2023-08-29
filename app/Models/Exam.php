@@ -8,7 +8,7 @@ use App\Models\ExamResult;
 class Exam extends Model
 {
     protected $table = 'exams';
-    protected $fillable = ['examname','class_id', 'total_marks'];
+    protected $fillable = ['examname','class_id', 'subject_id', 'total_marks'];
 
     public function results()
     {

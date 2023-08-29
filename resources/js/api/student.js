@@ -6,6 +6,15 @@ export function addAttendance(data) {
     data,
   });
 }
+
+export function studentAttReport(data) {
+  return request({
+    url: '/student_att_report',
+    method: 'get',
+    params: data,
+  });
+}
+
 export function getDailyClasswise(data) {
   return request({
     url: '/getdailyclasswise',
