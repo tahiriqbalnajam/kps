@@ -1,6 +1,5 @@
 <script setup>
   import { reactive, onMounted, computed } from 'vue';
-  import axios from 'axios';
   import moment from 'moment';
   import Resource from '@/api/resource.js';
   import HeadControls from '@/components/HeadControls.vue';
@@ -63,13 +62,20 @@
     //getteacher();
   }
 
-  const generate_pay  = () => {
-    get_list();
-    query2.type = 'generatepay';
-    query2.resource = teacherInline.resource;
-    attendence.store(query2);
-    get_list();
-  }
+  // const generate_pay  = () => {
+  //   get_list();
+  //   query2.type = 'generatepay';
+  //   query2.resource = teacherInline.resource;
+  //   attendence.store(query2);
+  //   get_list();
+  // }
+  const generate_pay = async() => {
+    console.log(query);
+      const { data } = await generatePay(query);
+      formInline.has_generated = data.has_generated
+      console.log(formInline.has_generated)
+      const content = tooltipContent.value;
+    };
 
   const getteacher  = async() => {
     query.type = 'getteachers';

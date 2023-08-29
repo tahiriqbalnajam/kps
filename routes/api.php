@@ -28,6 +28,7 @@ Route::post('change_status', 'SmsQueueController@change_status');
 Route::apiResource('dashboard', 'dashboardController');
 Route::apiResource('attendance', 'StudentAttendanceController');
 Route::post('check_salary_generated', 'TeacherAttendanceController@check_salary_generated');
+Route::post('generate_pay', 'TeacherAttendanceController@generate_pay');
 Route::apiResource('teacher_attendance', 'TeacherAttendanceController');
 Route::apiResource('exam_result', 'ExamController');
 Route::apiResource('subjects', 'SubjectController');

@@ -13,3 +13,10 @@ export function checkSalaryGenerated(data) {
     data,
   });
 }
+export function generatePay(data) {
+  return request({
+    url: '/generate_pay',
+    method: 'post',
+    data,
+  });
+}
