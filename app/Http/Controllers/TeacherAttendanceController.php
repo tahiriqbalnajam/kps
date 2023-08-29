@@ -56,11 +56,15 @@ class TeacherAttendanceController extends Controller
             $settings = Settings::find($school_id);
             $start_month = Carbon::createFromFormat('Y-m-d', $month)->firstOfMonth()->format('Y-m-d');
             $end_month = Carbon::createFromFormat('Y-m-d', $month)->lastOfMonth()->format('Y-m-d');
-            $result = (DB::SELECT(" SELECT u.name, u.id, u.type, u.pay,
+            $results = (DB::SELECT(" SELECT u.name, u.id, u.type, u.pay,
             (SELECT tp.estimated_pay FROM teacher_pay tp
              WHERE u.id = tp.user_id AND month BETWEEN '$start_month' AND '$end_month'
              LIMIT 1) AS estimated_pay
                 FROM users u"));
+            $results = (object)$results;
+            $sallery = $results->map(function($result) {
+                $per_day = $result->pay/30;
+            });
             return response()->json(new JsonResponse(['teacherwithsalary' => $result, 'setting' => $settings]));
         }
         

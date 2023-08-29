@@ -27,6 +27,7 @@ Route::get('sendsms', 'SmsQueueController@sendsms');
 Route::post('change_status', 'SmsQueueController@change_status');
 Route::apiResource('dashboard', 'dashboardController');
 Route::apiResource('attendance', 'StudentAttendanceController');
+Route::get('student_att_report', 'StudentAttendanceController@student_att_report');
 Route::apiResource('teacher_attendance', 'TeacherAttendanceController');
 Route::apiResource('exam_result', 'ExamController');
 Route::apiResource('subjects', 'SubjectController');
@@ -35,6 +36,7 @@ Route::apiResource('exams', 'ExamController');
 Route::post('getdailyclasswise', 'StudentAttendanceController@dailyclasswise');
 Route::post('edit_class', 'StudentController@edit_class');
 Route::apiResource('transaction', 'TransactionsController');
+Route::apiResource('balances', 'BalanceController');
 Route::namespace('Api')->group(function() {
     Route::post('auth/login', 'AuthController@login');
     Route::apiResource('getusers', 'UserController');

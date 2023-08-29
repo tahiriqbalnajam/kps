@@ -20,12 +20,16 @@ class SubjectToClassController extends Controller
     {
         $searchParams = $request->all();
         $limit = Arr::get($searchParams, 'limit', static::ITEM_PER_PAGE);
-        $keyword = $request->get('keyword');;
+        $keyword = $request->get('keyword');
+        $stdclass = $request->get('stdclass');
         //DB::enableQueryLog(); // Enable query log
         $subjects = Classes::with('subjects')
-        // ->when($keyword, function ($query) use ($keyword) {
-        //         $query->where('title', 'like', '%'.$keyword.'%');
-        // })
+        ->when($keyword, function ($query) use ($keyword) {
+                $query->where('title', 'like', '%'.$keyword.'%');
+        })
+        ->when($stdclass, function ($query) use ($stdclass) {
+                $query->where('id', $stdclass);
+        })
         ->paginate($limit);
         //dd(DB::getQueryLog()); // Show results of log
         return response()->json(new JsonResponse(['classubj' => $subjects]));

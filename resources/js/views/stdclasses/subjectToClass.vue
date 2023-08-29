@@ -12,11 +12,6 @@
         </template>
       </el-table-column>
       <el-table-column align="right">
-        <template slot="header" #default="scope">
-          <el-input ref="search" v-model="query.keyword" size="mini" placeholder="Type to search" v-on:input="debounceInput" />
-        </template>
-      </el-table-column>
-      <el-table-column align="right">
         <template #default="scope">
           <el-button
             size="mini"
@@ -28,7 +23,7 @@
     <pagination v-show="total>0" :total="total" :page.sync="query.page" :limit.sync="query.limit" @pagination="getList" />
     <el-drawer
       title="Edit Record"
-      :visible.sync="editnow"
+      :modelValue="editnow"
       direction="rtl"
       custom-class="demo-drawer"
       ref="drawer"

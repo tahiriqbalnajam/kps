@@ -11,8 +11,6 @@
     teacher_select: '',
     teacherr: '',
     estimated_pay: '',
-    month: '',
-    allowed_holidays: '',
     type: '',
   })
 

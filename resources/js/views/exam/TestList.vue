@@ -2,9 +2,10 @@
   import HeadControls from '@/components/HeadControls.vue';
   import AddTest from '@/views/exam/AddTest.vue';
   import Pagination from '@/components/Pagination/index.vue';
-  import { ElNotification } from 'element-plus'
+  import { ElNotification, ElMessage, ElMessageBox } from 'element-plus'
   import { onMounted, ref } from "vue";
   import { reactive } from 'vue';
+  import moment from 'moment';
   import Resource from '@/api/resource.js';
   const resource = new Resource('exams');
   const dialogFormVisible = ref(false);
@@ -114,11 +115,27 @@
   }
 
   const deleteExam = async(examsid) => {
-    get_Exams();
-    const examid = examsid;
-    resource.destroy(examid);
-   // resource.destroy(examid);
-    await get_Exams();
+
+    ElMessageBox.confirm(
+      'Do you want permanently delete the exam. Continue?',
+      'Warning',
+      {
+        confirmButtonText: 'OK',
+        cancelButtonText: 'Cancel',
+        type: 'warning',
+      }
+    ).then(() => {
+      get_Exams();
+      const examid = examsid;
+      resource.destroy(examid);
+      get_Exams();
+      ElMessage({
+        type: 'success',
+        message: 'Delete completed',
+      })
+    })
+    .catch(() => {
+    })
   }
   
 
@@ -179,7 +196,11 @@
         <el-table-column prop="examname" label="Exam"  />
         <el-table-column prop="classes.name" label="Class"  />
         <el-table-column prop="total_marks" label="Total Marks"  />
-        <el-table-column prop="created_at" label="Date"  />
+        <el-table-column prop="created_at" label="Date">
+          <template #default="scope">
+            {{moment(scope.row.created_at).format('DD/MM/YYYY')}}
+          </template>
+        </el-table-column>
         <el-table-column>
           <template #default="scope">
             <el-button-group>

@@ -5,8 +5,9 @@ namespace App\Http\Controllers;
 use Auth;
 use Illuminate\Http\Request;
 use App\Laravue\JsonResponse;
+use App\Models\Balance;
 use Illuminate\Support\Arr;
-use DB;
+use Illuminate\Support\Facades\DB;
 use App\Models\Transaction as ATrans;
 use Carbon\Carbon;
 use Illuminate\Support\Str;
@@ -24,16 +25,16 @@ class TransactionsController extends Controller
             'jama_account','naam_account'
         ])
         ->when($date[0], function($query) use ($date) {
-            echo $date_from = Carbon::parse($date[0])->startOfDay();
-            echo $date_to = Carbon::parse($date[1])->endOfDay();
+            $date_from = Carbon::parse($date[0])->startOfDay();
+            $date_to = Carbon::parse($date[1])->endOfDay();
             return $query->whereBetween('created_at', [$date_from, $date_to]);
         })
         // ->when(!$isAdmin, function($query){
         //     return $query->where('entry_by', session('user_id'));
         // })
         ->select('id','jama_id','naam_id','amount', 'comments', 'type', 'created_at')
-        ->orderby('created_at', 'desc')->toSql();
-        //->paginate( $limit);
+        ->orderby('created_at', 'desc')
+        ->paginate( $limit);
         return response()->json(new JsonResponse(['transactions' => $transactions]));
     }
     /**
@@ -50,15 +51,44 @@ class TransactionsController extends Controller
             'amount' => 'required|numeric',
             'sale_id' => (string) Str::orderedUuid(),
         ]);
-        
-        $transaction = new ATrans();
-        $transaction->jama_id = $request->get('jama_account');
-        $transaction->naam_id = $request->get('naam_account');
-        $transaction->amount = $request->get('amount');
-        $transaction->type ='others';
-        $transaction->comments = $request->get('comments');
-        $transaction->entry_by = session('user_id');
-        $transaction->save();
+
+        DB::beginTransaction();
+
+        try {
+            $jama_account = $request->get('jama_account');
+            $naam_account = $request->get('naam_account');
+            $amount = $request->get('amount');
+            $transaction = new ATrans();
+            $transaction->jama_id = $jama_account;
+            $transaction->naam_id = $naam_account;
+            $transaction->amount = $amount;
+            $transaction->type ='others';
+            $transaction->comments = $request->get('comments');
+            $transaction->entry_by = session('user_id');
+            $transaction->save();
+            $this->setBalance($jama_account, 'jama', $amount);
+            $this->setBalance($naam_account, 'naam', $amount);
+           
+
+            DB::commit();
+            return response()->json(new JsonResponse(['transactions' => $transaction]));
+        } catch (\Exception $e) {
+            DB::rollback();
+            return response()->json( $e->getMessage(), 403);
+        }
+    }
+
+    function setBalance($user_id, $type, $amount) {
+        $balance = Balance::firstOrNew(array('user_id' => $user_id));
+        $balance->user_id = $user_id;
+        if($type == 'naam') {
+            $balance->naam += $amount;
+            $balance->balance -= $amount;
+        } else {
+            $balance->jama += $amount;
+            $balance->balance += $amount;
+        }
+        $balance->save();
     }
 
     /**
