@@ -52,6 +52,12 @@
       formInline.showtitle = (data.has_generated === "Yes")?true:false;
       const title = alertTitle.value;
       formInline.alertRec = true;
+      hideAlertAfter(3000);
+    };
+    const hideAlertAfter = (milliseconds) => {
+      setTimeout(() => {
+        formInline.alertRec = false;
+      }, milliseconds);
     };
 
   onMounted(() => {
@@ -93,7 +99,7 @@
          </head-controls>
      </div>
      <el-card class="box-card">
-      <el-table :data="formInline.resource" height="600" style="width: 100%">
+      <el-table :data="formInline.resource" height="600" style="width: 100%" empty-text="Not Generated">
         <el-table-column prop="name" label="Teacher"  />
         <el-table-column prop="pay" label="Total Pay"  />
         <el-table-column prop="month" label="Pay/ Day">
