@@ -1,10 +1,11 @@
 <script setup>
-  import { reactive } from 'vue';
-  import { onMounted, ref } from "vue";
+  import { reactive, onMounted, computed } from 'vue';
   import moment from 'moment';
   import Resource from '@/api/resource.js';
   import HeadControls from '@/components/HeadControls.vue';
   const  attendence = new Resource('teacher_attendance');
+  import { checkSalaryGenerated } from '@/api/teacher';
+  import { generatePay } from '@/api/teacher';
   
   const formInline = reactive({
     resource: '',
@@ -12,19 +13,23 @@
     teacherr: '',
     estimated_pay: '',
     type: '',
+    has_generated:'',
+    alertRec: false,
+    showtitle: false,
   })
-
   const teacherInline = reactive({
     resource: '',
     type: '',
   })
-
   const query = reactive({
     month: moment().format("YYYY-MM-DD"),
     type: '',
     resource: '',
   })
-
+  const handleDateChange = async() => {
+    get_list();  
+    const content = tooltipContent.value;
+    };
   const query2 = reactive({
     month: moment().format("YYYY-MM-DD"),
     type: '',
@@ -35,33 +40,28 @@
     query.type = 'teachers_salarygenerated';
     const { data } = await attendence.list(query);
     formInline.resource = data.teacherwithsalary;
-    formInline.resource.allowed_holidays = data.setting.teacher_leaves_allowed;
-    console.log(formInline.resource)
-    formInline.resource = formInline.resource.filter(item => item.type == 'App\\Models\\Teacher');
-    //const { data } = await attendence.list(query);
-    //formInline.resource = data.attendace;
-    //getteacher();
+      for (let i = 0; i < formInline.resource.length; i++) {
+        const row = formInline.resource[i];
+        row.allowed_holidays = data.setting.teacher_leaves_allowed;
+      }
+    formInline.has_generated = data.has_generated
   }
+  const generate_pay = async() => {
+      const { data } = await generatePay(query);
+      get_list();
+      formInline.showtitle = (data.has_generated === "Yes")?true:false;
+      const title = alertTitle.value;
+      formInline.alertRec = true;
+    };
 
-  const generate_pay  = () => {
-    get_list();
-    query2.type = 'generatepay';
-    query2.resource = teacherInline.resource;
-    attendence.store(query2);
-    get_list();
-  }
-
-  const getteacher  = async() => {
-    query.type = 'getteachers';
-    const { data } = await attendence.list(query);
-    teacherInline.resource = data.teachers;
-    //const teacherid = formInline.teacher_select;
-    teacherInline.resource = teacherInline.resource.filter(item => item.type == 'App\\Models\\Teacher');
-    
-  }
   onMounted(() => {
-    getteacher();
     get_list();
+  });
+  const tooltipContent = computed(() => {
+    return formInline.has_generated === 'Yes' ? 'Regenerate Salaries' : 'Generate Salaries';
+  });
+  const alertTitle = computed(() => {
+    return formInline.showtitle ? 'Salary Generated' : 'Salary Not Generated';
   });
 
 
@@ -70,6 +70,7 @@
   <div class="app-container">
      <div class="filter-container">
          <head-controls>
+          <el-alert :title="alertTitle" type="success" v-if="formInline.alertRec"></el-alert>
              <el-form-item label="Select Month">
                  <el-col :span="4">
                      <el-date-picker
@@ -78,10 +79,11 @@
                          format="MMM"
                          value-format="YYYY-MM-DD"
                          placeholder="Pick a month" 
+                         @change="handleDateChange"
                      />
                  </el-col>
                  <el-col :span="4">
-                    <el-tooltip content="Generate Salaries" placement="top">
+                    <el-tooltip :content="tooltipContent" placement="top">
                       <el-button type="primary" @click="generate_pay()">
                         <el-icon><Money /></el-icon>
                       </el-button>
@@ -100,6 +102,9 @@
           </template>
         </el-table-column>
         <el-table-column prop="allowed_holidays" label="Allowed Holidays"  />
+        <el-table-column prop="absent" label="Absent Days"  />
+        <el-table-column prop="leaves" label="Leave Days"  />
+        <el-table-column prop="working" label="Working Days" />
         <el-table-column prop="estimated_pay" label="Estimated Pay">
           <template #default="scope">
             {{ scope.row.estimated_pay ? (Math.round( scope.row.estimated_pay)) : '' }}
