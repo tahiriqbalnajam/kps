@@ -67,7 +67,9 @@ class TeacherAttendanceController extends Controller
                         ->join('teacher_pay as p', 'p.user_id', '=', 'u.id')
                         //->leftjoin('teacher_attendances as ta', 'ta.user_id', '=', 'u.id')
                         ->select('u.name','u.id','u.type','u.pay','p.estimated_pay','p.month')
-                        // ->selectRaw('(SELECT SUM(CASE WHEN status = "absent" THEN 1 ELSE 0 END) AS absent FROM teacher_attendances ta WHERE u.id = ta.user_id and attendance_date BETWEEN "2023-08-01" AND "2023-08-31" GROUP BY ta.user_id) AS absent')
+                        ->selectRaw('(SELECT SUM(CASE WHEN status = "absent" THEN 1 ELSE 0 END) AS absent FROM teacher_attendances ta WHERE u.id = ta.user_id and attendance_date BETWEEN "'.$start_month.'" and "'.$end_month.'" GROUP BY ta.user_id) AS absent')
+                        ->selectRaw('(SELECT SUM(CASE WHEN status = "leave" THEN 1 ELSE 0 END) AS absent FROM teacher_attendances ta WHERE u.id = ta.user_id and attendance_date BETWEEN "'.$start_month.'" and "'.$end_month.'" GROUP BY ta.user_id) AS leaves')
+                        ->selectRaw('(SELECT sum(case when status = "holiday" or status = "present" then 1 else 0 end) AS working FROM teacher_attendances ta WHERE u.id = ta.user_id and attendance_date BETWEEN "'.$start_month.'" and "'.$end_month.'" GROUP BY ta.user_id) AS working')
                         ->where('u.type','App\Models\Teacher')
                         ->whereBetween('p.month',[$start_month,$end_month])
                         ->get();

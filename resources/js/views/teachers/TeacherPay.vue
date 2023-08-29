@@ -124,6 +124,9 @@
           </template>
         </el-table-column>
         <el-table-column prop="allowed_holidays" label="Allowed Holidays"  />
+        <el-table-column prop="absent" label="Absent Days"  />
+        <el-table-column prop="leaves" label="Leave Days"  />
+        <el-table-column prop="working" label="Working Days" />
         <el-table-column prop="estimated_pay" label="Estimated Pay">
           <template #default="scope">
             {{ scope.row.estimated_pay ? (Math.round( scope.row.estimated_pay)) : '' }}
