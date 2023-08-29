@@ -193,24 +193,41 @@ class TeacherAttendanceController extends Controller
     }
     public function generate_pay(Request $request)
     {
+        $res = 'No';
+        $school_id = 1;
+        $settings = Settings::find($school_id);
         $month = $request->month;
-        echo $month;
-        
-    //     $teachers_salary = $request->resource;
-    //     print_r($teachers_salary);
-    //     $month = $request->month;
-    //     $teacher_array = array();
-
-    //     $start_month = Carbon::createFromFormat('Y-m-d', $month)->firstOfMonth()->format('Y-m-d');
-    //     $end_month = Carbon::createFromFormat('Y-m-d', $month)->lastOfMonth()->format('Y-m-d');
-    //     // $delete = (DB::DELETE("DELETE FROM teacher_pay
-    //    // WHERE month BETWEEN '$start_month' AND '$end_month'"));
-        
-    //     foreach($teachers_salary as $teacher_salary)
-    //         $teacher_array[] = array('estimated_pay' => $teacher_salary['pay']/31 *$teacher_salary['present'] , 'month' => $month, 'user_id' => $teacher_salary['id'] );
-    //         $result_teacher_array= TeacherPay::insert($teacher_array);
-    //         return response()->json(new JsonResponse(['examsreult' => $result_teacher_array]));
-        //$exam = TeacherPay::create($request->all());
-            //return response()->json(new JsonResponse(['has_generated' => $ans]));
+        $start_month = Carbon::createFromFormat('Y-m-d', $month)->firstOfMonth()->format('Y-m-d');
+        $end_month = Carbon::createFromFormat('Y-m-d', $month)->lastOfMonth()->format('Y-m-d');
+        $result = DB::table('users as u')
+                        ->select('u.name','u.id','u.type','u.pay')
+                        ->selectRaw('(SELECT SUM(CASE WHEN status = "absent" THEN 1 ELSE 0 END) AS absent FROM teacher_attendances ta WHERE u.id = ta.user_id and attendance_date BETWEEN "'.$start_month.'" and "'.$end_month.'" GROUP BY ta.user_id) AS absent')
+                        ->selectRaw('(SELECT SUM(CASE WHEN status = "leave" THEN 1 ELSE 0 END) AS absent FROM teacher_attendances ta WHERE u.id = ta.user_id and attendance_date BETWEEN "'.$start_month.'" and "'.$end_month.'" GROUP BY ta.user_id) AS leaves')
+                        ->selectRaw('(SELECT sum(case when status = "holiday" or status = "present" then 1 else 0 end) AS working FROM teacher_attendances ta WHERE u.id = ta.user_id and attendance_date BETWEEN "'.$start_month.'" and "'.$end_month.'" GROUP BY ta.user_id) AS working')
+                        ->where('u.type','App\Models\Teacher')
+                        ->get();
+        $delete = (DB::DELETE("DELETE FROM teacher_pay WHERE month BETWEEN '$start_month' AND '$end_month'"));
+        foreach($result as $row){
+            $perday_pay = $row->pay/30;
+            $working_days = $row->working;
+            $absent = $row->absent;
+            $leaves = $row->leaves;
+            $allowed_leaves = $settings->teacher_leaves_allowed;
+            $total_working = $working_days+$absent+$leaves;
+            $total_off = $absent+$leaves;
+            $month_days = 30;
+            if($total_working < 15){
+                $month_days = $total_working;
+                $allowed_leaves = ($allowed_leaves)? $allowed_leaves/2:$allowed_leaves;
+            }
+            $days_to_pay = ($total_off>$allowed_leaves)?$month_days+$allowed_leaves-$total_off:$month_days;
+            $estimate_pay = $perday_pay*$days_to_pay;
+            $teacher_array = array('estimated_pay' => $estimate_pay , 'month' => $month, 'user_id' => $row->id );
+            if($row->working){
+                $res = 'Yes';
+                $result_teacher_array= TeacherPay::insert($teacher_array);
+            }
+        }
+        return response()->json(new JsonResponse(['has_generated' => $res]));
     }
 }

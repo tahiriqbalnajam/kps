@@ -5,6 +5,7 @@
   import HeadControls from '@/components/HeadControls.vue';
   const  attendence = new Resource('teacher_attendance');
   import { checkSalaryGenerated } from '@/api/teacher';
+  import { generatePay } from '@/api/teacher';
   
   const formInline = reactive({
     resource: '',
@@ -15,31 +16,22 @@
     allowed_holidays: '',
     type: '',
     has_generated:'',
+    alertRec: false,
+    showtitle: false,
   })
-
   const teacherInline = reactive({
     resource: '',
     type: '',
   })
-
   const query = reactive({
     month: moment().format("YYYY-MM-DD"),
     type: '',
     resource: '',
   })
-  // const handleDateChange = async() => {
-  //   get_list();
-  //   const content = tooltipContent.value;
-  // };
   const handleDateChange = async() => {
-    console.log(query);
-      const { data } = await checkSalaryGenerated(query);
-      formInline.has_generated = data.has_generated
-      console.log(formInline.has_generated)
-      const content = tooltipContent.value;
+    get_list();  
+    const content = tooltipContent.value;
     };
-  // nadeem
-
   const query2 = reactive({
     month: moment().format("YYYY-MM-DD"),
     type: '',
@@ -54,44 +46,25 @@
         const row = formInline.resource[i];
         row.allowed_holidays = data.setting.teacher_leaves_allowed;
       }
-      formInline.has_generated = data.has_generated
-    console.log(formInline.has_generated)
-    //formInline.resource = formInline.resource.filter(item => item.type == 'App\\Models\\Teacher');
-   // const { data } = await attendence.list(query);
-    //formInline.resource = data.attendace;
-    //getteacher();
+    formInline.has_generated = data.has_generated
   }
-
-  // const generate_pay  = () => {
-  //   get_list();
-  //   query2.type = 'generatepay';
-  //   query2.resource = teacherInline.resource;
-  //   attendence.store(query2);
-  //   get_list();
-  // }
   const generate_pay = async() => {
-    console.log(query);
       const { data } = await generatePay(query);
-      formInline.has_generated = data.has_generated
-      console.log(formInline.has_generated)
-      const content = tooltipContent.value;
+      get_list();
+      formInline.showtitle = (data.has_generated === "Yes")?true:false;
+      const title = alertTitle.value;
+      formInline.alertRec = true;
     };
 
-  const getteacher  = async() => {
-    query.type = 'getteachers';
-    const { data } = await attendence.list(query);
-    teacherInline.resource = data.teachers;
-    //const teacherid = formInline.teacher_select;
-    teacherInline.resource = teacherInline.resource.filter(item => item.type == 'App\\Models\\Teacher');
-    
-  }
   onMounted(() => {
-     getteacher();
     get_list();
   });
   const tooltipContent = computed(() => {
-      return formInline.has_generated === 'Yes' ? 'Regenerate Salaries' : 'Generate Salaries';
-    });
+    return formInline.has_generated === 'Yes' ? 'Regenerate Salaries' : 'Generate Salaries';
+  });
+  const alertTitle = computed(() => {
+    return formInline.showtitle ? 'Salary Generated' : 'Salary Not Generated';
+  });
 
 
 </script>
@@ -99,6 +72,7 @@
   <div class="app-container">
      <div class="filter-container">
          <head-controls>
+          <el-alert :title="alertTitle" type="success" v-if="formInline.alertRec"></el-alert>
              <el-form-item label="Select Month">
                  <el-col :span="4">
                      <el-date-picker

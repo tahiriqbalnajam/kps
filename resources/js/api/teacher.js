@@ -6,6 +6,7 @@ export function getAttendacne(data) {
     data,
   });
 }
+
 export function checkSalaryGenerated(data) {
   return request({
     url: '/check_salary_generated',
@@ -13,6 +14,7 @@ export function checkSalaryGenerated(data) {
     data,
   });
 }
+
 export function generatePay(data) {
   return request({
     url: '/generate_pay',
