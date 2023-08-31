@@ -1,11 +1,12 @@
 <script setup>
-  import { reactive, onMounted, computed } from 'vue';
+  import { reactive, onMounted, computed, ref } from 'vue';
   import moment from 'moment';
   import Resource from '@/api/resource.js';
   import HeadControls from '@/components/HeadControls.vue';
   const  attendence = new Resource('teacher_attendance');
   import { checkSalaryGenerated } from '@/api/teacher';
   import { generatePay } from '@/api/teacher';
+  import { PaySalary } from '@/api/teacher';
   
   const formInline = reactive({
     resource: '',
@@ -16,6 +17,9 @@
     has_generated:'',
     alertRec: false,
     showtitle: false,
+    paysalaryalert:false,
+    paysalary:false,
+    loading: false,
   })
   const teacherInline = reactive({
     resource: '',
@@ -52,6 +56,7 @@
       formInline.showtitle = (data.has_generated === "Yes")?true:false;
       const title = alertTitle.value;
       formInline.alertRec = true;
+      formInline.paysalaryalert = false;
       hideAlertAfter(3000);
     };
     const hideAlertAfter = (milliseconds) => {
@@ -59,6 +64,23 @@
         formInline.alertRec = false;
       }, milliseconds);
     };
+    const model = reactive({
+      user_id: '',
+      amount: 0,
+    });
+    const payFee = (id) => {
+      model.user_id = id;
+      formInline.paysalary = true;
+      console.log(model.user_id);
+    };
+    const onSubmit = async() => {
+      const { data } = await PaySalary(model);
+      formInline.showtitle = (data.has_generated === "Yes")?true:false;
+      const title = alertTitle.value;
+      formInline.alertRec = true;
+      formInline.paysalaryalert = true;
+      formInline.paysalary = false;
+    }
 
   onMounted(() => {
     get_list();
@@ -67,7 +89,11 @@
     return formInline.has_generated === 'Yes' ? 'Regenerate Salaries' : 'Generate Salaries';
   });
   const alertTitle = computed(() => {
-    return formInline.showtitle ? 'Salary Generated' : 'Salary Not Generated';
+    if (formInline.paysalaryalert) {
+      return formInline.showtitle ? 'Salary Paid' : 'Salary Not Paid';
+    } else {
+      return formInline.showtitle ? 'Salary Generated' : 'Salary Not Generated';
+    }
   });
 
 
@@ -116,10 +142,37 @@
             {{ scope.row.estimated_pay ? (Math.round( scope.row.estimated_pay)) : '' }}
           </template>
         </el-table-column>
+        <el-table-column align="right" fixed="right">
+          <template #default="scope">
+            <el-tooltip content="Pay Salary" placement="top">
+              <el-button type="success" @click="payFee(scope.row.id)">
+                  <el-icon><Coin /></el-icon>
+                </el-button>
+            </el-tooltip>
+          </template>
+        </el-table-column>
 
       </el-table>
     </el-card>
-
+    <el-drawer
+      title="Pay Salary"
+      :modelValue="formInline.paysalary"
+      direction="rtl"
+      custom-class="demo-drawer"
+      ref="drawer"
+    >
+      <div class="demo-drawer__content">
+        <el-form :model="model">
+          <el-form-item label="Amount" :label-width="formLabelWidth">
+            <el-input-number v-model="model.amount" :min="1" :max="10000" />
+          </el-form-item>
+        </el-form>
+        <div class="demo-drawer__footer">
+          <el-button @click="paysalary = false">Cancel</el-button>
+          <el-button type="primary" @click="onSubmit" :loading="loading">{{ loading ? 'Submitting ...' : 'Submit' }}</el-button>
+        </div>
+      </div>
+    </el-drawer>
  </div>
 </template>
 

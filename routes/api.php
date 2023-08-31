@@ -29,6 +29,7 @@ Route::apiResource('dashboard', 'dashboardController');
 Route::apiResource('attendance', 'StudentAttendanceController');
 Route::get('student_att_report', 'StudentAttendanceController@student_att_report');
 Route::post('check_salary_generated', 'TeacherAttendanceController@check_salary_generated');
+Route::post('pay_salary', 'TeacherAttendanceController@pay_salary');
 Route::post('generate_pay', 'TeacherAttendanceController@generate_pay');
 Route::apiResource('teacher_attendance', 'TeacherAttendanceController');
 Route::apiResource('exam_result', 'ExamController');

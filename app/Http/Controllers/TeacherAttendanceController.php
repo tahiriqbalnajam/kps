@@ -5,7 +5,12 @@ use App\Models\Teacher;
 use App\Models\User;
 use App\Models\SmsQueue;
 use App\Models\Settings;
+use App\Models\Log;
+use App\Models\Balance;
+use App\Models\Transaction as ATrans;
+use App\Http\Controllers\TransactionsController;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use App\Laravue\JsonResponse;
 use App\Models\TeacherAttendance;
 use App\Models\TeacherPay;
@@ -180,6 +185,8 @@ class TeacherAttendanceController extends Controller
         $school_id = 1;
         $settings = Settings::find($school_id);
         $month = $request->month;
+        $time=strtotime($month);
+        $trmonthyear=date("F",$time).'~'.date("Y",$time);
         $start_month = Carbon::createFromFormat('Y-m-d', $month)->firstOfMonth()->format('Y-m-d');
         $end_month = Carbon::createFromFormat('Y-m-d', $month)->lastOfMonth()->format('Y-m-d');
         $result = DB::table('users as u')
@@ -189,28 +196,101 @@ class TeacherAttendanceController extends Controller
                         ->selectRaw('(SELECT sum(case when status = "holiday" or status = "present" then 1 else 0 end) AS working FROM teacher_attendances ta WHERE u.id = ta.user_id and attendance_date BETWEEN "'.$start_month.'" and "'.$end_month.'" GROUP BY ta.user_id) AS working')
                         ->where('u.type','App\Models\Teacher')
                         ->get();
-        $delete = (DB::DELETE("DELETE FROM teacher_pay WHERE month BETWEEN '$start_month' AND '$end_month'"));
-        foreach($result as $row){
-            $perday_pay = $row->pay/30;
-            $working_days = $row->working;
-            $absent = $row->absent;
-            $leaves = $row->leaves;
-            $allowed_leaves = $settings->teacher_leaves_allowed;
-            $total_working = $working_days+$absent+$leaves;
-            $total_off = $absent+$leaves;
-            $month_days = 30;
-            if($total_working < 15){
-                $month_days = $total_working;
-                $allowed_leaves = ($allowed_leaves)? $allowed_leaves/2:$allowed_leaves;
+        try {
+            DB::beginTransaction();
+            $current_transtection = ATrans::where('sub_type', $trmonthyear)->get();
+            $transactionController = new TransactionsController();
+            foreach ($current_transtection as $row){
+                //echo $row->amount;
+                $this->setBalanceondelete($row->naam_id, 'naam', $row->amount);
+                $this->setBalanceondelete($row->jama_id, 'jama', $row->amount);
             }
-            $days_to_pay = ($total_off>$allowed_leaves)?$month_days+$allowed_leaves-$total_off:$month_days;
-            $estimate_pay = $perday_pay*$days_to_pay;
-            $teacher_array = array('estimated_pay' => $estimate_pay , 'month' => $month, 'user_id' => $row->id );
-            if($row->working){
-                $res = 'Yes';
-                $result_teacher_array= TeacherPay::insert($teacher_array);
-            }
+            
+            
+            $delete = (DB::DELETE("DELETE FROM teacher_pay WHERE month BETWEEN '$start_month' AND '$end_month'"));
+            $delete = (DB::DELETE("DELETE FROM transactions WHERE sub_type = '$trmonthyear'"));
+            foreach($result as $row){
+                $perday_pay = $row->pay/30;
+                $working_days = $row->working;
+                $absent = $row->absent;
+                $leaves = $row->leaves;
+                $allowed_leaves = $settings->teacher_leaves_allowed;
+                $total_working = $working_days+$absent+$leaves;
+                $total_off = $absent+$leaves;
+                $month_days = 30;
+                if($total_working < 15){
+                    $month_days = $total_working;
+                    $allowed_leaves = ($allowed_leaves)? $allowed_leaves/2:$allowed_leaves;
+                }
+                $days_to_pay = ($total_off>$allowed_leaves)?$month_days+$allowed_leaves-$total_off:$month_days;
+                $estimate_pay = $perday_pay*$days_to_pay;
+                $teacher_array = array('estimated_pay' => $estimate_pay , 'month' => $month, 'user_id' => $row->id );
+                if($row->working){
+                    $res = 'Yes';
+                    $result_teacher_array= TeacherPay::insert($teacher_array);
+                }
+                // code for transection save
+                $naam_account = 1;
+                $this->save_transection($naam_account,$row->id,$estimate_pay,'salary',$trmonthyear, 'Salary added to account');
+            } // end foreach
+            
+            // $loginUser = Auth::user();
+            // echo $loginUser->id;
+            // print_r($loginUser);
+            // dd($loginUser);
+            // Log::query()->create([
+            //     'user_id' => $loginUser->id,
+            //     'operator_id' => $loginUser->id,
+            //     'title' => 'Teacher Pay',
+            //     'content' => "Created by {$loginUser->name}({$loginUser->email})"
+            // ]);
+            DB::commit();
+            return response()->json(new JsonResponse(['has_generated' => $res]));
+        } catch (\Exception $ex) {
+            DB::rollBack();
+            return responseFailed($ex->getMessage());
         }
-        return response()->json(new JsonResponse(['has_generated' => $res]));
+    }
+    public function save_transection($naam_account, $jama_account, $amount, $type, $trmonthyear, $comment){
+        $transaction = new ATrans();
+        $transaction->jama_id = $jama_account;
+        $transaction->naam_id = $naam_account;
+        $transaction->amount = $amount;
+        $transaction->type = $type;
+        $transaction->sub_type = $trmonthyear;
+        $transaction->comments = $comment;
+        $transaction->entry_by = session('user_id');
+        if ($transaction->save()) {
+            $transactionController = new TransactionsController();
+            $transactionController->setBalance($jama_account, 'jama', $amount);
+            $transactionController->setBalance($naam_account, 'naam', $amount);
+            return 'yes';
+        } else {
+            return 'no';
+        }
+    }
+    function setBalanceondelete($user_id, $type, $amount) {
+        $balance = Balance::firstOrNew(array('user_id' => $user_id));
+        $balance->user_id = $user_id;
+        if($type == 'naam') {
+            $balance->naam -= $amount;
+            $balance->balance += $amount;
+        } else {
+            $balance->jama -= $amount;
+            $balance->balance -= $amount;
+        }
+        $balance->save();
+
+    }
+    public function pay_salary(Request $request)
+    {
+        $amount = $request->amount;
+        $user_id = $request->user_id;
+        $result = $this->save_transection($user_id,1,$amount,'salary','', 'Salary Paid ');
+        if ($result === 'yes') {
+            return response()->json(new JsonResponse(['has_generated' => 'Yes']));
+        } else {
+            return response()->json(new JsonResponse(['has_generated' => 'No'], 500));
+        }
     }
 }

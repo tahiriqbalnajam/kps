@@ -22,3 +22,10 @@ export function generatePay(data) {
     data,
   });
 }
+export function PaySalary(data) {
+  return request({
+    url: '/pay_salary',
+    method: 'post',
+    data,
+  });
+}
