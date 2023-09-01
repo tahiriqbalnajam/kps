@@ -11,9 +11,11 @@ use Illuminate\Support\Facades\DB;
 use App\Models\Transaction as ATrans;
 use Carbon\Carbon;
 use Illuminate\Support\Str;
+use App\Traits\TransactionTrait;
 
 class TransactionsController extends Controller
 {
+    use TransactionTrait;
     const ITEM_PER_PAGE = 10;
     public function index(Request $request)
     {
@@ -58,18 +60,8 @@ class TransactionsController extends Controller
             $jama_account = $request->get('jama_account');
             $naam_account = $request->get('naam_account');
             $amount = $request->get('amount');
-            $transaction = new ATrans();
-            $transaction->jama_id = $jama_account;
-            $transaction->naam_id = $naam_account;
-            $transaction->amount = $amount;
-            $transaction->type ='others';
-            $transaction->comments = $request->get('comments');
-            $transaction->entry_by = session('user_id');
-            $transaction->save();
-            $this->setBalance($jama_account, 'jama', $amount);
-            $this->setBalance($naam_account, 'naam', $amount);
-           
-
+            $comment = $request->get('comments');
+            $transaction = $this->doTransaction($naam_account, $jama_account, $amount,'others', '', $comment);
             DB::commit();
             return response()->json(new JsonResponse(['transactions' => $transaction]));
         } catch (\Exception $e) {

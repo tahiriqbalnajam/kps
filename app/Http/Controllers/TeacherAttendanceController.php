@@ -15,10 +15,12 @@ use App\Laravue\JsonResponse;
 use App\Models\TeacherAttendance;
 use App\Models\TeacherPay;
 use Illuminate\Support\Facades\DB;
-
+use App\Traits\TransactionTrait;
+use Symfony\Contracts\Translation\TranslatorTrait;
 
 class TeacherAttendanceController extends Controller
 {
+    use TranslatorTrait;
     /**
      * Display a listing of the resource.
      */
@@ -165,7 +167,7 @@ class TeacherAttendanceController extends Controller
     {
         //
     }
-    public function check_salary_generated(Request $request)
+    public function  check_salary_generated(Request $request)
     {
         $month = $request->month;
         $start_month = Carbon::createFromFormat('Y-m-d', $month)->firstOfMonth()->format('Y-m-d');
@@ -179,6 +181,8 @@ class TeacherAttendanceController extends Controller
                         $ans = ($result->count() > 0) ? 'Yes' : 'No';
             return response()->json(new JsonResponse(['has_generated' => $ans]));
     }
+
+
     public function generate_pay(Request $request)
     {
         $res = 'No';
@@ -198,17 +202,17 @@ class TeacherAttendanceController extends Controller
                         ->get();
         try {
             DB::beginTransaction();
-            $current_transtection = ATrans::where('sub_type', $trmonthyear)->get();
+            //$current_transtection = ATrans::where('sale_id', $trmonthyear)->get();
             $transactionController = new TransactionsController();
-            foreach ($current_transtection as $row){
-                //echo $row->amount;
-                $this->setBalanceondelete($row->naam_id, 'naam', $row->amount);
-                $this->setBalanceondelete($row->jama_id, 'jama', $row->amount);
-            }
+            // foreach ($current_transtection as $row){
+            //     //echo $row->amount;
+            //     $this->setBalanceondelete($row->naam_id, 'naam', $row->amount);
+            //     $this->setBalanceondelete($row->jama_id, 'jama', $row->amount);
+            // }
             
             
             $delete = (DB::DELETE("DELETE FROM teacher_pay WHERE month BETWEEN '$start_month' AND '$end_month'"));
-            $delete = (DB::DELETE("DELETE FROM transactions WHERE sub_type = '$trmonthyear'"));
+            //$delete = (DB::DELETE("DELETE FROM transactions WHERE sub_type = '$trmonthyear'"));
             foreach($result as $row){
                 $perday_pay = $row->pay/30;
                 $working_days = $row->working;
@@ -227,11 +231,11 @@ class TeacherAttendanceController extends Controller
                 $teacher_array = array('estimated_pay' => $estimate_pay , 'month' => $month, 'user_id' => $row->id );
                 if($row->working){
                     $res = 'Yes';
-                    $result_teacher_array= TeacherPay::insert($teacher_array);
+                    $result_teacher_array= TeacherPay::create($teacher_array);
                 }
                 // code for transection save
                 $naam_account = 1;
-                $this->save_transection($naam_account,$row->id,$estimate_pay,'salary',$trmonthyear, 'Salary added to account');
+                $this->save_transection($naam_account,$row->id,$estimate_pay,'salary',$result_teacher_array->id, 'Salary added to account');
             } // end foreach
             
             // $loginUser = Auth::user();
@@ -251,19 +255,19 @@ class TeacherAttendanceController extends Controller
             return responseFailed($ex->getMessage());
         }
     }
-    public function save_transection($naam_account, $jama_account, $amount, $type, $trmonthyear, $comment){
+    public function save_transection($naam_account, $jama_account, $amount, $type, $salary_id, $comment){
         $transaction = new ATrans();
         $transaction->jama_id = $jama_account;
         $transaction->naam_id = $naam_account;
         $transaction->amount = $amount;
         $transaction->type = $type;
-        $transaction->sub_type = $trmonthyear;
+        $transaction->salary_id = $salary_id;
         $transaction->comments = $comment;
         $transaction->entry_by = session('user_id');
         if ($transaction->save()) {
-            $transactionController = new TransactionsController();
-            $transactionController->setBalance($jama_account, 'jama', $amount);
-            $transactionController->setBalance($naam_account, 'naam', $amount);
+            // $transactionController = new TransactionsController();
+            // $transactionController->setBalance($jama_account, 'jama', $amount);
+            // $transactionController->setBalance($naam_account, 'naam', $amount);
             return 'yes';
         } else {
             return 'no';
