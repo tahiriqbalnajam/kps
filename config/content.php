@@ -17,8 +17,8 @@ return [
 
     // Meta
     'meta' => [
-        'keywords' => 'Laravel Vue Admin,laravel,vuejs',
-        'description' => 'Talk is cheap. Show me the code.'
+        'keywords' => 'School Managment System, IDLSchool',
+        'description' => 'A software to facilitate the school owner.'
     ],
 
     // Google Analytics

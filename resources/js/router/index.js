@@ -193,14 +193,20 @@ export const constantRoutes = [
     meta: {title: 'Exam', bootstrapIcon: 'journal-text', noCache: true},
     children: [
       {
+        path: 'exam',
+        component: () => import('@/views/exam/ExamList.vue'),
+        name: 'Add Exam',
+        meta: {title: 'Exam', bootstrapIcon: 'journal-text', noCache: true},
+      },
+      {
         path: 'test',
         component: () => import('@/views/exam/TestList.vue'),
         name: 'Add Test',
         meta: {title: 'Test', bootstrapIcon: 'journal-text', noCache: true},
       },
       {
-        path: 'edit',
-        component: () => import('@/views/exam/AddTest.vue'),
+        path: 'exam-results',
+        component: () => import('@/views/exam/Results.vue'),
         name: 'Waqar',
         meta: {title: 'Test Result', bootstrapIcon: 'calendar-plus', noCache: true},
       },

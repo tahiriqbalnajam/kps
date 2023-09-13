@@ -1,10 +1,11 @@
 <?php
 namespace App\Http\Controllers;
-use Illuminate\Http\Request;
 use App\Models\Exam;
-use Illuminate\Support\Arr;
-use App\Laravue\JsonResponse;
 use App\Models\ExamResult;
+use Illuminate\Support\Arr;
+use Illuminate\Http\Request;
+use App\Laravue\JsonResponse;
+use Illuminate\Support\Facades\DB;
 
 class ExamController extends Controller
 {
@@ -34,15 +35,22 @@ class ExamController extends Controller
      */
     public function store(Request $request)
     {
-        $exam = Exam::create($request->all());
-        $students = $request->students;
-        $exam_id = $exam->id;
-        $stuents_array = array();
-        foreach($students as $student) 
-            $stuents_array[] = array('exam_id' => $exam_id, 'student_id' => $student['id'], 'class_id' => $student['class_id'], 'total_marks' => $exam->total_marks, 'obtained_marks' => $student['obtained_marks'] );
-            
-        $result_exam_student= ExamResult::insert($stuents_array);
-        return response()->json(new JsonResponse(['examsreult' => $stuents_array]));
+        try {
+            DB::beginTransaction();
+            $exam = Exam::create($request->all());
+            $students = $request->students;
+            $exam_id = $exam->id;
+            $stuents_array = array();
+            foreach($students as $student) 
+                $stuents_array[] = array('exam_id' => $exam_id, 'student_id' => $student['id'], 'class_id' => $student['class_id'], 'subject_id' => $request->subject_id, 'total_marks' => $exam->total_marks, 'obtained_marks' => $student['obtained_marks'] );
+                
+            $result_exam_student= ExamResult::insert($stuents_array);
+            DB::commit();
+            return response()->json(new JsonResponse(['examsreult' => $stuents_array]));
+        } catch (\Exception $ex) {
+            DB::rollBack();
+            return responseFailed($ex->getMessage());
+        }
     }
 
     /**

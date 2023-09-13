@@ -33,15 +33,19 @@ class SettingController extends Controller
     public function store(Request $request)
     {
         // print_r($request->all());
-        $parm = $request->all();
-        $data = $parm['allowed_holiday'];
-        // Settings::update([
-        //    'teacher_leaves_allowed' => $data
+        $input = $request->all();
+        $settings = Settings::find('1');
+        $settings->fill($input)->save();
+        // $parm = $request->all();
+        // $data = $parm['allowed_holiday'];
+        // // Settings::update([
+        // //    'teacher_leaves_allowed' => $data
+        // // ]);
+        // Settings::query()->update([
+        //     'teacher_leaves_allowed' => $data
         // ]);
-        Settings::query()->update([
-            'teacher_leaves_allowed' => $data
-        ]);
         //dd('yes');
+        return response()->json(new JsonResponse(['settings' => $settings]));
     }
 
     /**

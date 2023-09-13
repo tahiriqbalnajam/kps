@@ -6,7 +6,7 @@
     <div style="position:relative;">
       <pan-thumb :image="avatar" class="panThumb"/>
       <div class="mallki-text">
-        Laravel Vue Admin
+        IDLSchool
       </div>
       <div style="padding-top:35px;" class="progress-item">
         <span>Laravel</span>

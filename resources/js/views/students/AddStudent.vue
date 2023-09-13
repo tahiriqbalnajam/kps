@@ -230,6 +230,19 @@ export default {
         religion: 'Islam',
         status: 'enable',
       },
+      resetStudent: {
+        id: '',
+        name: '',
+        parent_id: '',
+        class_id: '',
+        dob: '',
+        b_form: '',
+        gender: 'Male',
+        monthly_fee: '',
+        subling: '0',
+        religion: 'Islam',
+        status: 'enable',
+      },
       parentquery: {
         keyword: '',
       },
@@ -238,7 +251,7 @@ export default {
   watch: {
     customerForm: {
       handler: function(val, oldval) {
-        this.tellToParent();
+        this.handleClose();
       },
     },
   },
@@ -250,6 +263,7 @@ export default {
   },
   methods: {
     handleClose() {
+      this.student = {...this.resetStudent};
       this.$emit('closeAddStudent', this.addeditstudentprop);
     },
     async handleSubmit(formName) {
