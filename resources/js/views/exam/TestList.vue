@@ -1,14 +1,15 @@
 <script setup>
   import HeadControls from '@/components/HeadControls.vue';
-  import AddTest from '@/views/exam/AddTest.vue';
+  import AddTest from '@/views/exam/AddTestExam.vue';
   import Pagination from '@/components/Pagination/index.vue';
   import { ElNotification, ElMessage, ElMessageBox } from 'element-plus'
   import { onMounted, ref } from "vue";
   import { reactive } from 'vue';
   import moment from 'moment';
   import Resource from '@/api/resource.js';
-  const resource = new Resource('exams');
+  const resource = new Resource('examstest');
   const dialogFormVisible = ref(false);
+  const studentexam = ref(false);
   const dialogEditFormVisible = ref(false);
 
   const form = reactive({
@@ -147,14 +148,20 @@
     rdata.result_id = result[0].id;
     rdata.result_classname = "class: " + result[0].classes.name;
   }
+  const getResultStudentwise = async(examsid, testname) => {
+    const result = formInline.resource.filter(item => item.id == examsid);
+    console.log(formInline.resource);
+    rdata.result_students = result[0].results;
+    rdata.result_examname = result[0].examname;
+    rdata.result_id = result[0].id;
+    rdata.result_classname = "class: " + result[0].classes.name;
+  }
 
   const openPopup = () => {
-    console.log('pop called');
     rdata.addedittestprop = true
   }
 
   const popupClosed = () => {
-    console.log('pop closed');
     rdata.addedittestprop = false
     get_Exams();
   }
@@ -211,7 +218,7 @@
               </el-tooltip>
 
               <el-tooltip content="Student Wise" placement="top">
-                <el-button color="#626aef" :dark="isDark" >
+                <el-button color="#626aef" :dark="isDark" @click="[getResultStudentwise(scope.row.id, scope.row.examname),studentexam = true]">
                   <el-icon><UserFilled /></el-icon>
                 </el-button>
               </el-tooltip>
@@ -251,6 +258,28 @@
       <span class="dialog-footer">
         <el-button @click="dialogFormVisible = false">Cancel</el-button>
         <el-button type="primary" @click="dialogFormVisible = false">
+          Print
+        </el-button>
+      </span>
+    </template>
+  </el-dialog>
+  <el-dialog v-model="studentexam" v-model:title="rdata.result_classname">
+    <el-form :model="form">
+      <el-form label-position="left"  style="max-width: 300px;">
+          <el-form-item label="Exam Name:">
+            <el-input readonly v-model="rdata.result_examname" />
+          </el-form-item>
+        </el-form>
+      <el-table :data="rdata.result_students" style="width: 100%">
+        <el-table-column prop="student.name" label="Student"/>
+        <el-table-column prop="total_marks" label="Total Marks"  />
+        <el-table-column prop="obtained_marks" label="Obtain Marks" />
+      </el-table>
+    </el-form>
+    <template #footer>
+      <span class="dialog-footer">
+        <el-button @click="studentexam = false">Cancel</el-button>
+        <el-button type="primary" @click="studentexam = false">
           Print
         </el-button>
       </span>
