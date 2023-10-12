@@ -141,8 +141,9 @@
   
 
   const getResultClaswise = async(examsid, testname) => {
+    // console.log(formInline.resource);
     const result = formInline.resource.filter(item => item.id == examsid);
-    //console.log(result);
+    // console.log(result);
     rdata.result_students = result[0].results;
     rdata.result_examname = result[0].examname;
     rdata.result_id = result[0].id;

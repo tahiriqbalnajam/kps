@@ -123,27 +123,29 @@
             </el-form-item>
           </el-col>
         </el-row>
-       
         <el-table :data="formInline.students" height="400" style="width: 100%">
           <el-table-column prop="id" label="ID" width="180" />
           <el-table-column prop="name" label="Name" width="180" />
-            <!-- Dynamic columns for subjects -->
           <el-table-column label="Subjects">
-            <template #default="scope">
-              <el-table-column
-                v-for="(subject, index) in formInline.subjects"
-                :key="index"
-                :prop="`subject_${index}`"
-                :label="subject"
-                width="180"
-              >
-                <template #default="innerScope">
-                  <el-input v-model="innerScope.row[`subject_${subject.id}`]" :required="true" :placeholder="`Enter Marks for ${formInline.subjects[index].title} (${formInline.subjects[index].id})`" clearable />
-                </template>
-              </el-table-column>
-            </template>
+            <el-table-column
+              v-for="(subject, index) in formInline.subjects"
+              :key="index"
+              :prop="`subject_${index}`"
+              :label="subject.title"
+              width="180"
+            >
+              <template #default="innerScope">
+                <el-input
+                  v-model="innerScope.row[`subject_${subject.id}`]"
+                  :required="true"
+                  :placeholder="`Enter Marks for ${subject.title} (${subject.id})`"
+                  clearable
+                />
+              </template>
+            </el-table-column>
           </el-table-column>
         </el-table>
+
       </el-form>
   </el-dialog>
   </div>

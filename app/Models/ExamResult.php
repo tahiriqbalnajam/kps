@@ -22,6 +22,10 @@ class ExamResult extends Model
     public function exams(){
         return $this->belongsTo(AddExam::class,'exam_id');
     }
+    public function subject()
+    {
+        return $this->belongsTo(Subject::class, 'subject_id');
+    }
 
     
 }

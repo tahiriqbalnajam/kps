@@ -21,7 +21,7 @@ class ExamTestController extends Controller
         $limit = Arr::get($searchParams, 'limit', static::ITEM_PER_PAGE);
         $keyword = $request->get('keyword');;
         //DB::enableQueryLog(); // Enable query log
-        $subjects = Exam::with('classes','results', 'results.student')
+        $subjects = Exam::with('classes','results', 'results.student','results.subject')
         ->paginate($limit);
         //dd(DB::getQueryLog()); // Show results of log
         return response()->json(new JsonResponse(['exams' => $subjects]));
