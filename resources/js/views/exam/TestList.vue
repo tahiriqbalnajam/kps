@@ -78,36 +78,16 @@
    updateexams.filtercol = 'update_result';
     rdata.result_students.forEach(element => {
       elementsave.ids = element.id;
-  //    elementsave.exam_ids = element.exam_id;
-  //    elementsave.student_ids = element.student_id;
-  //    elementsave.class_ids = element.class_id;
-   //   elementsave.total_markss = element.total_marks;
-    //  elementsave.obtained_markss = element.obtained_marks;
-
-    //console.log(elementsave);
-    //resource.destroy(elementsave); 
-    updateexams.id = element.id;
-    updateexams.obtained_marks = element.obtained_marks;
-    resource.update(element.id, updateexams);
+      updateexams.id = element.id;
+      updateexams.obtained_marks = element.obtained_marks;
+      resource.update(element.id, updateexams);
    });
 
     updateexams.filtercol = 'update_exams';
     updateexams.id = rdata.result_id;
     updateexams.examname = rdata.result_examname;
     resource.update(updateexams.id, updateexams);
-
-//resource.destroy(rdata.result_students);
-
-    //console.log(rdata.result_students);
-   // rdata.result_students.forEach(element => {
-   //   const exam_id = element.exam_id
-   // });
-    //const { data } = await resource.update(element.exam_id, 'obtained_marks='+element.obtained_marks);
-    //formInline.updateexamresult = data.resource.data;
-    //const { data } = await resource.update('41', 'obtained_marks=900');
-    //formInline.updateexamresult = data.resource.data;
     get_Exams();
-
     ElNotification({
       title: 'Success',
       message: 'Record Has Been Updated',
@@ -140,11 +120,12 @@
   }
   
 
-  const getResultClaswise = async(examsid, testname) => {
+  const getResultClaswise = async(class_id, testname) => {
     // console.log(formInline.resource);
-    const result = formInline.resource.filter(item => item.id == examsid);
-    // console.log(result);
+    const result = formInline.resource.filter(item => item.class_id == class_id);
+    console.log(result);
     rdata.result_students = result[0].results;
+    //rdata.result_students = result;
     rdata.result_examname = result[0].examname;
     rdata.result_id = result[0].id;
     rdata.result_classname = "class: " + result[0].classes.name;
@@ -213,7 +194,7 @@
           <template #default="scope">
             <el-button-group>
               <el-tooltip content="Class Wise" placement="top">
-                <el-button color="#626aef" :dark="isDark" @click="[getResultClaswise(scope.row.id, scope.row.examname),dialogFormVisible = true]">
+                <el-button color="#626aef" :dark="isDark" @click="[getResultClaswise(scope.row.class_id, scope.row.examname),dialogFormVisible = true]">
                   <el-icon><ScaleToOriginal /></el-icon>
                 </el-button>
               </el-tooltip>
@@ -251,6 +232,7 @@
         </el-form>
       <el-table :data="rdata.result_students" style="width: 100%">
         <el-table-column prop="student.name" label="Student"/>
+        <el-table-column prop="subject.title" label="Subject"/>
         <el-table-column prop="total_marks" label="Total Marks"  />
         <el-table-column prop="obtained_marks" label="Obtain Marks" />
       </el-table>

@@ -7,12 +7,12 @@ use Illuminate\Database\Eloquent\Model;
 class ExamResult extends Model
 {
     public $timestamps = false;
-    protected $fillable = ['student_id', 'class_id', 'total_marks', 'obtained_marks', 'exam_id'];
+    protected $fillable = ['student_id', 'class_id', 'total_marks', 'obtained_marks', 'exam_id','subject_id'];
     protected $table = "exam_result_students";
 
     public function GetExams()
     {
-        return $this->belongsToMany(Subject::class, 'student_id', 'class_id', 'total_marks', 'obtained_marks');
+        return $this->belongsToMany(Subject::class, 'student_id', 'class_id', 'total_marks', 'obtained_marks','subject_id');
     }
 
     public function student(){
