@@ -138,4 +138,19 @@ class ExamTestController extends Controller
     //    $result_exam_student= ExamResult::insert($stuents_array);
       //  return response()->json(new JsonResponse(['examsreult' => $stuents_array]));
     }
+    public function test_results($exam_id)
+    {
+        $classResults = DB::table('exams')
+            ->join('exam_result_students', 'exams.id', '=', 'exam_result_students.exam_id')
+            ->join('students', 'exam_result_students.student_id', '=', 'students.id')
+            ->join('classes', 'exams.class_id', '=', 'classes.id')
+            ->join('subjects', 'exam_result_students.subject_id', '=', 'subjects.id')
+            ->where('exams.type','exam')
+            ->select('exams.class_id','subjects.title as subject_name','classes.name as class_name','students.name as student_name', 'students.roll_no', 'exam_result_students.total_marks', 'exam_result_students.obtained_marks', 'exams.examname', 'exam_result_students.subject_id')
+            ->orderBy('students.roll_no')
+            ->orderBy('exams.class_id')
+            ->get();
+
+        return response()->json(new JsonResponse(['classResults' => $classResults]));
+    }
 }

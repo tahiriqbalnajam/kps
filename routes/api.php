@@ -38,6 +38,7 @@ Route::apiResource('subjects', 'SubjectController');
 Route::apiResource('subject_class', 'SubjectToClassController');
 Route::apiResource('exams', 'ExamController');
 Route::apiResource('examstest', 'ExamTestController');
+Route::get('examstest/{examstest}/test_results', 'ExamTestController@test_results');
 Route::post('getdailyclasswise', 'StudentAttendanceController@dailyclasswise');
 Route::post('edit_class', 'StudentController@edit_class');
 Route::apiResource('transaction', 'TransactionsController');
