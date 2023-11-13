@@ -289,6 +289,7 @@
         <h2>{{ studentName }}</h2>
         <el-table :data="studentResults" stripe style="width: 100%">
           <el-table-column label="Student Name" prop="student_name"></el-table-column>
+          <el-table-column label="Roll #" prop="roll_no"></el-table-column>
           <el-table-column label="Exam Name" prop="examname"></el-table-column>
           <el-table-column label="Subject Name" prop="subject_name"></el-table-column>
           <el-table-column label="Total Marks" prop="total_marks"></el-table-column>
@@ -326,7 +327,7 @@
           <h2>{{ className }}</h2>
           <el-table :data="classResults" stripe style="width: 100%">
             <el-table-column label="Student Name" prop="student_name"></el-table-column>
-            <el-table-column label="Roll Number" prop="roll_no"></el-table-column>
+            <el-table-column label="Roll #" prop="roll_no"></el-table-column>
             <el-table-column label="Exam Name" prop="examname"></el-table-column>
             <el-table-column label="Subject Name" prop="subject_name"></el-table-column>
             <el-table-column label="Total Marks" prop="total_marks"></el-table-column>
