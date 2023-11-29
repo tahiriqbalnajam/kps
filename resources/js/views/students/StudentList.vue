@@ -116,7 +116,7 @@
     <add-student  :if="addstudentpop" :addeditstudentprop="addstudentpop" :stdid="stdid" @closeAddStudent="closeAddStudent()"/>
     <pay-fee v-if="openpayfee" :openpayfee="openpayfee" :stdid="stdid" @donePayFee="donePayFee" />
     <fee-detail v-if="openfeedetail" :openfeedetail="openfeedetail" :stdid="studentid" @doneFeeDetail="doneFeeDetail" />
-    <character-certificate v-if="showcharactercertificate" :showcharactercertificate="showcharactercertificate" :stdid="studentid" @doneFeeDetail="doneFeeDetail" />
+    <character-certificate  v-if="showcharactercertificate" :showcharactercertificate="showcharactercertificate" :stdid="studentid" @doneFeeDetail="doneFeeDetail" />
     <fee-print v-if="openfeeprint" :feeid="feeid" :openfeeprint="openfeeprint" @doneFeePrint="doneFeePrint" />
   </div>
 </template>
@@ -135,7 +135,7 @@ import Resource from '@/api/resource';
 import PayFee from '@/views/fee/component/PayFee.vue';
 import FeePrint from '@/views/fee/component/FeePrint.vue';
 import FeeDetail from '@/views/fee/component/FeeDetail.vue';
-import FeeDetail from '@/views/students/StudentCharacterCertificate.vue';
+import CharacterCertificate from '@/views/students/StudentCharacterCertificate.vue';
 import AddStudent from '@/views/students/AddStudent.vue';
 import { editClass } from '@/api/student.js';
 import HeadControls from '@/components/HeadControls.vue';
@@ -143,7 +143,7 @@ const student = new Resource('students');
 const classes = new Resource('classes');
 export default {
   name: 'StudentList',
-  components: { Pagination, AddStudent,  PayFee, FeePrint, FeeDetail, HeadControls },
+  components: { Pagination, AddStudent,  PayFee, FeePrint, FeeDetail, HeadControls, CharacterCertificate },
   directives: { },
   filters: {
     dateformat: (date) => {
@@ -292,6 +292,7 @@ export default {
     },
     showCharacterCertificate(id) {
       this.showcharactercertificate = true;
+      this.studentid = id;
     },
     handleDownload() {
       this.downloadLoading = true;
