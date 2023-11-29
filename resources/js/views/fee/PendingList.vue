@@ -25,20 +25,20 @@
       <el-table-column label="Phone" prop="phone" />
       <el-table-column label="Class" prop="classname" />
       <el-table-column label="Paid Till">
-        <template slot-scope="scope">
+        <template #default="scope">
           <span style="font-weight:bold; color: #000">{{ scope.row.payment_to_date | dateformat}}</span>
         </template>
       </el-table-column>
       <el-table-column label="Paid at">
-        <template slot-scope="scope">
+        <template #default="scope">
           {{ scope.row.paidat | dateformat}}
         </template>
       </el-table-column>
       <el-table-column align="right">
-        <template slot="header" slot-scope="scope">
+        <template slot="header" #header="scope">
           <el-input ref="search" v-model="query.keyword" size="mini" placeholder="Type to search" v-on:input="debounceInput" />
         </template>
-        <template slot-scope="scope">
+        <template #default="scope">
           <el-button
             size="mini"
             type="danger"

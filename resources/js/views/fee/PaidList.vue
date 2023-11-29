@@ -13,7 +13,7 @@
             start-placeholder="Start month"
             end-placeholder="End month"
             :picker-options="pickerOptions" 
-            value-format="yyyy-MM-dd"
+            value-format="YYYY-MM-DD"
           />
           <el-button class="filter-item" type="primary" icon="el-icon-search" @click="getList()">
             {{ $t('table.search') }}
@@ -49,37 +49,34 @@
       <el-table-column label="Amount" prop="amount" />
       <el-table-column label="Fee Type" prop="feetype.title" />
       <el-table-column label="For Month(s)" prop="payment_from_date">
-        <template slot-scope="scope">
+        <template #default="scope">
           {{ showduration(scope.row.payment_from_date,  scope.row.payment_to_date) }}
         </template>
       </el-table-column>dateformat
       <el-table-column label="Paid at" prop="created_at">
-        <template slot-scope="scope">
+        <template #default="scope">
           {{ scope.row.created_at | dateformat }}
         </template>
       </el-table-column>
       <el-table-column align="right">
-        <template slot="header" slot-scope="scope">
+        <template #header>
           <el-input ref="search" v-model="query.keyword" size="mini" placeholder="Type to search" v-on:input="debounceInput" />
         </template>
-        <template slot-scope="scope">
+        <template slot="header" #default="scope">
           <el-tooltip content="Print" placement="top">
             <el-button
               type="primary"
-              icon="el-icon-printer"
               size="mini"
               @click="printIt(scope.row.id)"
-            />
+            ><el-icon><Printer /></el-icon></el-button>
           </el-tooltip>
           <el-tooltip content="Delete" placement="top">
             <el-button
               size="mini"
               type="danger"
-              icon="el-icon-delete"
               @click="handleDelete(scope.row.id, scope.row.name)"
-            />
+            ><el-icon><Delete /></el-icon></el-button>
           </el-tooltip>
-
         </template>
       </el-table-column>
     </el-table>
@@ -108,6 +105,10 @@
   </div>
 </template>
 <script>
+import {
+  Printer,
+  Delete,
+} from '@element-plus/icons-vue'
 import Pagination from '@/components/Pagination/index.vue';
 import PayFee from './component/PayFee.vue';
 import FeePrint from './component/FeePrint.vue';
@@ -228,7 +229,7 @@ export default {
       this.editnow = true;
     },
     async handleDelete(id, name) {
-      this.confirm('Do you really want to delete?', 'Warning', {
+      this.$confirm('Do you really want to delete?', 'Warning', {
         confirmButtonText: 'OK',
         cancelButtonText: 'Cancel',
         type: 'warning'

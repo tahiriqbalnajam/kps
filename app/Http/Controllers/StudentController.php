@@ -2,16 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use Response;
 use App\Models\Classes;
 use App\Models\Parents;
 use App\Models\Student;
-use App\Models\ClassSession;
 use Illuminate\Support\Arr;
+use App\Models\ClassSession;
 use Illuminate\Http\Request;
 use App\Laravue\JsonResponse;
-use Illuminate\Support\Facades\DB;
 use App\Models\StudentAttendance;
-use Response;
+use Illuminate\Support\Facades\DB;
+use Spatie\QueryBuilder\QueryBuilder;
+use Spatie\QueryBuilder\AllowedFilter;
 
 class StudentController extends Controller
 {
@@ -24,47 +26,63 @@ class StudentController extends Controller
     public function index(Request $request)
     {
         $searchParams = $request->all();
-        $limit = Arr::get($searchParams, 'limit', static::ITEM_PER_PAGE);
-        $keyword = $request->get('keyword');
-        $stdid = $request->get('id');
-        $stdclass = $request->get('stdclass');
-        $filtercol = $request->get('filtercol');
-        
-        $all = ($request->get('filtercol') == 'all') ? true : false;
-        //DB::enableQueryLog(); // Enable query log
-        $students = Student::with('parents','stdclasses','class_session')
-        ->when($all || ($filtercol == 'parent_name' && !empty($keyword)), function ($query) use ($keyword) {
-            $query->whereHas('parents', function($query) use($keyword) {
-                $query->where('parents.name', 'like', '%'.$keyword.'%');
-            });
-        })
-        ->when($all || ($filtercol == 'name' && !empty($keyword)), function ($query) use ($all, $keyword) {
-            if($all)
-                return $query->orWhere('name', 'like', '%' . $keyword . '%');
-            else
-                return $query->where('name', 'like', '%' . $keyword . '%');
-        })
-        ->when($all || ($filtercol == 'roll_no' && !empty($keyword)), function ($query) use ($all, $keyword) {
-            if($all)
-                return $query->orWhere('roll_no', $keyword);
-            else
-                return $query->where('roll_no', $keyword);
-        })
-        ->when($all || ($filtercol == 'parent_phone' && !empty($keyword)), function ($query) use ($all, $keyword) {
-            $query->whereHas('parents', function($query) use($keyword) {
-                $query->where('parents.phone', 'like', '%'.$keyword.'%');
-            });
-        })
-        ->when($stdid, function ($query) use ($stdid) {
-            return $query->where('id', $stdid);
-        })
-        ->when($stdclass, function ($query) use ($stdclass) {
-            return $query->where('class_id', $stdclass);
-        })
-        ->paginate($limit);
-        //dd(DB::getQueryLog()); // Show results of log
+        $limit = Arr::get($searchParams, 'limit', static::ITEM_PER_PAGE);        
+        $students = QueryBuilder::for(Student::class)
+                    ->with('parents','stdclasses','class_session')
+                    ->allowedFilters(['id','name', 'roll_no', 'adminssion_number', 
+                                        AllowedFilter::partial('parent_phone', 'parents.phone'),
+                                        AllowedFilter::partial('parent_name', 'parents.name'),
+                                        AllowedFilter::exact('stdclass', 'stdclasses.id')
+                                    ])
+                    ->paginate($limit);
         return response()->json(new JsonResponse(['students' => $students]));
     }
+
+
+    // public function index(Request $request)
+    // {
+    //     $searchParams = $request->all();
+    //     $limit = Arr::get($searchParams, 'limit', static::ITEM_PER_PAGE);
+    //     $keyword = $request->get('keyword');
+    //     $stdid = $request->get('id');
+    //     $stdclass = $request->get('stdclass');
+    //     $filtercol = $request->get('filtercol');
+        
+    //     $all = ($request->get('filtercol') == 'all') ? true : false;
+    //     //DB::enableQueryLog(); // Enable query log
+    //     $students = Student::with('parents','stdclasses','class_session')
+    //     ->when($all || ($filtercol == 'parent_name' && !empty($keyword)), function ($query) use ($keyword) {
+    //         $query->whereHas('parents', function($query) use($keyword) {
+    //             $query->where('parents.name', 'like', '%'.$keyword.'%');
+    //         });
+    //     })
+    //     ->when($all || ($filtercol == 'name' && !empty($keyword)), function ($query) use ($all, $keyword) {
+    //         if($all)
+    //             return $query->orWhere('name', 'like', '%' . $keyword . '%');
+    //         else
+    //             return $query->where('name', 'like', '%' . $keyword . '%');
+    //     })
+    //     ->when($all || ($filtercol == 'roll_no' && !empty($keyword)), function ($query) use ($all, $keyword) {
+    //         if($all)
+    //             return $query->orWhere('roll_no', $keyword);
+    //         else
+    //             return $query->where('roll_no', $keyword);
+    //     })
+    //     ->when($all || ($filtercol == 'parent_phone' && !empty($keyword)), function ($query) use ($all, $keyword) {
+    //         $query->whereHas('parents', function($query) use($keyword) {
+    //             $query->where('parents.phone', 'like', '%'.$keyword.'%');
+    //         });
+    //     })
+    //     ->when($stdid, function ($query) use ($stdid) {
+    //         return $query->where('id', $stdid);
+    //     })
+    //     ->when($stdclass, function ($query) use ($stdclass) {
+    //         return $query->where('class_id', $stdclass);
+    //     })
+    //     ->paginate($limit);
+    //     //dd(DB::getQueryLog()); // Show results of log
+    //     return response()->json(new JsonResponse(['students' => $students]));
+    // }
 
     /**
      * Store a newly created resource in storage.

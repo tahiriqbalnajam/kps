@@ -1,5 +1,5 @@
 <template>
-  <el-dialog title="Fee Print" :visible.sync="openfeeprint" width="80%" top="5vh" :before-close="handleClose">
+  <el-dialog title="Fee Print" :modelValue="opendialog" width="80%" top="5vh" :before-close="handleClose">
     <el-button type="primary" plain @click="print" @keydown.native.enter="print()">Print</el-button>
     <div class="app-container" id="printMe">
       <el-row :gutter="10">
@@ -200,6 +200,8 @@ export default {
   },
   data() {
     return {
+      opendialog: true,
+      local_feeid: null,
       localfeeid: null,
       closefeeprint: false,
       list: null,
@@ -228,7 +230,7 @@ export default {
     };
   },
   watch: {
-    feeid: function(val, oldval) {
+    local_feeid: function(val, oldval) {
       console.log('watch is running');
       this.getFeeDetail(val);
     },
@@ -236,6 +238,10 @@ export default {
   async created() {
     await this.getSettings();
     await this.getFeeDetail();
+  },
+  mounted: function() {
+    this.opendialog = this.openfeeprint;
+    this.local_feeid = this.feeid;
   },
   methods: {
     handleClose() {

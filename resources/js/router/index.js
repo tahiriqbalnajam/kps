@@ -56,6 +56,12 @@ export const constantRoutes = [
         meta: { title: 'List',bootstrapIcon: 'mortarboard', icon: 'people', noCache: true },
       },
       {
+        path: 'character-certificate',
+        component: () => import('@/views/students/StudentCharacterCertificate.vue'),
+        name: 'Character Certificate',
+        meta: { title: 'Character Certificate',bootstrapIcon: 'mortarboard', icon: 'people', noCache: true },
+      },
+      {
         path: '/attendance',
         redirect: '/attendance/add',
         meta: { title: 'Attendance', bootstrapIcon: 'calendar-check-fill', noCache: true },

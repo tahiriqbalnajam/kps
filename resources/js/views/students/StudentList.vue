@@ -78,12 +78,13 @@
         </el-table-column>
         <el-table-column align="right" fixed="right">
           <template #default="scope">
-            <el-dropdown split-button type="primary" @click="payFee(scope.row.id, scope.row.name)" size="small">
+            <el-dropdown split-button type="primary" @click="payFee(scope.row.id, scope.row.name)" size="small" @command="handleCommand">
               Pay Fee
               <template #dropdown>
                 <el-dropdown-menu>
                   <el-dropdown-item icon="el-icon-money" :command="'feedetail~'+scope.row.id">Fee Detail</el-dropdown-item>
                   <el-dropdown-item icon="el-icon-edit" :command="'edit~'+scope.row.id">Edit Student</el-dropdown-item>
+                  <el-dropdown-item icon="el-icon-delete" :command="'certificat~'+scope.row.id">Character Certificat</el-dropdown-item>
                   <el-dropdown-item icon="el-icon-delete" :command="'delete~'+scope.row.id">Delete Student</el-dropdown-item>
                 </el-dropdown-menu>
               </template>
@@ -115,6 +116,7 @@
     <add-student  :if="addstudentpop" :addeditstudentprop="addstudentpop" :stdid="stdid" @closeAddStudent="closeAddStudent()"/>
     <pay-fee v-if="openpayfee" :openpayfee="openpayfee" :stdid="stdid" @donePayFee="donePayFee" />
     <fee-detail v-if="openfeedetail" :openfeedetail="openfeedetail" :stdid="studentid" @doneFeeDetail="doneFeeDetail" />
+    <character-certificate v-if="showcharactercertificate" :showcharactercertificate="showcharactercertificate" :stdid="studentid" @doneFeeDetail="doneFeeDetail" />
     <fee-print v-if="openfeeprint" :feeid="feeid" :openfeeprint="openfeeprint" @doneFeePrint="doneFeePrint" />
   </div>
 </template>
@@ -133,6 +135,7 @@ import Resource from '@/api/resource';
 import PayFee from '@/views/fee/component/PayFee.vue';
 import FeePrint from '@/views/fee/component/FeePrint.vue';
 import FeeDetail from '@/views/fee/component/FeeDetail.vue';
+import FeeDetail from '@/views/students/StudentCharacterCertificate.vue';
 import AddStudent from '@/views/students/AddStudent.vue';
 import { editClass } from '@/api/student.js';
 import HeadControls from '@/components/HeadControls.vue';
@@ -167,6 +170,7 @@ export default {
       downloading: false,
       dialogVisible: false,
       alertRec: false,
+      showcharactercertificate: false,
       multiStudentOption:{
         multiStudent: [],
         changeClass: "",
@@ -182,7 +186,7 @@ export default {
       query: {
         page: 1,
         limit: 15,
-        keyword: '',
+        filter: {},
         filtercol: 'name',
         stdclass: '',
       },
@@ -201,11 +205,11 @@ export default {
       }
     },
     handleCommand(command) {
+      console.log(command);
       let info = command.split('~');
       const method = info[0];
       const id = info[1];
 
-      console.log(method);
       if (method == 'feedetail') {
         this.showFeeDetails(id);
       }
@@ -216,12 +220,21 @@ export default {
       if (method == 'delete') {
         this.handleDelete(id);
       }
+      if (method == 'certificat') {
+        this.showCharacterCertificate(id);
+      }
     },
     debounceInput: function (e) {
       this.getList();
     },
     async getList() {
       this.listloading = true;
+      const filterKey = this.query.filtercol;
+      const filterValue = this.query.keyword;
+      this.query.filter = {
+        [filterKey]: filterValue,
+        ['stdclass']: this.query.stdclass,
+      };
       const { data } = await student.list(this.query);
       this.listloading = false;
       this.list = data.students.data;
@@ -277,6 +290,9 @@ export default {
       this.alertRec = true;
       this.getList();
     },
+    showCharacterCertificate(id) {
+      this.showcharactercertificate = true;
+    },
     handleDownload() {
       this.downloadLoading = true;
       import('@/vendor/Export2Excel').then(excel => {
@@ -319,7 +335,6 @@ export default {
       }));
     },
     showFeeDetails(id) {
-      console.log('we are in showfee details -'+id);
       this.studentid = id;
       this.openfeedetail = true;
     },
