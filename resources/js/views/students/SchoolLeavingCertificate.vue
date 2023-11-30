@@ -3,14 +3,19 @@
     <div>
         <el-dialog v-model="rdata.dialogVisible" title="Character Certificate">
             <div>
-                <h2 style="text-align: center;">PROVISIONAL & CHARACTER CERTIFICATE</h2>
-                <p>Registration No ---------  Session --------</p>
-                <p>It is certified that <u>{{ rdata.student.name }}</u> <br>
-                S/D/O <span> {{ rdata.student.parents.name }}</span> whose date of birth (In Figures) {{ convertDate(rdata.student.dob) }} 
-                (In Words) {{ convertDateToWords(new Date(rdata.student.dob)) }} <br>
-                </p>
-                <p>has been a regular student of this school. He/She has been declared pass/fail in the Secondary School Certificate Annual Examination ----------- held by the Board of Intermediate and Secondary Education Bahawalpur under Roll No. ---------------- securing --------------/ -------- marks. During his/her studies at this school, I have found him/her ----------------------</p>
-                <p>He/She bears <u><b>good</b></u> moral character. May he/she succeed in every walk of life.</p>
+                <h1 style="text-align: center;">SCHOOL LEAVING CERTIFICATE</h1>
+                <p><strong>Name of Student:</strong> {{ rdata.student.name }}</p>
+                <p><strong>Father's Name:</strong> {{ rdata.student.parents.name }}</p>
+                <p><strong>Date of Birth (in Figures):</strong> {{ convertDate(rdata.student.dob) }}</p>
+                <p><strong>Date of Birth (in Words):</strong> {{ convertDate(rdata.student.dob) }}</p>
+                <p><strong>Admission No.:</strong> {{ rdata.student.adminssion_number }}   <strong>Date of Admission:</strong> {{ convertDate(rdata.student.created_at) }} </p>
+                <p><strong>Class in which admitted:</strong> ---------------------------------------------</p>
+                <p><strong>Date of leaving the school:</strong> --------------------------------------</p>
+                <p><strong>Class in which studying / Passed / Failed:</strong> --------------------------------------</p>
+                <p><strong>Examination:</strong> ------------------------------------------------</p>
+                <p><strong>Roll No.:</strong> ------------------------- <strong>Marks Obtained:</strong> ------------------------</p>
+                <p><strong>Total Marks:</strong> --------------------------------</p>
+                <p>Certified that above mentioned particulars are in accordance with the school record.</p>
             </div>
         </el-dialog>
     </div>
@@ -22,14 +27,14 @@ import Resource from '@/api/resource';
 import moment from 'moment';
 
 export default {
-    name: 'CharacterCertificate',
+    name: 'SchoolLeavingCertificate',
     components: {},
     props: {
-        showcharactercertificate: Boolean,
+        showschoolleavingcertificate: Boolean,
         stdid: Number
     },
     setup(props) {
-        const { showcharactercertificate, stdid } = toRefs(props);
+        const { showschoolleavingcertificate, stdid } = toRefs(props);
 
         const resource = new Resource('students');
         const rdata = reactive({
@@ -43,12 +48,12 @@ export default {
         });
 
         onMounted(() => {
-            rdata.dialogVisible = showcharactercertificate.value;
+            rdata.dialogVisible = showschoolleavingcertificate.value;
             getStudent(stdid.value);
         });
 
         // Define watchers
-        watch(showcharactercertificate, (newValue, oldValue) => {
+        watch(showschoolleavingcertificate, (newValue, oldValue) => {
             if (newValue !== oldValue) {
                 rdata.dialogVisible = newValue;
             }
@@ -58,7 +63,7 @@ export default {
             if (!date) 
                 return null;
 
-                return moment(date).format('DD-MM-YYYY');
+                return moment(date).format('DD/MM/YYYY');
         }
 
         const convertDateToWords = (date) => {
@@ -77,7 +82,7 @@ export default {
                         "thirty", "thirty-one"
                     ];
 
-                    const day = days[date.getDay()];
+                    const day = days[date.getDate()];
                     const month = months[date.getMonth()];
                     const year = date.getFullYear();
 
@@ -104,5 +109,5 @@ export default {
 </script>
 
 <style scoped>
-/* Your component styles here */
+
 </style>

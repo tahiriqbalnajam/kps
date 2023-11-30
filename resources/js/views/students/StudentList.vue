@@ -85,6 +85,7 @@
                   <el-dropdown-item icon="el-icon-money" :command="'feedetail~'+scope.row.id">Fee Detail</el-dropdown-item>
                   <el-dropdown-item icon="el-icon-edit" :command="'edit~'+scope.row.id">Edit Student</el-dropdown-item>
                   <el-dropdown-item icon="el-icon-delete" :command="'certificat~'+scope.row.id">Character Certificat</el-dropdown-item>
+                  <el-dropdown-item icon="el-icon-delete" :command="'schoolleaving~'+scope.row.id">School Leaving Certificat</el-dropdown-item>
                   <el-dropdown-item icon="el-icon-delete" :command="'delete~'+scope.row.id">Delete Student</el-dropdown-item>
                 </el-dropdown-menu>
               </template>
@@ -117,6 +118,7 @@
     <pay-fee v-if="openpayfee" :openpayfee="openpayfee" :stdid="stdid" @donePayFee="donePayFee" />
     <fee-detail v-if="openfeedetail" :openfeedetail="openfeedetail" :stdid="studentid" @doneFeeDetail="doneFeeDetail" />
     <character-certificate  v-if="showcharactercertificate" :showcharactercertificate="showcharactercertificate" :stdid="studentid" @doneFeeDetail="doneFeeDetail" />
+    <school-leaving-certificate  v-if="showschoolleavingcertificate" :showschoolleavingcertificate="showschoolleavingcertificate" :stdid="studentid" @doneFeeDetail="doneFeeDetail" />
     <fee-print v-if="openfeeprint" :feeid="feeid" :openfeeprint="openfeeprint" @doneFeePrint="doneFeePrint" />
   </div>
 </template>
@@ -136,6 +138,7 @@ import PayFee from '@/views/fee/component/PayFee.vue';
 import FeePrint from '@/views/fee/component/FeePrint.vue';
 import FeeDetail from '@/views/fee/component/FeeDetail.vue';
 import CharacterCertificate from '@/views/students/StudentCharacterCertificate.vue';
+import SchoolLeavingCertificate from '@/views/students/SchoolLeavingCertificate.vue';
 import AddStudent from '@/views/students/AddStudent.vue';
 import { editClass } from '@/api/student.js';
 import HeadControls from '@/components/HeadControls.vue';
@@ -143,7 +146,7 @@ const student = new Resource('students');
 const classes = new Resource('classes');
 export default {
   name: 'StudentList',
-  components: { Pagination, AddStudent,  PayFee, FeePrint, FeeDetail, HeadControls, CharacterCertificate },
+  components: { Pagination, AddStudent,  PayFee, FeePrint, FeeDetail, HeadControls, CharacterCertificate, SchoolLeavingCertificate },
   directives: { },
   filters: {
     dateformat: (date) => {
@@ -171,6 +174,7 @@ export default {
       dialogVisible: false,
       alertRec: false,
       showcharactercertificate: false,
+      showschoolleavingcertificate: false,
       multiStudentOption:{
         multiStudent: [],
         changeClass: "",
@@ -222,6 +226,9 @@ export default {
       }
       if (method == 'certificat') {
         this.showCharacterCertificate(id);
+      }
+      if (method == 'schoolleaving') {
+        this.SchoolLeavingCertificate(id);
       }
     },
     debounceInput: function (e) {
@@ -292,6 +299,10 @@ export default {
     },
     showCharacterCertificate(id) {
       this.showcharactercertificate = true;
+      this.studentid = id;
+    },
+    SchoolLeavingCertificate(id) {
+      this.showschoolleavingcertificate = true;
       this.studentid = id;
     },
     handleDownload() {
