@@ -196,7 +196,7 @@ export const constantRoutes = [
     path: '/exam',
     component: Layout,
     redirect: '/exam/test',
-    meta: {title: 'Exam', bootstrapIcon: 'journal-text', noCache: true},
+    meta: {title: 'Assessments', bootstrapIcon: 'journal-text', noCache: true},
     children: [
       {
         path: 'exam',
@@ -209,12 +209,6 @@ export const constantRoutes = [
         component: () => import('@/views/exam/TestList.vue'),
         name: 'Add Test',
         meta: {title: 'Test', bootstrapIcon: 'journal-text', noCache: true},
-      },
-      {
-        path: 'exam-results',
-        component: () => import('@/views/exam/Results.vue'),
-        name: 'Waqar',
-        meta: {title: 'Test Result', bootstrapIcon: 'calendar-plus', noCache: true},
       },
     ],
   },

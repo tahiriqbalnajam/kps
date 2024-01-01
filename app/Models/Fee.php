@@ -16,6 +16,15 @@ class Fee extends Model
         return $this->belongsTo(FeeType::class,'fee_type_id');
     }
 
+    public function feemeta(){
+        return $this->belongsTo(FeeMeta::class,'fee_id');
+    }
+
+    public function fee_meta()
+    {
+        return $this->hasMany(FeeMeta::class,'fee_id');
+    }
+
     public function lastpaid()
     {
         return $this->hasOne(Fee::class)->ofMany([

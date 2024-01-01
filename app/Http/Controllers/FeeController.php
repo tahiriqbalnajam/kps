@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Fee;
+use App\Models\FeeMeta;
 use Illuminate\Support\Arr;
 use Illuminate\Http\Request;
 use App\Laravue\JsonResponse;
@@ -53,15 +54,38 @@ class FeeController extends Controller
      */
     public function store(Request $request)
     {
-        
-        $fee = new Fee();
-        $fee->student_id = $request->student_id;
-        $fee->payment_from_date = Carbon::parse($request->feefromto[0])->startOfMonth()->toDateString();
-        $fee->payment_to_date = Carbon::parse($request->feefromto[1])->endOfMonth()->toDateString();
-        $fee->amount = $request->amount;
-        $fee->fee_type_id = $request->fee_type_id;
-        $fee->save();
-        return response()->json(new JsonResponse(['fee' => $fee]));
+           
+        try {
+            DB::beginTransaction();
+
+            $total = 0;
+            foreach($request->fee_meta as $key => $value){
+                $total += $value['meta_value'];
+            }
+
+            $fee = new Fee();
+            $fee->student_id = $request->student_id;
+            $fee->payment_from_date = Carbon::parse($request->feefromto[0])->startOfMonth()->toDateString();
+            $fee->payment_to_date = Carbon::parse($request->feefromto[1])->endOfMonth()->toDateString();
+            $fee->amount = $total;
+            $fee->fee_type_id = $request->fee_type_id;
+            $fee->save();
+
+            foreach($request->fee_meta as $key => $value){
+                $fee_meta = new FeeMeta();
+                $fee_meta->meta_key = $value['meta_key'];
+                $fee_meta->meta_value = $value['meta_value'];
+                $fee_meta->fee_id = $fee->id;
+                $fee_meta->save();
+            }
+
+            DB::commit();
+
+            return response()->json(new JsonResponse(['fee' => $fee]));
+        } catch (\Exception $e) {
+            DB::rollback();
+            return response()->json(new JsonResponse(['error' => $e->getMessage()]), 500);
+        }
     }
 
     /**
@@ -72,7 +96,7 @@ class FeeController extends Controller
      */
     public function show($id)
     {
-        $fee = Fee::where('id',$id)->with(['feetype','student.parents','student.stdclasses'])->first();
+        $fee = Fee::where('id',$id)->with(['feetype','student.parents','student.stdclasses', 'fee_meta'])->first();
         return response()->json(new JsonResponse(['fee' => $fee]));
     }
 

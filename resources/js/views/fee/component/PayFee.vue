@@ -43,18 +43,28 @@
             :picker-options="pickerOptions"
           />
         </el-form-item>
-        <el-form-item label="Fee Type" :label-width="formLabelWidth">
-          <el-select v-model="fee.fee_type_id" placeholder="Select Fee Type" @change="setPrice()">
-            <el-option
-              v-for="type in feetypes"
-              :key="type.id"
-              :value="type.id"
-              :label="type.title + ' (' + type.amount + ')'"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="Amount" :label-width="formLabelWidth">
-          <el-input v-model="fee.amount" autocomplete="off" />
+        <el-form-item label="Fee Type" :label-width="formLabelWidth" v-for="(fm, index) in fee.fee_meta">
+          <el-row :gutter="20">
+            <el-col :xs="10" :sm="10" :md="10" :lg="10" :xl ="10">
+              <el-select v-model="fm.meta_key" placeholder="Select Fee Type" @change="setPrice()">
+                <el-option
+                  v-for="type in feetypes"
+                  :key="type.id"
+                  :value="type.title"
+                  :label="type.title + ' (' + type.amount + ')'"
+                />
+              </el-select>
+            </el-col>
+            <el-col :xs="10" :sm="10" :md="10" :lg="10" :xl ="10">
+              <el-input v-model="fm.meta_value" placeholder="Enter amount" size="normal" clearable @change=""></el-input>
+            </el-col>
+            <el-col :xs="4" :sm="4" :md="4" :lg="4" :xl ="4">
+              <el-button type="primary" size="mini" @click="addFeeType(index, fm.button)">
+                <el-icon v-if="fm.button == 'add'"><Plus /></el-icon>
+                <el-icon v-if="fm.button == 'remove'"><Minus /></el-icon>
+              </el-button>
+            </el-col>
+          </el-row>
         </el-form-item>
       </el-form>
       <div class="demo-drawer__footer">
@@ -66,6 +76,10 @@
 </template>
 <script>
 import Pagination from '@/components/Pagination/index.vue';
+import {
+    Plus,
+    Minus,
+} from '@element-plus/icons-vue'
 import Resource from '@/api/resource';
 const feePro = new Resource('fee');
 const feeTypePro = new Resource('feetypes');
@@ -91,14 +105,18 @@ export default {
       loading: false,
       findstudent: false,
       students: null,
+      feetypeselection: [],
       fee: {
         id: '',
         student_id: '',
         feefromto: '',
         payment_from_date: '',
         payment_to_date: '',
-        amount: '',
-        fee_type_id: 1,
+        fee_meta: [{
+          meta_key: '',
+          meta_value: '',
+          button: 'add',
+        }],
       },
       feetypes: [],
       pickerOptions: {
@@ -154,6 +172,29 @@ export default {
     this.getsetStudent();
   },
   methods: {
+    addFeeType(index, button) {
+      if(this.feetypes.length == this.fee.fee_meta.length) {
+        this.$message({
+          message: 'All fee type added.',
+          type: 'warning',
+        });
+        return false;
+      }
+      if (button == 'remove') {
+        this.fee.fee_meta = this.fee.fee_meta.filter((item, i) => {
+          return i != index;
+        });
+      } else {
+        this.fee.fee_meta = [...this.fee.fee_meta, { meta_key: '', meta_value: '', button: 'remove' }];
+      }
+      
+    },
+    removeFeeType(index) {
+      console.log(index);
+      this.feetypeselection = this.feetypeselection.filter((item) => {
+          return item == index;
+      });
+    },
     donePayFee(printnow = false, feeid = null) {
       this.resetFee();
       this.closepopup = false;

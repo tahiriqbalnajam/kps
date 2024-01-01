@@ -32,12 +32,13 @@
     keyword: '',
     filtercol: 'name',
     stdclass: '',
+    filter: {},
   })
 
   const exam = reactive({
     examname: '',
     class_id: '',
-    total_marks: '',
+    subjects: '',
     students: '',
   })
 
@@ -48,16 +49,21 @@
     }
   })
 
-  const onSubmit = () => {
+  const onSubmit = async() => {
     exam.examname = formInline.examname;
     exam.class_id = formInline.stdclass;
-    exam.subject_id = formInline.subjects;
+    exam.subjects = formInline.subjects;
     exam.total_marks = formInline.total_marks;
     console.log(formInline.subjects);
     exam.students = formInline.students;
-    resource.store(exam);
-    resetFormInline();
-    handleClose();
+    try {
+      const response = await resource.store(exam);
+      resetFormInline();
+      handleClose();
+    } catch (error) {
+      // Handle error response
+      console.error(error);
+    }
   }
 
   const getClasses = async() => {
@@ -66,7 +72,7 @@
   }
 
   const getstudents = async() => {
-    query.stdclass = formInline.stdclass
+    query.filter.stdclass = formInline.stdclass
     const { data } = await students.list(query);
     formInline.students = data.students.data;
 
@@ -89,7 +95,7 @@
 <template>
 
   <div >
-    <el-dialog title="Add Test Marks" :modelValue="addedittestprop" @close="handleClose">
+    <el-dialog title="Add Exam Marks" :modelValue="addedittestprop" @close="handleClose">
       <el-form style="width: 100%" :inline="true" :model="formInline" class="demo-form-inline">
         <el-row :gutter="10">
           <el-col :span="8">
@@ -110,13 +116,6 @@
               </el-select>
             </el-form-item>
           </el-col>
-        </el-row>
-        <el-row :gutter="10">
-          <el-col :span="8">
-            <el-form-item label="Totla Marks">
-              <el-input-number v-model="formInline.total_marks" />
-            </el-form-item>
-          </el-col>
           <el-col :span="8">
             <el-form-item>
               <el-button type="primary" @click="onSubmit" :disabled="!formInline.students.length">Save</el-button>
@@ -134,6 +133,9 @@
               :label="subject.title"
               width="180"
             >
+            <template #header="innerScope">
+              <el-input v-model="subject.total_marks" size="small" :placeholder="`Total ${subject.title}`" :clearable="true" />
+            </template>
               <template #default="innerScope">
                 <el-input
                   v-model="innerScope.row[`subject_${subject.id}`]"

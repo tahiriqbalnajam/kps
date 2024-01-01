@@ -21,8 +21,15 @@ class ExamController extends Controller
         $limit = Arr::get($searchParams, 'limit', static::ITEM_PER_PAGE);
         $keyword = $request->get('keyword');;
         //DB::enableQueryLog(); // Enable query log
-        $subjects = Exam::with('classes','results', 'results.student')
-        ->paginate($limit);
+        $subjects = Exam::with(['results.student.subjects'])
+            ->paginate($limit);
+
+        return response()->json(new JsonResponse(['exams' => $subjects]));
+        $subjects = Exam::with(['classes', 'results' => function ($query) {
+            $query->groupBy('student_id');
+        }])
+            //->with(['results.student', 'results.subject'])
+            ->paginate($limit);
         //dd(DB::getQueryLog()); // Show results of log
         return response()->json(new JsonResponse(['exams' => $subjects]));
     }

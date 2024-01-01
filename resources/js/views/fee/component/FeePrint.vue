@@ -34,17 +34,8 @@
             <tr>
               <td>Amount Paid: <strong class="paid_amount">{{ fee.amount }}</strong> Rs.</td>                            
             </tr>
-            <tr>
-              <td>Arrears :&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;</td>
-            </tr>
-            <tr>
-              <td>Paper Fund : &mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;</td>
-            </tr>
-            <tr>
-              <td>Paid Fee : &mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;</td>
-            </tr>
-            <tr>
-              <td>Total Fee : &mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;</td>
+            <tr v-for="fm in fee.fee_meta">
+              <td>{{ fm.meta_key }} : <u>{{ fm.meta_value }}</u></td>
             </tr>
             <tr>
               <td>Signature : &mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;</td>
@@ -90,17 +81,8 @@
             <tr>
               <td>Amount Paid: <strong class="paid_amount">{{ fee.amount }}</strong> Rs.</td>                            
             </tr>
-            <tr>
-              <td>Arrears :&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;</td>
-            </tr>
-            <tr>
-              <td>Paper Fund : &mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;</td>
-            </tr>
-            <tr>
-              <td>Paid Fee : &mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;</td>
-            </tr>
-            <tr>
-              <td>Total Fee : &mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;</td>
+            <tr v-for="fm in fee.fee_meta">
+              <td>{{ fm.meta_key }} : <u>{{ fm.meta_value }}</u></td>
             </tr>
             <tr>
               <td>Signature : &mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;</td>
@@ -146,17 +128,8 @@
             <tr>
               <td>Amount Paid: <strong class="paid_amount">{{ fee.amount }}</strong> Rs.</td>                            
             </tr>
-            <tr>
-              <td>Arrears :&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;</td>
-            </tr>
-            <tr>
-              <td>Paper Fund : &mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;</td>
-            </tr>
-            <tr>
-              <td>Paid Fee : &mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;</td>
-            </tr>
-            <tr>
-              <td>Total Fee : &mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;</td>
+            <tr v-for="fm in fee.fee_meta">
+              <td>{{ fm.meta_key }} : <u>{{ fm.meta_value }}</u></td>
             </tr>
             <tr>
               <td>Signature : &mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;</td>

@@ -1,6 +1,6 @@
 <script setup>
   import HeadControls from '@/components/HeadControls.vue';
-  import AddTest from '@/views/exam/AddTest.vue';
+  import AddExam from '@/views/exam/AddExam.vue';
   import Pagination from '@/components/Pagination/index.vue';
   import { ElNotification, ElMessage, ElMessageBox } from 'element-plus'
   import { onMounted, ref } from "vue";
@@ -171,7 +171,7 @@
       <head-controls>
         <el-form-item v-loading="listloading">
           <el-col :span="4">
-            <el-select v-model="formInline.exam" placeholder="Select Test" class="filter-item" clearable>
+            <el-select v-model="formInline.exam" placeholder="Select Exam" class="filter-item" clearable>
               <el-option
                   v-for="item in formInline.resource"
                   :key="item.id"
@@ -181,7 +181,7 @@
             </el-select>
           </el-col>
           <el-col :span="2">
-            <el-tooltip content="Add Test" placement="top">
+            <el-tooltip content="Add New Exam" placement="top">
               <el-button class="filter-item" style="margin-left: 10px;" type="success" @click="openPopup">
                 <el-icon><Plus /></el-icon>
               </el-button>
@@ -216,13 +216,13 @@
                 </el-button>
               </el-tooltip>
 
-              <el-tooltip content="Edit Test" placement="top">
+              <el-tooltip content="Edit Exam" placement="top">
                 <el-button type="primary" @click="[getResultClaswise(scope.row.id, scope.row.examname),dialogEditFormVisible = true]">
                   <el-icon><Edit /></el-icon>
                 </el-button>
               </el-tooltip>
 
-              <el-tooltip content="Delete Test" placement="top">
+              <el-tooltip content="Delete Exam" placement="top">
                 <el-button type="danger" @click="[deleteExam(scope.row.id)]">
                   <el-icon><Delete /></el-icon>
                 </el-button>
@@ -286,7 +286,7 @@
 
 
   <pagination v-show="rdata.total>0" :total="rdata.total" :page.sync="query.page" :limit.sync="query.limit" @pagination="get_Exams" />
-    <add-test :addedittestprop="rdata.addedittestprop"  @popupclosed="popupClosed"/>
+    <add-exam :addedittestprop="rdata.addedittestprop"  @popupclosed="popupClosed"/>
   </div>
 </template>
 

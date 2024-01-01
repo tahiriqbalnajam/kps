@@ -32,7 +32,7 @@
    <pagination v-show="total>0" :total="total" :page.sync="query.page" :limit.sync="query.limit" @pagination="getList" />
     <el-drawer
       title="Edit Record"
-      :visible.sync="editnow"
+      :modelValue="editnow"
       direction="rtl"
       custom-class="demo-drawer"
       ref="drawer"
@@ -42,7 +42,7 @@
           <el-form-item label="Title" :label-width="formLabelWidth">
             <el-input v-model="feetype.title" autocomplete="off"></el-input>
           </el-form-item>
-          <el-form-item label="Title" :label-width="formLabelWidth">
+          <el-form-item label="Amount" :label-width="formLabelWidth">
             <el-input v-model="feetype.amount" autocomplete="off"></el-input>
           </el-form-item>
         </el-form>

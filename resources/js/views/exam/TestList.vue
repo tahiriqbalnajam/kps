@@ -1,6 +1,6 @@
 <script setup>
   import HeadControls from '@/components/HeadControls.vue';
-  import AddTest from '@/views/exam/AddTestExam.vue';
+  import AddTest from '@/views/exam/AddTest.vue';
   import Pagination from '@/components/Pagination/index.vue';
   import { ElNotification, ElMessage, ElMessageBox, ElPrint } from 'element-plus'
   import { onMounted, ref } from "vue";

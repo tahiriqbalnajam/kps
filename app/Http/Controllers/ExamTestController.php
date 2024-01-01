@@ -6,6 +6,7 @@ use Illuminate\Support\Arr;
 use Illuminate\Http\Request;
 use App\Laravue\JsonResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Validator;
 
 class ExamTestController extends Controller
 {
@@ -35,46 +36,97 @@ class ExamTestController extends Controller
      */
     public function store(Request $request)
     {
+        $validated = $request->validate([
+            'examname' => 'required|max:255',
+        ]);
+        
+        
         try {
             DB::beginTransaction();
-            $exam_data = $request->all();
-            //echo $examname = $exam_data['students']['id'];
-            //print_r($request->all());die('asdf');
-            $exam_data_array = array(
-                'examname'=>$exam_data['examname'],
-                'class_id'=>$exam_data['class_id'],
-                'total_marks'=>$exam_data['total_marks'],
-                'type'=>'test'
-            );
-            //print_r($exam_data_array);die('yes');
-            $exam_id = Exam::create($exam_data_array);
-            //echo $exam->id;
-            //die('jkhk');
-            foreach ($exam_data['students'] as $student) {
-                foreach ($student as $key =>$value) {
+            
+            $examData = $request->all();
+            
+            $exam = Exam::create([
+                'examname' => $examData['examname'],
+                'class_id' => $examData['class_id'],
+                'total_marks' => $examData['total_marks'] ?? 0,
+                'type' => 'test'
+            ]);
+            
+            foreach ($examData['students'] as $student) {
+                foreach ($student as $key => $value) {
                     if (preg_match('/^subject_(\d+)$/', $key, $matches)) {
-                        $exam = new ExamResult(); // Create a new Exam model instance
-                        $exam->exam_id = $exam_id->id;
-                        $exam->class_id = $exam_data['class_id'];
-                        $exam->student_id = $student['id']; // Assuming 'id' is the student's ID
-                        $exam->subject_id = $matches[1]; // Assuming 'id' is the subject's ID
-                        $exam->obtained_marks = $student['subject_'.$matches[1]]; // Assuming 'id' is the subject's ID
-                        $exam->total_marks = $exam_data['total_marks'];
-                        $exam->save();
+                        $examResult = new ExamResult([
+                            'exam_id' => $exam->id,
+                            'class_id' => $examData['class_id'],
+                            'student_id' => $student['id'],
+                            'subject_id' => $matches[1],
+                            'obtained_marks' => $student['subject_'.$matches[1]],
+                            'total_marks' => $this->searchTotalMarks( $examData['subjects'], $matches[1]),
+                        ]);
+
+                        $examResult->save();
                     }
-                    // You can set other fields as needed
-        
-                    //$exam->save(); // Save the individual exam result to the database
                 }
             }
-            
             DB::commit();
-            return response()->json(new JsonResponse(['examsreult' => $exam_data_array]));
+            
+            return response()->json(new JsonResponse(['exam' => $exam]));
         } catch (\Exception $ex) {
             DB::rollBack();
             return responseFailed($ex->getMessage());
         }
     }
+
+    function searchTotalMarks($array, $id) {
+        foreach ($array as $item) {
+            if ($item['id'] == $id) {
+                return $item['total_marks'];
+            }
+        }
+        return null; // Return null if id is not found
+    }
+    // {
+    //     try {
+    //         DB::beginTransaction();
+    //         $exam_data = $request->all();
+    //         //echo $examname = $exam_data['students']['id'];
+    //         //print_r($request->all());die('asdf');
+    //         $exam_data_array = array(
+    //             'examname'=>$exam_data['examname'],
+    //             'class_id'=>$exam_data['class_id'],
+    //             'total_marks'=> ($exam_data['total_marks']) ? $exam_data['total_marks'] : 0,
+    //             'type'=>'test'
+    //         );
+    //         //print_r($exam_data_array);die('yes');
+    //         $exam_id = Exam::create($exam_data_array);
+    //         //echo $exam->id;
+    //         //die('jkhk');
+    //         foreach ($exam_data['students'] as $student) {
+    //             foreach ($student as $key =>$value) {
+    //                 if (preg_match('/^subject_(\d+)$/', $key, $matches)) {
+    //                     $exam = new ExamResult(); // Create a new Exam model instance
+    //                     $exam->exam_id = $exam_id->id;
+    //                     $exam->class_id = $exam_data['class_id'];
+    //                     $exam->student_id = $student['id']; // Assuming 'id' is the student's ID
+    //                     $exam->subject_id = $matches[1]; // Assuming 'id' is the subject's ID
+    //                     $exam->obtained_marks = $student['subject_'.$matches[1]]; // Assuming 'id' is the subject's ID
+    //                     $exam->total_marks = $exam_data['total_marks'];
+    //                     $exam->save();
+    //                 }
+    //                 // You can set other fields as needed
+        
+    //                 //$exam->save(); // Save the individual exam result to the database
+    //             }
+    //         }
+            
+    //         DB::commit();
+    //         return response()->json(new JsonResponse(['examsreult' => $exam_data_array]));
+    //     } catch (\Exception $ex) {
+    //         DB::rollBack();
+    //         return responseFailed($ex->getMessage());
+    //     }
+   // }
 
     /**
      * Display the specified resource.
