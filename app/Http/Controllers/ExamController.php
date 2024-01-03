@@ -21,9 +21,9 @@ class ExamController extends Controller
         $limit = Arr::get($searchParams, 'limit', static::ITEM_PER_PAGE);
         $keyword = $request->get('keyword');;
         //DB::enableQueryLog(); // Enable query log
-        $subjects = Exam::with(['results.student.subjects'])
-            ->paginate($limit);
-
+        // $subjects = Exam::with(['results.student.subjects'])
+        //     ->paginate($limit);
+        $subjects = Exam::with('classes','results', 'results.student','results.subject');
         return response()->json(new JsonResponse(['exams' => $subjects]));
         $subjects = Exam::with(['classes', 'results' => function ($query) {
             $query->groupBy('student_id');
@@ -48,9 +48,40 @@ class ExamController extends Controller
             $students = $request->students;
             $exam_id = $exam->id;
             $stuents_array = array();
-            foreach($students as $student) 
-                $stuents_array[] = array('exam_id' => $exam_id, 'student_id' => $student['id'], 'class_id' => $student['class_id'], 'subject_id' => $request->subject_id, 'total_marks' => $exam->total_marks, 'obtained_marks' => $student['obtained_marks'] );
-                
+            $student_id = '';
+            $stuents_array = [];
+            $studentIds = [];
+            foreach ($students as $student) {
+                $studentId = $student['id'];
+                if (!in_array($studentId, $studentIds)) {
+                    $stuents_array[] = array(
+                        'exam_id' => $exam_id,
+                        'student_id' => $studentId,
+                        'class_id' => $student['class_id'],
+                        'subject_id' => $request->subject_id,
+                        'total_marks' => $exam->total_marks,
+                    );
+                    $studentIds[] = $studentId;
+                }
+            }
+
+            foreach ($students  as $student) {
+                foreach ($student as $key => $value) {
+                    if (preg_match('/^subject_(\d+)$/', $key, $matches)) {
+                        $examResult = new ExamResult([
+                            'exam_id' => $exam->id,
+                            'class_id' => $examData['class_id'],
+                            'student_id' => $student['id'],
+                            'subject_id' => $matches[1],
+                            'obtained_marks' => $student['subject_'.$matches[1]],
+                            'total_marks' => $this->searchTotalMarks( $examData['subjects'], $matches[1]),
+                        ]);
+
+                        $examResult->save();
+                    }
+                }
+            }
+   
             $result_exam_student= ExamResult::insert($stuents_array);
             DB::commit();
             return response()->json(new JsonResponse(['examsreult' => $stuents_array]));

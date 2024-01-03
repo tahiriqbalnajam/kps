@@ -32,7 +32,7 @@ Route::post('check_salary_generated', 'TeacherAttendanceController@check_salary_
 Route::post('pay_salary', 'TeacherAttendanceController@pay_salary');
 Route::post('generate_pay', 'TeacherAttendanceController@generate_pay');
 Route::apiResource('teacher_attendance', 'TeacherAttendanceController');
-Route::apiResource('exam_result', 'ExamController');
+//Route::apiResource('exam_result', 'ExamController');
 Route::apiResource('examtest_result', 'ExamTestController');
 Route::apiResource('subjects', 'SubjectController');
 Route::apiResource('subject_class', 'SubjectToClassController');

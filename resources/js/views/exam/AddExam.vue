@@ -3,7 +3,7 @@
   import { reactive } from 'vue';
   import Resource from '@/api/resource.js';
   const classes = new Resource('classes');
-  let resource = new Resource('examtest_result');
+  let resource = new Resource('exams');
   const students = new Resource('students');
   const subjectRes = new Resource('subject_class');
   
@@ -75,10 +75,11 @@
     query.filter.stdclass = formInline.stdclass
     const { data } = await students.list(query);
     formInline.students = data.students.data;
-
     const subjectdata  = await subjectRes.list(query);
-    console.log(subjectdata.data.classubj.data[0].subjects);
-    formInline.subjects = subjectdata.data.classubj.data[0].subjects;
+    const student_subjects = subjectdata.data.classubj.data[0].subjects;
+    formInline.students = formInline.students.map( student => ({...student, 'subjects' : student_subjects}));
+    console.log(formInline.students);
+    //formInline.subjects = subjectdata.data.classubj.data[0].subjects;
   }
 
   const emit = defineEmits(['popupclosed'])
@@ -123,11 +124,30 @@
           </el-col>
         </el-row>
         <el-table :data="formInline.students" height="400" style="width: 100%">
-          <el-table-column prop="id" label="ID" width="180" />
+          <el-table-column type="index" width="60" />
           <el-table-column prop="name" label="Name" width="180" />
           <el-table-column label="Subjects">
+            
+            <el-table :data="formInline.students.subjects" border stripe @selection-change="handleSelectionChange">
+            <el-table-column type="title" width="55">
+              <template #default="innerScope">
+                <el-input v-model="obtained_marks" size="small" :placeholder="title" :clearable="true" />
+              </template>
+            </el-table-column>
+            <el-table-column type="index" width="50" />
+            <el-table-column v-for="col in columns"
+            :prop="col.id"
+            :key="col.id"
+            :label="col.label"
+            :width="col.width">
+            </el-table-column>
+            </el-table>
+            
+
+
+
             <el-table-column
-              v-for="(subject, index) in formInline.subjects"
+              v-for="(subject, index) in formInline.students.subjects"
               :key="index"
               :prop="`subject_${index}`"
               :label="subject.title"
