@@ -13,15 +13,13 @@
       <table class="tblwdborder">
         <tr>
           <th>Amount</th>
-          <th>Fee Type</th>
           <th>Fee Period</th>
           <th>Paid At</th>
         </tr>
         <tr v-for="fee in fees" :key="fee.id">
           <td>{{ fee.amount }}</td>
-          <td>{{ fee.feetype.title }}</td>
-          <td>{{ moment(fee.payment_from_date).format('MMM, YYYY')  }} to {{ moment(fee.payment_to_date).format('MMM, YYYY') }}</td>
-          <td>{{ moment(fee.created_at).format('MMM, YYYY')}}</td>
+          <td>{{ formateDate(fee.payment_from_date)}} to {{ formateDate(fee.payment_to_date)}}</td>
+          <td>{{formateDate(fee.created_at)}}</td>
         </tr>
       </table>
       <div class="demo-drawer__footer">
@@ -66,6 +64,7 @@ export default {
         page: 1,
         limit: 15,
         keyword: '',
+        filter: {},
         id: '',
         role: '',
         pending: true,
@@ -85,10 +84,15 @@ export default {
     this.query.id = this.stdid;
   },
   created() {
-    this.query.id = this.stdid;
+    this.query.filter.id = this.stdid;
     this.getFeeDetail();
   },
   methods: {
+    formateDate(date) {
+      const formated = moment(date).format('DD-MM-YYYY');
+      return formated
+      this.query.filter.to_date = moment(this.query.filter.to_date).format('YYYY-MM-DD');
+    },
     donePayFee(printnow = false, feeid = null) {
       this.closepopup = false;
       this.$emit('doneFeeDetail');

@@ -181,7 +181,15 @@ export default {
         callback();
       }
     };
+    var b_form = (rule, value, callback) => {
+      if (!value) {
+        return callback(new Error('Enter B form #.'));
+      } else {
+        callback();
+      }
+    };
     return {
+      student_id: null,
       loading: false,
       parentloading: false,
       customerForm: true,
@@ -193,6 +201,7 @@ export default {
         parent_id: [{ validator: parent, trigger: 'blur' }],
         class_id: [{ validator: class_id, trigger: 'blur' }],
         dob: [{ validator: dob, trigger: 'blur' }],
+        b_form: [{ validator: b_form, trigger: 'blur' }],
         monthly_fee: [{ validator: monthly_fee, trigger: 'blur' }],
       },
       classes: [],
@@ -254,12 +263,16 @@ export default {
         this.handleClose();
       },
     },
+    stdid: function(val, oldval) {
+      this.student_id = val;
+      this.getStudent();
+    },
   },
   created() {
     this.getClasses();
-    if (this.stdid !== null) {
+    //if (this.stdid !== null) {
       this.getStudent();
-    }
+    //}
   },
   methods: {
     handleClose() {
@@ -327,7 +340,7 @@ export default {
       });
     },
     async getStudent() {
-      let { data } = await stdRes.get(this.stdid);
+      let { data } = await stdRes.get(this.student_id);
       this.student = data.student;
       data = await stdParent.get(this.student.parent_id);
       this.parents = [data.data.parent];

@@ -7,7 +7,7 @@
           <el-image
             style="height:220px"
             :src="`uploads/${settings.logo}`"
-            fit="fit"
+            fit="fill"
           />
           <el-divider />
           <table width="90%">
@@ -24,7 +24,7 @@
               <td>Class </td><td><strong>{{ fee.student.stdclasses.name }}</strong></td>
             </tr>
             <tr>
-              <td>Fee Period </td><td><strong>{{ fee.payment_from_date | monthformat }} To {{ fee.payment_to_date | monthformat }}</strong></td>
+              <td>Fee Period </td><td><strong>{{ monthformat(fee.payment_from_date) }} To {{ monthformat(fee.payment_to_date)}}</strong></td>
             </tr>
           </table>
           <table align="left">
@@ -54,11 +54,14 @@
           <el-image
             style="height:220px"
             :src="`uploads/${settings.logo}`"
-            fit="fit"
+            fit="fill"
           />
           <el-divider />
           <table width="90%">
-            <tr style="padding:5px"><td>Admin Copy</td><td>Print Date: {{ todayDateTime() }}</td></tr>
+            <tr style="padding:5px">
+              <td>Admin Copy</td>
+              <td>Print Date: {{ todayDateTime() }}</td>
+            </tr>
           </table>
           <table id="info" align="left" style="font-size: 14px;font-weight: normal;text-align: left; width:90%">
             <tr>
@@ -71,7 +74,7 @@
               <td>Class </td><td><strong>{{ fee.student.stdclasses.name }}</strong></td>
             </tr>
             <tr>
-              <td>Fee Period </td><td><strong>{{ fee.payment_from_date | monthformat }} To {{ fee.payment_to_date | monthformat }}</strong></td>
+              <td>Fee Period </td><td><strong>{{ monthformat(fee.payment_from_date) }} To {{ monthformat(fee.payment_to_date) }}</strong></td>
             </tr>
           </table>
           <table align="left">
@@ -101,7 +104,7 @@
           <el-image
             style="height:220px"
             :src="`uploads/${settings.logo}`"
-            fit="fit"
+            fit="fill"
           />
           <el-divider />
           <table width="90%">
@@ -118,7 +121,7 @@
               <td>Class </td><td><strong>{{ fee.student.stdclasses.name }}</strong></td>
             </tr>
             <tr>
-              <td>Fee Period </td><td><strong>{{ fee.payment_from_date | monthformat }} To {{ fee.payment_to_date | monthformat }}</strong></td>
+              <td>Fee Period </td><td><strong>{{ monthformat(fee.payment_from_date) }} To {{ monthformat(fee.payment_to_date)}}</strong></td>
             </tr>
           </table>
           <table id="other-details" align="left">
@@ -217,6 +220,9 @@ export default {
     this.local_feeid = this.feeid;
   },
   methods: {
+    monthformat: (date) => {
+      return (!date) ? '' : moment(date).format('MMM, YYYY');
+    },
     handleClose() {
       this.doneFeePrint();
     },

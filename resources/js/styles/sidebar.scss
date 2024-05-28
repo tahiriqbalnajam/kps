@@ -72,8 +72,13 @@
       }
     }
 
+    .is-active {
+      color: $subMenuActiveText !important;
+      background-color: $menuActiveBG !important;
+    }
     .is-active>.el-submenu__title {
       color: $subMenuActiveText !important;
+      background-color: $menuActiveBG !important;
     }
 
     & .nest-menu .el-submenu>.el-submenu__title,

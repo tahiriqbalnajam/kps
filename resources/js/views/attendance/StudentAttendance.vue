@@ -76,9 +76,14 @@ export default {
         limit: 15,
         keyword: '',
         role: '',
+        filter: {},
       },
       classquery: {
         stdclass: '',
+      },
+      attenquery: {
+        stdclass: '',
+        month: '',
       },
     };
   },
@@ -92,6 +97,7 @@ export default {
     async getList() {
       const { data } = await classPro.list(this.query);
       this.classes = data.classes.data;
+      
     },
     todayDate() {
       var today = new Date();
@@ -102,8 +108,11 @@ export default {
       return today;
     },
     async getStudent() {
-      this.classquery.stdclass = this.studentclass;
-      const { data } = await studentPro.list(this.classquery);
+      this.query.filter.id = this.studentclass;
+      const { data } = await studentPro.list(this.query);
+      // this.attenquery.month = this.attendance.date;
+      // this.attenquery.stdclass = this.studentclass;
+      // const { data } = await attendPro.list(this.attenquery);
       this.attendance.students = data.students.data.map(std => {
         return { ...std, 'attendance': 'Present' };
       });

@@ -34,7 +34,8 @@ class StudentController extends Controller
                                         AllowedFilter::partial('parent_name', 'parents.name'),
                                         AllowedFilter::exact('stdclass', 'stdclasses.id')
                                     ])
-                    ->paginate($limit);
+                    ->paginate($limit)
+                    ->appends(request()->query());;
         return response()->json(new JsonResponse(['students' => $students]));
     }
 

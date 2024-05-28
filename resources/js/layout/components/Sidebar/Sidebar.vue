@@ -10,9 +10,6 @@
         :collapse="!isCollapse"
         :unique-opened="false"
         :collapse-transition="false"
-        :background-color="scssJson.menuBg"
-        :text-color="scssJson.menuText"
-        :active-text-color="scssJson.menuActiveText"
         mode="vertical"
       >
         <sidebar-item v-for="route in routes" :key="route.path" :item="route" :base-path="route.path" />

@@ -49,6 +49,8 @@
     <el-card class="box-card">
   <el-table
           :data="list"
+          height="500"
+          stripe 
           style="width: 100%"
           v-loading="listloading"
           @selection-change="handleSelectionChange"
@@ -113,7 +115,21 @@
         <el-button :disabled="multiStudentOption.changeClass == ''" type="primary" @click="changeClass()" >Change Class</el-button>
       </span>
     </el-dialog>
-    <pagination v-show="total>0" :total="total" :page.sync="query.page" :limit.sync="query.limit" @pagination="getList" />
+    <div class="demo-pagination-block">
+      <el-pagination
+        v-show="total>0"
+        v-model:current-page="query.page"
+        v-model:page-size="query.limit"
+        :page-sizes="[10, 15, 20, 30, 50, 100]"
+        :small="small"
+        :disabled="disabled"
+        background="white"
+        layout="total, sizes, prev, pager, next, jumper"
+        :total="total"
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
+      />
+    </div>
     <add-student  :if="addstudentpop" :addeditstudentprop="addstudentpop" :stdid="stdid" @closeAddStudent="closeAddStudent()"/>
     <pay-fee v-if="openpayfee" :openpayfee="openpayfee" :stdid="stdid" @donePayFee="donePayFee" />
     <fee-detail v-if="openfeedetail" :openfeedetail="openfeedetail" :stdid="studentid" @doneFeeDetail="doneFeeDetail" />
@@ -203,6 +219,15 @@ export default {
     this.getClasses();
   },
   methods: {
+    async handleSizeChange (val) {
+      console.log(`每页 ${val} 条`);
+      this.query.limit = val
+      await this.getList()
+    },
+    async handleCurrentChange (val) {
+      this.query.page = val
+      await this.getList()
+    },
     upperFirst(txt) {
       if (txt) {
         return txt.charAt(0).toUpperCase() + txt.slice(1)
@@ -261,7 +286,7 @@ export default {
     handleFilter() {
       this.getList();
     },
-    handleEdit(id, name) {
+    handleEdit(id) {
       this.stdid = id;
       this.addstudentpop = true;
     },
@@ -362,5 +387,11 @@ export default {
   },
 };
 </script>
-<style  scoped>
+<style scoped>
+.demo-pagination-block {
+  margin-top: 10px;
+}
+.demo-pagination-block .demonstration {
+  margin-bottom: 16px;
+}
 </style>

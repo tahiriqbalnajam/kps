@@ -8,12 +8,11 @@
     <title>IDLSchool</title>
     <link rel="shortcut icon" href="{{ asset('favicon.ico') }}">
     <meta name="theme-color" content="#ffffff">
+    {{ vite_assets() }}
 </head>
 <body>
 <div id="app">
 </div>
-
-{{ vite_assets() }}
 
 @if(config('content.google.open'))
     <!-- Global site tag (gtag.js) - Google Analytics -->

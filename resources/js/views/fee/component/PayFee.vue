@@ -152,6 +152,7 @@ export default {
         id: '',
         role: '',
         pending: true,
+        filter: {},
       },
     };
   },
@@ -168,7 +169,7 @@ export default {
   },
   created() {
     this.feeTypesList();
-    this.query.id = this.stdid;
+    this.query.filter.id = this.stdid;
     this.getsetStudent();
   },
   methods: {

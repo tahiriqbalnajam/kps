@@ -88,6 +88,9 @@
     >
       <div class="demo-drawer__content">
         <el-form :model="teacher">
+          <el-divider content-position="left">
+            <el-tag type="primary" effect="dark" round>Basic Info</el-tag>
+          </el-divider>
           <el-form-item label="Name" :label-width="formLabelWidth">
             <el-input v-model="teacher.name" autocomplete="off" />
           </el-form-item>

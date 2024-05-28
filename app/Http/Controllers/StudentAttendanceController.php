@@ -27,10 +27,20 @@ class StudentAttendanceController extends Controller
         $date = $request->month;
         $start_month = Carbon::createFromFormat('Y-m-d', $date)->firstOfMonth()->format('Y-m-d');
         $end_month = Carbon::createFromFormat('Y-m-d', $date)->lastOfMonth()->format('Y-m-d');
-        $attendance = StudentAttendance::where('class_id', $class_id)
-                                        ->whereBetween('attendance_date',array($start_month,$end_month))
-                                        ->orderBy('student_id')
-                                        ->get();
+        // $attendance = StudentAttendance::where('class_id', $class_id)
+        //                                 ->whereBetween('attendance_date',array($start_month,$end_month))
+        //                                 ->orderBy('student_id')
+        //                                 ->get();
+
+        $students = QueryBuilder::for(Student::class)
+                    ->with('parents','stdclasses','class_session')
+                    ->allowedFilters(['id','name', 'roll_no', 'adminssion_number', 
+                                        AllowedFilter::partial('parent_phone', 'parents.phone'),
+                                        AllowedFilter::partial('parent_name', 'parents.name'),
+                                        AllowedFilter::exact('stdclass', 'stdclasses.id')
+                                    ])
+                    ->paginate($limit)
+                    ->appends(request()->query());;
 
         $students = Student::with(['attend' => function($query) use($class_id, $start_month, $end_month){
             return $query->where('class_id', $class_id)->whereBetween('attendance_date',array($start_month,$end_month));

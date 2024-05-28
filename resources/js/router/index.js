@@ -61,37 +61,6 @@ export const constantRoutes = [
         name: 'Character Certificate',
         meta: { title: 'Character Certificate',bootstrapIcon: 'mortarboard', icon: 'people', noCache: true },
       },
-      {
-        path: '/attendance',
-        redirect: '/attendance/add',
-        meta: { title: 'Attendance', bootstrapIcon: 'calendar-check-fill', noCache: true },
-        children: [
-          {
-            path: 'add',
-            component: () => import('@/views/attendance/StudentAttendance.vue'),
-            name: 'Add Attendance',
-            meta: { title: 'Add Attendance', bootstrapIcon: 'calendar-plus', noCache: true },
-          },
-          {
-            path: 'student-report',
-            component: () => import('@/views/attendance/StudentAttReport.vue'),
-            name: 'Monthly/Classwise',
-            meta: { title: 'Monthly/Classwise', bootstrapIcon: 'calendar3', noCache: true },
-          },
-          {
-            path: 'daily-classwise',
-            component: () => import('@/views/attendance/AttReportDailyClasswise.vue'),
-            name: 'Daily/Classwise',
-            meta: { title: 'Daily/Classwise', bootstrapIcon: 'calendar3-range', noCache: true },
-          },
-          {
-            path: 'student-yearly',
-            component: () => import('@/views/attendance/AttReportStudentYearly.vue'),
-            name: 'Student Monthly',
-            meta: { title: 'Student Attendance Per Month', bootstrapIcon: 'calendar3-range', noCache: true },
-          },
-        ],
-      },
     ],
   },
   {
@@ -173,10 +142,30 @@ export const constantRoutes = [
         meta: { title: 'Teachers', bootstrapIcon: 'person-lines-fill', noCache: true },
       },
       {
+        path: 'teacher-pay',
+        component: () => import('@/views/teachers/TeacherPay.vue'),
+        name: 'Teacher Pay',
+        meta: { title: 'Pay', bootstrapIcon: 'currency-exchange', noCache: true },
+      }
+    ],
+  },
+  {
+    path: '/attendance',
+    component: Layout,
+    redirect: '/attendance/add',
+    meta: { title: 'Attendance', bootstrapIcon: 'calendar-check-fill', noCache: true },
+    children: [
+      {
+        path: 'add',
+        component: () => import('@/views/attendance/StudentAttendance.vue'),
+        name: 'Mark Students Attendance',
+        meta: { title: 'Mark Students Attendance', bootstrapIcon: 'calendar-plus', noCache: true },
+      },
+      {
         path: 'attendance',
         component: () => import('@/views/teachers/AddAttendance.vue'),
-        name: 'Attendance',
-        meta: { title: 'Attendance', bootstrapIcon: 'calendar3', noCache: true },
+        name: 'Mark Teacher Attendance',
+        meta: { title: 'Mark Teacher Attendance', bootstrapIcon: 'calendar3', noCache: true },
       },
       {
         path: 'teacher-att-report',
@@ -185,11 +174,23 @@ export const constantRoutes = [
         meta: { title: 'Att Report', bootstrapIcon: 'calendar-check-fill', noCache: true },
       },
       {
-        path: 'teacher-pay',
-        component: () => import('@/views/teachers/TeacherPay.vue'),
-        name: 'Teacher Pay',
-        meta: { title: 'Pay', bootstrapIcon: 'currency-exchange', noCache: true },
-      }
+        path: 'student-report',
+        component: () => import('@/views/attendance/StudentAttReport.vue'),
+        name: 'Monthly/Classwise',
+        meta: { title: 'Monthly/Classwise', bootstrapIcon: 'calendar3', noCache: true },
+      },
+      {
+        path: 'daily-classwise',
+        component: () => import('@/views/attendance/AttReportDailyClasswise.vue'),
+        name: 'Daily/Classwise',
+        meta: { title: 'Daily/Classwise', bootstrapIcon: 'calendar3-range', noCache: true },
+      },
+      {
+        path: 'student-yearly',
+        component: () => import('@/views/attendance/AttReportStudentYearly.vue'),
+        name: 'Student Monthly',
+        meta: { title: 'Student Attendance Per Month', bootstrapIcon: 'calendar3-range', noCache: true },
+      },
     ],
   },
   {
