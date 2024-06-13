@@ -2,64 +2,65 @@
   <div class="app-container">
     <div class="filter-container">
         <head-controls>
-          <el-form-item>
-            <el-col :span="4">
-              <el-select v-model="query.filtercol" placeholder="Class" class="filter-item">
-                <el-option v-for="filter in filtercol" :key="filter.col" :label="filter.display | uppercaseFirst" :value="filter.col" />
-              </el-select>
-            </el-col>
-            <el-col :span="3">
-              <el-input v-model="query.keyword" placeholder="Parent info" class="filter-item" v-on:input="debounceInput" />
-            </el-col>
-            <el-col :span="1">
-              <el-button  class="filter-item" type="primary" :icon="Search"  @click="handleFilter">
-                {{ $t('table.search') }}
-              </el-button>
-            </el-col>
-            <el-col :span="2">
-              <el-tooltip content="Add Student" placement="top">
-                <el-button class="filter-item" style="margin-left: 10px;" type="success" :icon="User" @click="addStudentFunc()">
-                  <el-icon><CirclePlus /></el-icon>
-                </el-button>
-              </el-tooltip>
-            </el-col>
-            <el-col :span="2">
-              <el-tooltip content="Add Parent" placement="top">
-                <el-button class="filter-item" style="margin-left: 10px;" type="info" :icon="Plus" @click="addparentpop = true" >
-                  <el-icon :size="15"><Plus /></el-icon>
-                </el-button>
-              </el-tooltip>
-            </el-col>
-            <el-col :span="2">
-              <el-tooltip content="Parent Excel" placement="top">
-                <el-button class="filter-item" :loading="downloadLoading"  type="danger" :icon="Search"  @click="handleDownload">
-                  <el-icon><Download /></el-icon>
-              </el-button>
-              </el-tooltip>
-            </el-col>
-            <el-col :span="2">
-              <el-button :disabled="multiStudentOption.multiStudent.length <= 0" class="filter-item"  style="margin-left: 10px;" type="warning" :icon="Edit"  @click="dialogVisible = true">
-                Change Class
-              </el-button>
-            </el-col>
-          </el-form-item>
+            <el-row :gutter="20" justify="space-between">
+              <el-col :span="12">
+                <el-row :gutter="20">
+                  <el-col :span="6">
+                    <el-select v-model="query.filtercol" placeholder="Class" class="filter-item">
+                      <el-option v-for="filter in filtercol" :key="filter.col" :label="filter.display | uppercaseFirst" :value="filter.col" />
+                    </el-select>
+                  </el-col>
+                  <el-col :span="10">
+                    <el-input v-model="query.keyword" placeholder="Parent info" class="filter-item" v-on:input="debounceInput" />
+                  </el-col>
+                  <el-col :span="6">
+                    <el-button  class="filter-item" type="primary" :icon="Search"  @click="handleFilter">
+                      {{ $t('table.search') }}
+                    </el-button>
+                  </el-col>
+                </el-row>
+              </el-col>
+              <el-col :span="12">
+                <el-row justify="end">
+                  <el-col :span="3">
+                    <el-tooltip content="Add Parent" placement="top">
+                      <el-button class="filter-item" style="margin-left: 10px;" type="info" :icon="Plus" @click="addparentpop = true" >
+                        <el-icon :size="15"><Plus /></el-icon>
+                      </el-button>
+                    </el-tooltip>
+                  </el-col>
+                  <el-col :span="3">
+                    <el-tooltip content="Parent Excel" placement="top">
+                      <el-button class="filter-item" :loading="downloadLoading"  type="danger" :icon="Search"  @click="handleDownload">
+                        <el-icon><Download /></el-icon>
+                    </el-button>
+                    </el-tooltip>
+                  </el-col>
+                </el-row>
+              </el-col>
+            </el-row>
         </head-controls> 
     </div>
     <el-table
       :data="parents"
       style="width: 100%"
+       max-height="450"
     >
       <el-table-column label="ID" prop="id" />
       <el-table-column label="Name" prop="name" />
       <el-table-column label="Phone" prop="phone" />
       <el-table-column label="Address" prop="address" />
-      <el-table-column label="Profession" prop="profession" />
       <el-table-column label="CNIC" prop="cnic" />
+      <el-table-column label="Children" prop="children">
+        <template #default="scope">
+         <span v-for="child in scope.row.students" :key="child.id">{{ child.name + ',' }}</span>
+        </template>
+      </el-table-column>
       <el-table-column align="right">
-        <template slot="header" slot-scope="scope">
+        <template #header="scope">
           <el-input ref="search" v-model="query.keyword" size="mini" placeholder="Type to search"  v-on:input="debounceInput" />
         </template>
-        <template slot-scope="scope">
+        <template #default="scope">
           <el-button
             size="mini"
             @click="handleEdit(scope.row.id, scope.row.name)"
@@ -72,22 +73,34 @@
         </template>
       </el-table-column>
     </el-table>
-    <pagination v-show="total>0" :total="total" :page.sync="query.page" :limit.sync="query.limit" @pagination="getList" />
+    <div class="demo-pagination-block">
+      <el-pagination
+        v-show="total>0"
+        v-model:current-page="query.page"
+        v-model:page-size="query.limit"
+        :page-sizes="[10, 15, 20, 30, 50, 100]"
+        :small="small"
+        :disabled="disabled"
+        background="white"
+        layout="total, sizes, prev, pager, next, jumper"
+        :total="total"
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
+      />
+    </div>
     <add-parent v-if="addparentpop" :editnowprop="addparentpop" :parentid="parentid" @closePopUp="closePopUp()" />
-    <add-student  :addeditstudentprop="addstudentpop" :stdid="stdid" @closeAddStudent="closeAddStudent()"/>
   </div>
 </template>
 <script>
 import Pagination from '@/components/Pagination/index.vue';
 import Resource from '@/api/resource';
 import AddParent from '@/views/parents/AddParent.vue';
-import AddStudent from '@/views/students/AddStudent.vue';
 import HeadControls from '@/components/HeadControls.vue';
 import { debounce } from 'lodash';
 const parentsPro = new Resource('parents');
 export default {
   name: 'ParentList',
-  components: { Pagination, AddParent, AddStudent},
+  components: { Pagination, AddParent, HeadControls},
   directives: { },
   filters: {
     dateformat: (date) => {
@@ -137,6 +150,15 @@ export default {
     }, 500),
     closeAddParent(parm) {
       this.addparentpop = false;
+    },
+    async handleSizeChange (val) {
+      console.log(`每页 ${val} 条`);
+      this.query.limit = val
+      await this.getList()
+    },
+    async handleCurrentChange (val) {
+      this.query.page = val
+      await this.getList()
     },
     async getList() {
       const { data } = await parentsPro.list(this.query);

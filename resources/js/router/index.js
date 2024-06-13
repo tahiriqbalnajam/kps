@@ -61,6 +61,13 @@ export const constantRoutes = [
         name: 'Character Certificate',
         meta: { title: 'Character Certificate',bootstrapIcon: 'mortarboard', icon: 'people', noCache: true },
       },
+      {
+        path: 'report/:id',
+        hidden: true,
+        component: () => import('@/views/students/StudentReport.vue'),
+        name: 'Student Report',
+        meta: { title: 'Student Report', icon: 'people', noCache: true },
+      },
     ],
   },
   {

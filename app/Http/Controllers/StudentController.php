@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Response;
+use App\Models\User;
 use App\Models\Classes;
 use App\Models\Parents;
 use App\Models\Student;
@@ -29,10 +30,11 @@ class StudentController extends Controller
         $limit = Arr::get($searchParams, 'limit', static::ITEM_PER_PAGE);        
         $students = QueryBuilder::for(Student::class)
                     ->with('parents','stdclasses','class_session')
-                    ->allowedFilters(['id','name', 'roll_no', 'adminssion_number', 
+                    ->allowedFilters(['id','name', 'roll_no', 'adminssion_number', 'is_orphan', 'pef_admission', 'nadra_pending','gender',
                                         AllowedFilter::partial('parent_phone', 'parents.phone'),
                                         AllowedFilter::partial('parent_name', 'parents.name'),
-                                        AllowedFilter::exact('stdclass', 'stdclasses.id')
+                                        AllowedFilter::exact('stdclass', 'stdclasses.id'),
+
                                     ])
                     ->paginate($limit)
                     ->appends(request()->query());;
@@ -93,7 +95,22 @@ class StudentController extends Controller
      */
     public function store(Request $request)
     {
-        Student::create($request->all());
+        DB::beginTransaction();
+
+        try {
+            $user['name'] = $request->name;
+            $user['email'] = $request->name.rand(10,100).'@idlschool.com';
+            $user['password'] = bcrypt($request['password']);
+            $user_id = User::create($user)->id;
+            $request->merge(['user_id' => $user_id]);
+            $student = Student::create($request->all());
+
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollback();
+            throw $e;
+
+        }
     }
 
     /**

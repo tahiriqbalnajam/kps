@@ -1,16 +1,22 @@
 <?php
 namespace App\Models;
-use Parental\HasParent;
+use Illuminate\Database\Eloquent\Model;
 
-class Teacher extends User {
+class Teacher extends Model {
 
-    use HasParent;
     
     protected $fillable = [
-        'type','name', 'email','sex','birthday', 'password', 'status', 'gender', 'dob', 'education', 'cnic', 'pay','address', 'phone', 'profession' 
+        'user_id','class_id','name', 'father_name','father_cnic', 'doj','education', 'experience', 'gender', 
+        'pay', 'cnic', 'address', 'phone', 'profession','active'
     ];
+
+
     public function attendance() {
         return $this->hasMany(TeacherAttendance::class);
+    }
+
+    public function user(){
+        return $this->belongsTo(User::class,'user_id');
     }
 
 }

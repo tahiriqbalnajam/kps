@@ -23,28 +23,29 @@ class StudentAttendanceController extends Controller
      */
     public function index(Request $request)
     {
-        $class_id = $request->class;
+        $class_id = $request->stdclass;
         $date = $request->month;
         $start_month = Carbon::createFromFormat('Y-m-d', $date)->firstOfMonth()->format('Y-m-d');
         $end_month = Carbon::createFromFormat('Y-m-d', $date)->lastOfMonth()->format('Y-m-d');
-        // $attendance = StudentAttendance::where('class_id', $class_id)
-        //                                 ->whereBetween('attendance_date',array($start_month,$end_month))
-        //                                 ->orderBy('student_id')
-        //                                 ->get();
+       
+        $attendance = StudentAttendance::where('class_id', $class_id)
+                                        ->whereBetween('attendance_date',array($start_month,$end_month))
+                                        ->orderBy('student_id')
+                                        ->get();
 
-        $students = QueryBuilder::for(Student::class)
-                    ->with('parents','stdclasses','class_session')
-                    ->allowedFilters(['id','name', 'roll_no', 'adminssion_number', 
-                                        AllowedFilter::partial('parent_phone', 'parents.phone'),
-                                        AllowedFilter::partial('parent_name', 'parents.name'),
-                                        AllowedFilter::exact('stdclass', 'stdclasses.id')
-                                    ])
-                    ->paginate($limit)
-                    ->appends(request()->query());;
+        // $students = QueryBuilder::for(Student::class)
+        //             ->with('parents','stdclasses','class_session')
+        //             ->allowedFilters(['id','name', 'roll_no', 'adminssion_number', 
+        //                                 AllowedFilter::partial('parent_phone', 'parents.phone'),
+        //                                 AllowedFilter::partial('parent_name', 'parents.name'),
+        //                                 AllowedFilter::exact('stdclass', 'stdclasses.id')
+        //                             ])
+        //             ->paginate($limit)
+        //             ->appends(request()->query());
 
-        $students = Student::with(['attend' => function($query) use($class_id, $start_month, $end_month){
-            return $query->where('class_id', $class_id)->whereBetween('attendance_date',array($start_month,$end_month));
-        }])->where('class_id', $class_id)->select('roll_no','name','id')->get();
+        // $students = Student::with(['attend' => function($query) use($class_id, $start_month, $end_month){
+        //     return $query->where('class_id', $class_id)->whereBetween('attendance_date',array($start_month,$end_month));
+        // }])->where('class_id', $class_id)->select('roll_no','name','id')->get();
 
         // $period = CarbonPeriod::create($start_month, $end_month);
         // $attend = array();
@@ -63,8 +64,20 @@ class StudentAttendanceController extends Controller
         // Iterate over the period
         
         
-        return response()->json(new JsonResponse(['students' => $students]));
+         return response()->json(new JsonResponse(['attendance' => $attendance]));
 
+    }
+
+    public function attendance_student_monthly(Request $request) {
+        $student_id = $request->student_id;
+        $date = $request->month;
+        $start_month = Carbon::createFromFormat('Y-m-d', $date)->firstOfMonth()->format('Y-m-d');
+        $end_month = Carbon::createFromFormat('Y-m-d', $date)->lastOfMonth()->format('Y-m-d');
+        $attendance = StudentAttendance::where('student_id', $student_id)
+                                        ->whereBetween('attendance_date',array($start_month,$end_month))
+                                        ->orderBy('attendance_date')
+                                        ->get();
+        return response()->json(new JsonResponse(['attendance' => $attendance]));
     }
 
     public function student_att_report(Request $request) {
@@ -95,6 +108,8 @@ class StudentAttendanceController extends Controller
     public function store(Request $request)
     {
         $date = $request->date;
+        $stdclass = $request->stdclass;
+        StudentAttendance::where(['attendance_date'=> $date, 'class_id' => $stdclass])->delete();
         $students = $request->students;
         foreach($students as $data){
             $attendance[] = [

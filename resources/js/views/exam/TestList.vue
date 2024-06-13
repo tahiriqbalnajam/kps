@@ -2,7 +2,7 @@
   import HeadControls from '@/components/HeadControls.vue';
   import AddTest from '@/views/exam/AddTest.vue';
   import Pagination from '@/components/Pagination/index.vue';
-  import { ElNotification, ElMessage, ElMessageBox, ElPrint } from 'element-plus'
+  import { ElNotification, ElMessage, ElMessageBox } from 'element-plus'
   import { onMounted, ref } from "vue";
   import { reactive } from 'vue';
   import moment from 'moment';
@@ -21,7 +21,7 @@
     type: [],
     resource: '',
     desc: '',
-  })
+  });
   const organizedResultsclass = ref({});
   const organizedResultsstd = ref({});
 
@@ -381,9 +381,8 @@
 
 
 <style  scoped>
-.rdata_result_examname {
-    /* border: none !important; */
-    box-shadow: none;
-}
+  .rdata_result_examname {
+      box-shadow: none;
+  }
 </style>
 

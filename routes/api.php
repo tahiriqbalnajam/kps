@@ -27,6 +27,7 @@ Route::get('sendsms', 'SmsQueueController@sendsms');
 Route::post('change_status', 'SmsQueueController@change_status');
 Route::apiResource('dashboard', 'dashboardController');
 Route::apiResource('attendance', 'StudentAttendanceController');
+Route::apiResource('attendance_student_monthly', 'StudentAttendanceController@attendance_student_monthly');
 Route::get('student_att_report', 'StudentAttendanceController@student_att_report');
 Route::post('check_salary_generated', 'TeacherAttendanceController@check_salary_generated');
 Route::post('pay_salary', 'TeacherAttendanceController@pay_salary');

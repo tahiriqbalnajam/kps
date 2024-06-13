@@ -8,14 +8,16 @@
     <el-table
       :data="classes"
       style="width: 100%"
+      max-height="500"
     >
       <el-table-column label="ID" prop="id" />
       <el-table-column label="Name" prop="name" />
+      <el-table-column label="Total Students" prop="total_students" />
       <el-table-column align="right">
-        <template slot="header" slot-scope="scope">
+        <template #header="scope">
           <el-input ref="search" v-model="query.keyword" size="mini" placeholder="Type to search" v-on:input="debounceInput" />
         </template>
-        <template slot-scope="scope">
+        <template #default="scope">
           <el-button
             size="mini"
             @click="handleEdit(scope.row.id, scope.row.name)"

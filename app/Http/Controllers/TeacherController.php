@@ -20,7 +20,9 @@ class TeacherController extends Controller
 {
     const ITEM_PER_PAGE = 1000;
 
-    private $column_select = array('id','name', 'gender', 'education', 'pay', 'dob', 'cnic', 'phone', 'address');
+    private $column_select = array('id','class_id', 'name', 'father_name','father_cnic',
+                                    'doj','education', 'experience', 'gender',
+                                    'pay', 'cnic', 'address', 'phone','status');
 
     public function index(Request $request)
     {
@@ -70,38 +72,29 @@ class TeacherController extends Controller
         } else {
         $params = $request->all();
             DB::beginTransaction();
-            $user = Teacher::create([
-                'name' => $params['name'],
-                'email' => 'teacher@school.test',
-                'password' => Hash::make('teacher123'),
-                'sex' => '0',
-                'education' => $params['education'],
-                'gender' => $params['gender'],
-                'pay' => $params['pay'],
-                'cnic' => $params['cnic'],
-                'phone' => $params['phone'],
-                'address' => $params['address'],
-                'dob' => $params['dob'] ?? null,
-                'description' => $params['description'] ?? ''
-            ]);
+            $user['name'] = $request->name;
+            $user['email'] = $request->name.rand(10,100).'@idlschool.com';
+            $user['password'] = bcrypt($request['password']);
+            $user = User::create($user);
+            $teacher = Teacher::create($request->all() + ['user_id' => $user->id]);
             $role = Role::findByName('teacher');
             $user->syncRoles($role);
             $loginUser = Auth::user();            
             DB::commit();
-            return response()->json(new JsonResponse(['teacher' => $user]));
+            return response()->json(new JsonResponse(['teacher' =>  $teacher]));
         }
         
     }
 
     public function show($id)
     {
-        $user = User::select($this->column_select)->where('id', $id)->get();
-        return response()->json(new JsonResponse(['teacher' => $user]));
+        $teacher = Teacher::select($this->column_select)->where('id', $id)->get();
+        return response()->json(new JsonResponse(['teacher' => $teacher]));
     }
 
     public function update(Request $request, $id)
     {
-        $user = User::where('id', $id)->update($request->all());
+        $user = Teacher::where('id', $id)->update($request->all());
         return response()->json(new JsonResponse(['teacher' => $user]));
     }
 

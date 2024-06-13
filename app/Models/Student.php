@@ -6,7 +6,13 @@ use Illuminate\Database\Eloquent\Model;
 
 class Student extends Model
 {
-    protected $fillable = ['roll_no','name', 'adminssion_number', 'parent_id','class_id','session_id','dob', 'b_form','gender','monthly_fee','subling','religion','status'];
+    protected $fillable = ['roll_no','name','user_id', 'adminssion_number', 'parent_id','class_id','session_id','dob', 
+                            'doa','is_orphan','pef_admission','cast','previous_school','b_form','gender','monthly_fee',
+                            'sibling','religion','status','action_required','action_details','nadra_pending'];
+
+    public function user(){
+        return $this->belongsTo(User::class,'user_id');
+    }
 
     public function parents(){
 

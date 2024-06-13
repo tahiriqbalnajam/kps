@@ -1,7 +1,7 @@
 <template>
   <div class="app-container">
     <div class="filter-container">
-      <el-select v-model="studentclass" placeholder="Select class" @change="getStudent">
+      <el-select v-model="attendance.stdclass" placeholder="Select class" @change="getStudent">
         <el-option
           v-for="stdclass in classes"
           :key="stdclass.id"
@@ -27,18 +27,20 @@
     <el-table
       :data="attendance.students"
       style="width: 100%"
+      max-height="500"
       :stripe="true"
       :border="true"
       empty-text="Select a class first!"
+      size="small"
     >
       <el-table-column label="Roll No." prop="roll_no" />
       <el-table-column label="Student Name" prop="name" />
       <el-table-column>
-        <template #default="scope">
+        <template  #default="scope">
           <el-radio-group v-model="scope.row.attendance" size="small" text-color="" :fill="(scope.row.attendance == 'Present') ? '#67c23a' : (scope.row.attendance == 'Absent') ? '#f56c6c' : '#909399'">
-            <el-radio-button label="Present" />
-            <el-radio-button label="Absent" />
-            <el-radio-button label="Leave" />
+            <el-radio-button label="Present" value="present" />
+            <el-radio-button label="Absent" value="absent"/>
+            <el-radio-button label="Leave" value="leave"/>
           </el-radio-group>
         </template>
       </el-table-column>
@@ -60,7 +62,6 @@ export default {
     return {
       classes: [],
       attendance_day: 'Week day',
-      studentclass: null,
       search: '',
       total: 0,
       loading: false,
@@ -69,11 +70,12 @@ export default {
       formLabelWidth: 250,
       attendance: {
         students: [],
+        stdclass: '',
         date: this.todayDate(),
       },
       query: {
         page: 1,
-        limit: 15,
+        limit: 1000,
         keyword: '',
         role: '',
         filter: {},
@@ -108,12 +110,22 @@ export default {
       return today;
     },
     async getStudent() {
-      this.query.filter.id = this.studentclass;
+      this.query.filter.stdclass = this.attenquery.stdclass = this.attendance.stdclass;
       const { data } = await studentPro.list(this.query);
-      // this.attenquery.month = this.attendance.date;
-      // this.attenquery.stdclass = this.studentclass;
-      // const { data } = await attendPro.list(this.attenquery);
+      this.attenquery.month = this.attendance.date;
+      const attenDD = await attendPro.list(this.attenquery);
+      const hasrec = Object.keys(attenDD.data.attendance).length
+      if(hasrec > 0) {
+        this.$alert('Attendance has already been submitted for this day.', 'Warning', {
+          confirmButtonText: 'OK',
+          type: 'warning'
+        });
+      }
       this.attendance.students = data.students.data.map(std => {
+        const atten = attenDD.data.attendance.find(att => att.student_id == std.id);
+        if(atten) {
+          return { ...std, 'attendance': atten.status[0].toUpperCase() + atten.status.slice(1) };
+        }
         return { ...std, 'attendance': 'Present' };
       });
     },
@@ -159,7 +171,7 @@ export default {
       await attendPro.store(this.attendance);
       this.$message.success('Attendance added successfully.');
       this.attendance.students = [];
-      this.studentclass = '';
+      this.attendance.stdclass = '';
     },
   },
 };

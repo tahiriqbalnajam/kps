@@ -25,7 +25,7 @@ class ParentController extends Controller
         $limit = Arr::get($searchParams, 'limit', static::ITEM_PER_PAGE);
         $filtercol = $request->get('filtercol');
         //DB::enableQueryLog(); // Enable query log
-        $parents = Parents::
+        $parents = Parents::with('students')->
                     when($keyword && !$filtercol, function ($query) use ($keyword) {
                        return $query->where('name', 'like', '%' . $keyword . '%');
                     })
@@ -47,7 +47,7 @@ class ParentController extends Controller
                         else
                             return $query->where('phone', 'like', '%' . $keyword . '%');
                     })
-                    ->paginate(30);
+                    ->paginate($limit);
                     //dd(DB::getQueryLog()); // Show results of log
         return response()->json(new JsonResponse(['parents' => $parents]));
     }

@@ -2,47 +2,69 @@
   <div class="app-container">
     <div class="filter-container">
       <head-controls>
-          <el-form-item>
-            <el-col :span="4">
-              <el-select v-model="query.filtercol" placeholder="Class" class="filter-item">
-                <el-option v-for="filter in filtercol" :key="filter.col" :label="upperFirst(filter.display)" :value="filter.col" />
-              </el-select>
-            </el-col>
-            <el-col :span="3">
-              <el-input v-model="query.keyword" placeholder="Student info" style="width: 200px;" class="filter-item" v-on:input="debounceInput" />
-            </el-col>
-            <el-col :span="3">
-              <el-select v-model="query.stdclass" placeholder="Class" clearable style="width: 130px" class="filter-item" @change="handleFilter">
-                <el-option v-for="item in classes" :key="item.id" :label="upperFirst(item.name)" :value="item.id" />
-              </el-select>
-            </el-col>
-            <el-col :span="2">
-              <el-button  class="filter-item" type="primary" :icon="Search"  @click="handleFilter">
-                {{ $t('table.search') }}
-              </el-button>
-            </el-col>
-            <el-col :span="2">
-              <el-tooltip content="Add Student" placement="top">
-                <el-button class="filter-item" style="margin-left: 10px;" type="success" :icon="User" @click="addStudentFunc()">
-                  <el-icon :size="15"><UserFilled /></el-icon>
-                </el-button>
-              </el-tooltip>
-            </el-col>
-            <el-col :span="2">
-              <el-tooltip content="Students Excel" placement="top">
-                <el-button class="filter-item" :loading="downloadLoading"  type="danger" :icon="Search"  @click="handleDownload">
-                  <el-icon><Download /></el-icon>
-                </el-button>
-              </el-tooltip>
-            </el-col>
-            <el-col :span="2">
-              <el-tooltip content="Change Class" placement="top">
-                <el-button :disabled="multiStudentOption.multiStudent.length <= 0" class="filter-item"  style="margin-left: 10px;" type="warning" :icon="Edit"  @click="dialogVisible = true">
-                  <el-icon><Sort /></el-icon>  
-                </el-button>
-              </el-tooltip>
-            </el-col>
-          </el-form-item>
+            <el-row :gutter="20" justify="space-between">
+              <el-col :span="14">
+                <el-row>
+                  <el-col :span="6"  :xs="14" :sm="12" :md="10" :lg="6" :xl="6">
+                    <el-select v-model="query.filtercol" placeholder="Class" class="filter-item">
+                      <el-option v-for="filter in filtercol" :key="filter.col" :label="upperFirst(filter.display)" :value="filter.col" />
+                    </el-select>
+                  </el-col>
+                  <el-col :span="6"  :xs="14" :sm="12" :md="10" :lg="8" :xl="6">
+                    <el-input v-model="query.keyword" placeholder="Student info" style="width: 200px;" class="filter-item" v-on:input="debounceInput" clearable />
+                  </el-col>
+                  <el-col :span="4"  :xs="14" :sm="12" :md="10" :lg="6" :xl="4">
+                    <el-select v-model="query.stdclass" placeholder="Class" clearable style="width: 130px" class="filter-item" @change="handleFilter">
+                      <el-option v-for="item in classes" :key="item.id" :label="upperFirst(item.name)" :value="item.id" />
+                    </el-select>
+                  </el-col>
+                  <el-col :span="2"  :xs="14" :sm="12" :md="10" :lg="3" :xl="3">
+                    <el-select
+                      v-model="query.morefilters"
+                      multiple
+                      placeholder="Select more filter"
+                      style="width: 240px"
+                      @change="handleFilter"
+                    >
+                      <el-option label="Male" value="gender_male"/>
+                      <el-option label="Female" value="gender_female"/>
+                      <el-option label="Is Orphan" value="is_orphan"/>
+                      <el-option label="PEF Adm Pedning" value="pef_admission_pending"/>
+                      <el-option label="PEF Adm Done" value="pef_admission_done"/>
+                      <el-option label="Nadra Pending" value="nadra_pending"/>
+                    </el-select>
+                    <!-- <el-button  class="filter-item" type="primary" :icon="Search"  @click="handleFilter">
+                      {{ $t('table.search') }}
+                    </el-button> -->
+                  </el-col>
+                </el-row>
+              </el-col>
+              <el-col :span="4"  :xs="6" :sm="6" :md="6" :lg="6" :xl="6">
+                <el-row justify="end">
+                  <el-col :span="6" :xs="6" :sm="6" :md="6" :lg="6" :xl="4">
+                    <el-tooltip content="Add Student" placement="top">
+                      <el-button class="filter-item" type="success" :icon="User" @click="addStudentFunc()">
+                        <el-icon :size="15"><UserFilled /></el-icon>
+                      </el-button>
+                    </el-tooltip>
+                  </el-col>
+                  <el-col :span="6"  :xs="6" :sm="6" :md="6" :lg="6" :xl="4">
+                    <el-tooltip content="Students Excel" placement="top">
+                      <el-button class="filter-item" :loading="downloadLoading"  type="danger" :icon="Search"  @click="handleDownload">
+                        <el-icon><Download /></el-icon>
+                      </el-button>
+                    </el-tooltip>
+                  </el-col>
+                  <el-col :span="6"  :xs="6" :sm="6" :md="6" :lg="6" :xl="4">
+                    <el-tooltip content="Change Class" placement="top">
+                      <el-button :disabled="multiStudentOption.multiStudent.length <= 0" class="filter-item"  type="warning" :icon="Edit"  @click="dialogVisible = true">
+                        <el-icon><Sort /></el-icon>  
+                      </el-button>
+                    </el-tooltip>
+                  </el-col>
+                </el-row>
+              </el-col>
+            </el-row>
         </head-controls>
       <el-alert title="Record Update" type="success" v-if="alertRec"> </el-alert>
     </div>
@@ -54,18 +76,31 @@
           style="width: 100%"
           v-loading="listloading"
           @selection-change="handleSelectionChange"
+          :table-layout="auto"
         >
         <el-table-column type="selection" width="55" />
        
-        <el-table-column label="Adm #" prop="adminssion_number" />
+        <el-table-column label="Adm #" prop="adminssion_number">
+          <template #default="scope">
+            <el-badge is-dot class="item" v-if="scope.row.action_required == 'Yes'">
+              <el-popover trigger="hover" placement="top">
+                <p>Action: {{ scope.row.action_details }}</p>
+                <template #reference>
+                  {{ scope.row.adminssion_number }}
+                </template>
+              </el-popover>
+            </el-badge>
+            <span v-else>{{  scope.row.adminssion_number }}</span>
+          </template>
+        </el-table-column>
         <el-table-column label="Name" prop="">
           <template #default="scope">
-            <el-popover trigger="hover" placement="top">
-              <p>B Form# {{ scope.row.b_form }}</p>
-              <template #reference>
-                {{ scope.row.name }}
-              </template>
-            </el-popover>
+              <el-popover trigger="hover" placement="top">
+                <p>B Form# {{ scope.row.b_form }}</p>
+                <template #reference>
+                  {{ scope.row.name }}
+                </template>
+              </el-popover>
           </template>
         </el-table-column>
         <el-table-column label="Parent" prop="parents.name" />
@@ -75,7 +110,7 @@
         <el-table-column label="Fee" prop="monthly_fee" />
         <el-table-column label="DOB">
           <template #default="scope">
-            {{ scope.row.dob | dateformat}}
+            {{ dateformat(scope.row.dob)}}
           </template>
         </el-table-column>
         <el-table-column align="right" fixed="right">
@@ -146,8 +181,10 @@ import {
   Message,
   Search,
   Star,
+  ArrowDown,
 } from '@element-plus/icons-vue'
 import moment from 'moment';
+import { debounce } from 'lodash';
 import Pagination from '@/components/Pagination/index.vue';
 import Resource from '@/api/resource';
 import PayFee from '@/views/fee/component/PayFee.vue';
@@ -165,9 +202,7 @@ export default {
   components: { Pagination, AddStudent,  PayFee, FeePrint, FeeDetail, HeadControls, CharacterCertificate, SchoolLeavingCertificate },
   directives: { },
   filters: {
-    dateformat: (date) => {
-      return (!date) ? '' : moment(date).format('DD MMM, YYYY');
-    },
+    
   },
   data() {
     return {
@@ -209,6 +244,7 @@ export default {
         filter: {},
         filtercol: 'name',
         stdclass: '',
+        morefilters: [],
       },
     };
   },
@@ -233,6 +269,9 @@ export default {
         return txt.charAt(0).toUpperCase() + txt.slice(1)
       }
     },
+    dateformat: (date) => {
+      return (!date) ? '' : moment(date).format('DD MMM, YYYY');
+    },
     handleCommand(command) {
       console.log(command);
       let info = command.split('~');
@@ -256,9 +295,9 @@ export default {
         this.SchoolLeavingCertificate(id);
       }
     },
-    debounceInput: function (e) {
+    debounceInput: debounce(function (e) {
       this.getList();
-    },
+    }, 500),
     async getList() {
       this.listloading = true;
       const filterKey = this.query.filtercol;
@@ -267,6 +306,20 @@ export default {
         [filterKey]: filterValue,
         ['stdclass']: this.query.stdclass,
       };
+      if(this.query.morefilters.length > 0) {
+        this.query.morefilters.forEach(filter => {
+          if(filter == 'gender_male')
+            this.query.filter['gender'] = 'Male';
+          else if(filter == 'gender_female')
+            this.query.filter['gender'] = 'Female';
+          else if(filter == 'pef_admission_done')
+            this.query.filter['pef_admission'] = 'Yes';
+          else if(filter == 'pef_admission_pending')
+            this.query.filter['pef_admission'] = 'No';
+          else 
+            this.query.filter[filter] = 'Yes';
+        });
+      }
       const { data } = await student.list(this.query);
       this.listloading = false;
       this.list = data.students.data;
