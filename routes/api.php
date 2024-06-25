@@ -26,13 +26,22 @@ Route::apiResource('smsqueue', 'SmsQueueController');
 Route::get('sendsms', 'SmsQueueController@sendsms');
 Route::post('change_status', 'SmsQueueController@change_status');
 Route::apiResource('dashboard', 'dashboardController');
+//student attendance
+Route::apiResource('has_student_attendance', 'StudentAttendanceController@has_student_attendance');
 Route::apiResource('attendance', 'StudentAttendanceController');
+Route::post('student_attendance_marked', 'StudentAttendanceController@student_attendance_marked');
+Route::post('student_monthly_attendance_report', 'StudentAttendanceController@student_monthly_attendance_report');
+Route::post('student_monthly_attendance_report', 'StudentAttendanceController@student_monthly_attendance_report');
+Route::post('student_daily_classwise_attendance_report', 'StudentAttendanceController@student_daily_classwise_attendance_report');
 Route::apiResource('attendance_student_monthly', 'StudentAttendanceController@attendance_student_monthly');
 Route::get('student_att_report', 'StudentAttendanceController@student_att_report');
+
+//teacher attendance
 Route::post('check_salary_generated', 'TeacherAttendanceController@check_salary_generated');
 Route::post('pay_salary', 'TeacherAttendanceController@pay_salary');
 Route::post('generate_pay', 'TeacherAttendanceController@generate_pay');
 Route::apiResource('teacher_attendance', 'TeacherAttendanceController');
+Route::apiResource('holidays', 'HolidayController');
 //Route::apiResource('exam_result', 'ExamController');
 Route::apiResource('examtest_result', 'ExamTestController');
 Route::apiResource('subjects', 'SubjectController');

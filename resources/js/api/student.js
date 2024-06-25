@@ -15,14 +15,6 @@ export function studentAttReport(data) {
   });
 }
 
-export function getDailyClasswise(data) {
-  return request({
-    url: '/getdailyclasswise',
-    method: 'post',
-    data,
-  });
-}
-
 export function editClass(stdData){
   return request({
     url: '/edit_class',

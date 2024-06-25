@@ -13,9 +13,16 @@ use Illuminate\Http\Request;
 use App\Laravue\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use App\Models\SmsQueue;
+use App\Services\Contracts\AttendanceServiceInterface;
 
 class StudentAttendanceController extends Controller
 {
+    protected $attendanceService;
+
+    public function __construct(AttendanceServiceInterface $attendanceService)
+    {
+        $this->attendanceService = $attendanceService;
+    }
     /**
      * Display a listing of the resource.
      *
@@ -31,7 +38,7 @@ class StudentAttendanceController extends Controller
         $attendance = StudentAttendance::where('class_id', $class_id)
                                         ->whereBetween('attendance_date',array($start_month,$end_month))
                                         ->orderBy('student_id')
-                                        ->get();
+                                        ->toSql();
 
         // $students = QueryBuilder::for(Student::class)
         //             ->with('parents','stdclasses','class_session')
@@ -66,6 +73,25 @@ class StudentAttendanceController extends Controller
         
          return response()->json(new JsonResponse(['attendance' => $attendance]));
 
+    }
+
+    public function student_attendance_marked(Request $request) {
+        $search = $request->all();
+        $attendance = $this->attendanceService->student_attendance_marked($search);
+        return response()->json(new JsonResponse(['attendance' => $attendance]));
+    }
+
+
+    public function student_daily_classwise_attendance_report(Request $request) {
+        $search = $request->all();
+        $attendance = $this->attendanceService->student_daily_classwise($search);
+        return response()->json(new JsonResponse(['attendance' => $attendance]));
+    }
+
+    public function student_monthly_attendance_report(Request $request) {
+        $search = $request->all();
+        $attendance = $this->attendanceService->student_monthly_attendance_report($search);
+        return response()->json(new JsonResponse(['students' => $attendance]));
     }
 
     public function attendance_student_monthly(Request $request) {

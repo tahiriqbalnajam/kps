@@ -2,24 +2,41 @@
   <div class="app-container">
     <div class="filter-container">
       <head-controls>
-        <el-form-item>
-          <el-col :span="4">
-            <el-date-picker
-              v-model="query.attendance_date"
-              type="date"
-              format="DD/MM/YYYY"
-              value-format="YYYY-MM-DD"
-              placeholder="Pick a day"
-              :picker-options="pickerOptions"
-            />
+        <el-row justify="space-between">
+          <el-col :span="8">
+            <el-row :gutter="20">
+              <el-col :span="8">
+                <el-form-item>
+                  <el-date-picker
+                    v-model="query.attendance_date"
+                    type="date"
+                    format="DD/MM/YYYY"
+                    value-format="YYYY-MM-DD"
+                    placeholder="Pick a day"
+                    :picker-options="pickerOptions"
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col :span="8">
+                <el-form-item label="Pef Students">
+                  <el-switch
+                    v-model="query.pef_admission"
+                    inline-prompt
+                    :active-icon="Check"
+                    :inactive-icon="Close"
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col :span="2">
+                <el-button type="primary" :loading="loading"  @click="getReport()">{{ loading ? 'Submitting ...' : 'Get report' }}</el-button>
+              </el-col>
+            </el-row>
           </el-col>
-          <el-col :span="2">
-            <el-button type="primary" :loading="loading"  @click="getReport()">{{ loading ? 'Submitting ...' : 'Get report' }}</el-button>
-          </el-col>
-        </el-form-item>
+        </el-row>
       </head-controls>   
     </div>
     <el-table
+      :loading="loading"
       :data="attendance"
       style="width: 100%"
       :stripe="true"
@@ -28,21 +45,18 @@
       show-summary
       empty-text="No data, Try an other date!" 
     >
-      <el-table-column label="Class Name" prop="name" />
-      <el-table-column label="Register student" prop="total_student" />
-      <el-table-column label="Register girls" prop="total_female" />
-      <el-table-column label="Register boys" prop="total_male" />
-      <el-table-column label="Present student" prop="total_present" />
-      <el-table-column label="Present girls" prop="female_present" />
-      <el-table-column label="Present boys" prop="male_present" />
-      <el-table-column label="Absent student" prop="total_absent" />
-      <el-table-column label="Absent boys" prop="male_absent" />
-      <el-table-column label="Absent girls" prop="female_absent" />
-      <el-table-column label="Class Attendance%">
-        <template #default="scope">
-          {{ scope.row.total_present ? (100 - Math.round((scope.row.total_absent+scope.row.total_onleave) / scope.row.total_student * 100)) + '%' : '' }}
-        </template>
-      </el-table-column>
+      <el-table-column label="Class Name" prop="class_title" />
+      <el-table-column label="Total Students" prop="total_students" />
+      <el-table-column label="Total Boys" prop="total_male" />
+      <el-table-column label="Total Girls" prop="total_female" />
+      <el-table-column label="Total Present" prop="total_present" />
+      <el-table-column label="Total Absent" prop="total_absent" />
+      <el-table-column label="Present Boys" prop="total_male_present" />
+      <el-table-column label="Absent Boys" prop="total_male_absent" />
+      <el-table-column label="Present Girls" prop="total_female_present" />
+      <el-table-column label="Absent Girls" prop="total_female_absent" />
+      <el-table-column label="Absent %" prop="absent_percentage" />
+      <el-table-column label="Present %" prop="present_percentage" />
     </el-table>
   </div>
 </template>
@@ -52,7 +66,8 @@ import moment from 'moment';
 import { debounce } from 'lodash';
 import HeadControls from '@/components/HeadControls.vue';
 const attendPro = new Resource('attendance');
-import { getDailyClasswise } from '@/api/student';
+import { getDailyClasswise } from '@/api/attendance';
+import { Check, Close } from '@element-plus/icons-vue'
 export default {
   name: '',
   components: { HeadControls},
@@ -95,6 +110,7 @@ export default {
       formLabelWidth: 250,
       query: {
         attendance_date: this.todayDate(),
+        pef_admission: false,
       },
     };
   },
@@ -109,7 +125,9 @@ export default {
       this.getAttendance();
     },
     async getAttendance() {
+      this.loading = true;
       const { data } = await getDailyClasswise(this.query);
+      this.loading = false;
       this.attendance = data.attendance;
       //console.log( this.attendance);
     },
@@ -131,11 +149,16 @@ export default {
         }
         if (index === 10) {
           
-          const totalabsent = this.attendance.map(item => item.total_absent).reduce((prev, curr) => prev + curr);
-          const total_onleave = this.attendance.map(item => item.total_onleave).reduce((prev, curr) => prev + curr);
-          const total = this.attendance.map(item => item.total_student).reduce((prev, curr) => prev + curr);
-          const present = 100 - Math.round(((totalabsent+total_onleave) / total) * 100);
-          sums[index] = present + '%';
+          const totalabsentpercent = this.attendance.map(item => parseFloat(item.absent_percentage)).reduce((prev, curr) => prev + curr);
+          const present = totalabsentpercent / this.attendance.length;
+          sums[index] = Math.round((present + Number.EPSILON) * 100) / 100 + '%';
+          return;
+        }
+        if (index === 11) {
+          
+          const totalabsentpercent = this.attendance.map(item => parseFloat(item.present_percentage)).reduce((prev, curr) => prev + curr);
+          const present = totalabsentpercent / this.attendance.length;
+          sums[index] = Math.round((present + Number.EPSILON) * 100) / 100 + '%';
           return;
         }
         const values = data.map(item => Number(item[column.property]));

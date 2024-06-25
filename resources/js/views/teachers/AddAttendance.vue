@@ -8,7 +8,9 @@
         value-format="YYYY-MM-DD"
         placeholder="Pick a day"
         @change="getAttendanceByDate()"/>
-      <el-button type="primary" :loading="loading" :disabled="attendance.teachers.length <= 0" @click="submitAttendance">{{ loading ? 'Submitting ...' : 'Save Attendance' }}</el-button>
+      <el-button type="primary" :loading="loading" :disabled="attendance.teachers.length <= 0" @click="submitAttendance">
+        {{ loading ? 'Submitting ...' : 'Save Attendance' }}
+      </el-button>
     </div>
     <div style="margin-top: 20px; margin-bottom: 20px">
       <el-radio-group v-model="attendance_day" size="medium">

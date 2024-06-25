@@ -181,8 +181,8 @@ export const constantRoutes = [
         meta: { title: 'Att Report', bootstrapIcon: 'calendar-check-fill', noCache: true },
       },
       {
-        path: 'student-report',
-        component: () => import('@/views/attendance/StudentAttReport.vue'),
+        path: 'students-monthly-report',
+        component: () => import('@/views/attendance/StudentsAttMonthlyReport.vue'),
         name: 'Monthly/Classwise',
         meta: { title: 'Monthly/Classwise', bootstrapIcon: 'calendar3', noCache: true },
       },
@@ -197,6 +197,12 @@ export const constantRoutes = [
         component: () => import('@/views/attendance/AttReportStudentYearly.vue'),
         name: 'Student Monthly',
         meta: { title: 'Student Attendance Per Month', bootstrapIcon: 'calendar3-range', noCache: true },
+      },
+      {
+        path: 'holidays',
+        component: () => import('@/views/attendance/Holidays.vue'),
+        name: 'Manage Holidays',
+        meta: { title: 'Manage Holidays', bootstrapIcon: 'calendar3-range', noCache: true },
       },
     ],
   },

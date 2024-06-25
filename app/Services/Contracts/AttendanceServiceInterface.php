@@ -1,0 +1,11 @@
+<?php
+namespace App\Services\Contracts;
+
+
+interface AttendanceServiceInterface
+{
+    public function getMonthlyAttendance($student_id, $date);
+    public function student_attendance_marked(array $data);
+    public function student_monthly_attendance_report(array $data);
+    public function student_daily_classwise(array $data);
+}

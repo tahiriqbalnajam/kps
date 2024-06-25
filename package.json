@@ -48,6 +48,7 @@
     "file-saver": "^2.0.5",
     "lodash": "^4.17.21",
     "moment": "^2.29.4",
+    "vue-json-excel3": "^1.0.24",
     "vue-lodash": "^2.1.2",
     "vue-qrcode-reader": "^5.2.0",
     "vue3-print-nb": "^0.1.4",

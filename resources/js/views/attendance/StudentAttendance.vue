@@ -14,8 +14,11 @@
         type="date"
         format="DD MMM, YYYY"
         value-format="YYYY-MM-DD"
-        placeholder="Pick a day" />
-      <el-button type="primary" :loading="loading" :disabled="attendance.students.length <= 0" @click="submitAttendance">{{ loading ? 'Submitting ...' : 'Save Attendance' }}</el-button>
+        placeholder="Pick a day" 
+        @change="getStudent" />
+      <el-button type="primary" :loading="loading" :disabled="attendance.students.length <= 0" @click="submitAttendance">
+        {{ loading ? 'Submitting ...' : 'Save Attendance' }}
+      </el-button>
     </div>
     <div style="margin-top: 20px; margin-bottom: 20px">
       <el-radio-group v-model="attendance_day" size="medium">
@@ -53,6 +56,7 @@ import Resource from '@/api/resource';
 const classPro = new Resource('classes');
 const studentPro = new Resource('students');
 const attendPro = new Resource('attendance');
+import {studentAttMarked} from '@/api/attendance';
 import { debounce } from 'lodash';
 export default {
   name: '',
@@ -113,7 +117,7 @@ export default {
       this.query.filter.stdclass = this.attenquery.stdclass = this.attendance.stdclass;
       const { data } = await studentPro.list(this.query);
       this.attenquery.month = this.attendance.date;
-      const attenDD = await attendPro.list(this.attenquery);
+      const attenDD = await studentAttMarked(this.attenquery);
       const hasrec = Object.keys(attenDD.data.attendance).length
       if(hasrec > 0) {
         this.$alert('Attendance has already been submitted for this day.', 'Warning', {

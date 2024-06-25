@@ -1,16 +1,33 @@
 import request from '@/utils/request';
 
-export function getDailyClasswise(data) {
-    return request({
-      url: '/getdailyclasswise',
-      method: 'post',
-      data,
-    });
-}
 
 export function getStudentAttendance(id) {
     return request({
       url: '/attendance_student_monthly/' + id,
       method: 'get',
     });
-  }
+}
+
+export function studentAttMarked(data) {
+    return request({
+      url: '/student_attendance_marked',
+      method: 'post',
+      data,
+    });
+}
+
+export function studentAttMonthlyReport(data) {
+    return request({
+      url: '/student_monthly_attendance_report',
+      method: 'post',
+      data,
+    });
+}
+
+export function getDailyClasswise(data) {
+  return request({
+    url: '/student_daily_classwise_attendance_report',
+    method: 'post',
+    data,
+  });
+}

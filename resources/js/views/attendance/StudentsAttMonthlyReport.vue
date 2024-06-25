@@ -16,7 +16,9 @@
         value-format="YYYY-MM-DD"
         placeholder="Pick a month" 
       />
-      <el-button type="primary" :loading="loading"  @click="getReport()">{{ loading ? 'Submitting ...' : 'get report' }}</el-button>
+      <el-button type="primary" :loading="loading"  @click="getReport()">
+        {{ loading ? 'Submitting ...' : 'get report' }}
+      </el-button>
     </div>
     <table class="tblwdborder">
       <tr>
@@ -25,7 +27,7 @@
       </tr>
       <tr v-for="student in attendance.students" :key="student.id">
         <td>{{ student.name }}</td>
-        <td v-for="att in student.attendance" :key="att.id" :class="{'absent': (att.status == 'absent')}">{{att.status}}</td>
+        <td v-for="att in student.attendances" :key="att.id" :class="{'absent': (att == 'A')}">{{att}}</td>
       </tr>
     </table>
   </div>
@@ -35,6 +37,7 @@ import Pagination from '@/components/Pagination/index.vue';
 import Resource from '@/api/resource';
 import moment from 'moment';
 import { debounce } from 'lodash';
+import {studentAttMonthlyReport} from '@/api/attendance';
 const classPro = new Resource('classes');
 const attendPro = new Resource('attendance');
 export default {
@@ -89,26 +92,8 @@ export default {
       this.classes = data.classes.data;
     },
     async getReport() {
-      const { data } = await attendPro.list(this.query);
-      this.attendance.students = await data.students.map((student) => {
-        let attendance = [];
-        for (let i = 0; i < 31; i++) {
-          let found = student.attend.find( att => {  
-            const date = moment(att.attendance_date); // Thursday Feb 2015
-            const dow = date.date();
-            return (dow-1) == i
-          });
-          if (!found){
-            attendance[i] = ({'id': i, 'student_id': student.id, 'class_id': i, 'status': '--'});
-          } else {
-            attendance[i] = found;
-          }
-        }
-        return {
-          ...student,
-          attendance: attendance,
-        };
-      });
+      const { data } = await studentAttMonthlyReport(this.query);
+      this.attendance.students = data.students;
     },
     todayDate() {
       var today = new Date();

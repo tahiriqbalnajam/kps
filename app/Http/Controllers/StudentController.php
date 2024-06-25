@@ -15,77 +15,31 @@ use App\Models\StudentAttendance;
 use Illuminate\Support\Facades\DB;
 use Spatie\QueryBuilder\QueryBuilder;
 use Spatie\QueryBuilder\AllowedFilter;
+use App\Services\Contracts\StudentServiceInterface;
 
 class StudentController extends Controller
 {
+    protected $studentService;
     const ITEM_PER_PAGE = 1000;
     /**
      * Display a listing of the resource.
      *
      * @return \Illuminate\Http\Response
      */
-    public function index(Request $request)
-    {
-        $searchParams = $request->all();
-        $limit = Arr::get($searchParams, 'limit', static::ITEM_PER_PAGE);        
-        $students = QueryBuilder::for(Student::class)
-                    ->with('parents','stdclasses','class_session')
-                    ->allowedFilters(['id','name', 'roll_no', 'adminssion_number', 'is_orphan', 'pef_admission', 'nadra_pending','gender',
-                                        AllowedFilter::partial('parent_phone', 'parents.phone'),
-                                        AllowedFilter::partial('parent_name', 'parents.name'),
-                                        AllowedFilter::exact('stdclass', 'stdclasses.id'),
 
-                                    ])
-                    ->paginate($limit)
-                    ->appends(request()->query());;
-        return response()->json(new JsonResponse(['students' => $students]));
+    public function __construct(StudentServiceInterface $studentService)
+    {
+        $this->studentService = $studentService;
     }
 
 
-    // public function index(Request $request)
-    // {
-    //     $searchParams = $request->all();
-    //     $limit = Arr::get($searchParams, 'limit', static::ITEM_PER_PAGE);
-    //     $keyword = $request->get('keyword');
-    //     $stdid = $request->get('id');
-    //     $stdclass = $request->get('stdclass');
-    //     $filtercol = $request->get('filtercol');
-        
-    //     $all = ($request->get('filtercol') == 'all') ? true : false;
-    //     //DB::enableQueryLog(); // Enable query log
-    //     $students = Student::with('parents','stdclasses','class_session')
-    //     ->when($all || ($filtercol == 'parent_name' && !empty($keyword)), function ($query) use ($keyword) {
-    //         $query->whereHas('parents', function($query) use($keyword) {
-    //             $query->where('parents.name', 'like', '%'.$keyword.'%');
-    //         });
-    //     })
-    //     ->when($all || ($filtercol == 'name' && !empty($keyword)), function ($query) use ($all, $keyword) {
-    //         if($all)
-    //             return $query->orWhere('name', 'like', '%' . $keyword . '%');
-    //         else
-    //             return $query->where('name', 'like', '%' . $keyword . '%');
-    //     })
-    //     ->when($all || ($filtercol == 'roll_no' && !empty($keyword)), function ($query) use ($all, $keyword) {
-    //         if($all)
-    //             return $query->orWhere('roll_no', $keyword);
-    //         else
-    //             return $query->where('roll_no', $keyword);
-    //     })
-    //     ->when($all || ($filtercol == 'parent_phone' && !empty($keyword)), function ($query) use ($all, $keyword) {
-    //         $query->whereHas('parents', function($query) use($keyword) {
-    //             $query->where('parents.phone', 'like', '%'.$keyword.'%');
-    //         });
-    //     })
-    //     ->when($stdid, function ($query) use ($stdid) {
-    //         return $query->where('id', $stdid);
-    //     })
-    //     ->when($stdclass, function ($query) use ($stdclass) {
-    //         return $query->where('class_id', $stdclass);
-    //     })
-    //     ->paginate($limit);
-    //     //dd(DB::getQueryLog()); // Show results of log
-    //     return response()->json(new JsonResponse(['students' => $students]));
-    // }
+    public function index(Request $request)
+    {
+        $searchParams = $request->all();       
+        $students = $this->studentService->listStudents($searchParams);
+        return response()->json(new JsonResponse(['students' => $students]));
+    }
+
 
     /**
      * Store a newly created resource in storage.
@@ -95,22 +49,8 @@ class StudentController extends Controller
      */
     public function store(Request $request)
     {
-        DB::beginTransaction();
-
-        try {
-            $user['name'] = $request->name;
-            $user['email'] = $request->name.rand(10,100).'@idlschool.com';
-            $user['password'] = bcrypt($request['password']);
-            $user_id = User::create($user)->id;
-            $request->merge(['user_id' => $user_id]);
-            $student = Student::create($request->all());
-
-            DB::commit();
-        } catch (\Exception $e) {
-            DB::rollback();
-            throw $e;
-
-        }
+        $student = $this->studentService->storeStudent($request->all());
+        return response()->json(new JsonResponse(['student' => $student]));
     }
 
     /**
@@ -134,7 +74,7 @@ class StudentController extends Controller
     public function update(Request $request, Student $student)
     {
         $input = $request->all();
-        $student->fill($input)->save();
+        $this->studentService->updateStudent($student, $input);
         return response()->json(new JsonResponse(['student' => $student]));
     }
 
@@ -148,29 +88,15 @@ class StudentController extends Controller
     {
         //
     }
+
     public function addattendance(Request $request){
-        $date = $request->date;
-        $students = $request->students;
-        $id = $students[0]->id;
-        foreach($students as $data){
-            $attendance[] = [
-                'class_id' => $data['class_id'],
-                'student_id' => $data['id'],
-                'status' => $data['attendance'],
-                'created_at' =>  $date,
-            ];
-        }
-        StudentAttendance::insert($attendance);
+        $this->studentService->addAttendance($request->all());
     }
+
     public function edit_class(Request $request){
         $selected_students = $request->multiStudent;
         $desired_class = $request->changeClass;
-        foreach($selected_students as $students){
-            Student::where('id', '=', $students)
-            ->update([
-                'class_id' => $desired_class // Add as many as you need
-            ]);
-        }
+        $this->studentService->editClass($selected_students, $desired_class);
 
     }
 }
