@@ -20,15 +20,8 @@
         {{ loading ? 'Submitting ...' : 'Save Attendance' }}
       </el-button>
     </div>
-    <div style="margin-top: 20px; margin-bottom: 20px">
-      <el-radio-group v-model="attendance_day" size="medium">
-        <el-radio-button label="Week day" class="weekday" fill="#ff4949" />
-        <el-radio-button label="Sunday" class="sunday" />
-        <el-radio-button label="Holliday" class="holliday" />
-      </el-radio-group>
-    </div>
     <el-table
-      :data="attendance.students"
+      :data="filterTableData"
       style="width: 100%"
       max-height="500"
       :stripe="true"
@@ -39,6 +32,9 @@
       <el-table-column label="Roll No." prop="roll_no" />
       <el-table-column label="Student Name" prop="name" />
       <el-table-column>
+        <template #header>
+        <el-input v-model="search" size="small" placeholder="Type to search" />
+      </template>
         <template  #default="scope">
           <el-radio-group v-model="scope.row.attendance" size="small" text-color="" :fill="(scope.row.attendance == 'Present') ? '#67c23a' : (scope.row.attendance == 'Absent') ? '#f56c6c' : '#909399'">
             <el-radio-button label="Present" value="present" />
@@ -91,7 +87,18 @@ export default {
         stdclass: '',
         month: '',
       },
+      search: '',
     };
+  },
+  computed: {
+    filterTableData() {
+      return this.attendance.students.filter(
+        (data) =>
+          !this.search ||
+          data.name.toLowerCase().includes(this.search.toLowerCase())
+      )
+    }
+    
   },
   created() {
     this.getList();

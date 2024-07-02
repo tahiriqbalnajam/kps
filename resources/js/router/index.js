@@ -169,18 +169,6 @@ export const constantRoutes = [
         meta: { title: 'Mark Students Attendance', bootstrapIcon: 'calendar-plus', noCache: true },
       },
       {
-        path: 'attendance',
-        component: () => import('@/views/teachers/AddAttendance.vue'),
-        name: 'Mark Teacher Attendance',
-        meta: { title: 'Mark Teacher Attendance', bootstrapIcon: 'calendar3', noCache: true },
-      },
-      {
-        path: 'teacher-att-report',
-        component: () => import('@/views/teachers/TeacherAttReport.vue'),
-        name: 'Attendance Report',
-        meta: { title: 'Att Report', bootstrapIcon: 'calendar-check-fill', noCache: true },
-      },
-      {
         path: 'students-monthly-report',
         component: () => import('@/views/attendance/StudentsAttMonthlyReport.vue'),
         name: 'Monthly/Classwise',
@@ -197,6 +185,24 @@ export const constantRoutes = [
         component: () => import('@/views/attendance/AttReportStudentYearly.vue'),
         name: 'Student Monthly',
         meta: { title: 'Student Attendance Per Month', bootstrapIcon: 'calendar3-range', noCache: true },
+      },
+      {
+        path: 'attendance',
+        component: () => import('@/views/teachers/AddAttendance.vue'),
+        name: 'Mark Teacher Attendance',
+        meta: { title: 'Mark Teacher Attendance', bootstrapIcon: 'calendar3', noCache: true },
+      },
+      {
+        path: 'teacher-att-report',
+        component: () => import('@/views/teachers/TeacherMonthlyAttReport.vue'),
+        name: 'Attendance Report',
+        meta: { title: 'Teachers Monthly', bootstrapIcon: 'calendar-check-fill', noCache: true },
+      },
+      {
+        path: 'absent-foreach-class',
+        component: () => import('@/views/attendance/AbsentForeachClass.vue'),
+        name: 'Absetn per class',
+        meta: { title: 'Absent Classwise', bootstrapIcon: 'calendar-check-fill', noCache: true },
       },
       {
         path: 'holidays',

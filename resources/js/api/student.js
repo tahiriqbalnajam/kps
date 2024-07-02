@@ -7,14 +7,6 @@ export function addAttendance(data) {
   });
 }
 
-export function studentAttReport(data) {
-  return request({
-    url: '/student_att_report',
-    method: 'get',
-    params: data,
-  });
-}
-
 export function editClass(stdData){
   return request({
     url: '/edit_class',

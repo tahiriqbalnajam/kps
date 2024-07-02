@@ -35,13 +35,17 @@ Route::post('student_monthly_attendance_report', 'StudentAttendanceController@st
 Route::post('student_daily_classwise_attendance_report', 'StudentAttendanceController@student_daily_classwise_attendance_report');
 Route::apiResource('attendance_student_monthly', 'StudentAttendanceController@attendance_student_monthly');
 Route::get('student_att_report', 'StudentAttendanceController@student_att_report');
+Route::get('absent_student_each_class', 'StudentAttendanceController@absent_student_each_class');
 
 //teacher attendance
+Route::apiResource('teacher_attendance', 'TeacherAttendanceController');
 Route::post('check_salary_generated', 'TeacherAttendanceController@check_salary_generated');
 Route::post('pay_salary', 'TeacherAttendanceController@pay_salary');
 Route::post('generate_pay', 'TeacherAttendanceController@generate_pay');
-Route::apiResource('teacher_attendance', 'TeacherAttendanceController');
+Route::post('teachers_monthly_att_report', 'TeacherAttendanceController@teachers_monthly_att_report');
 Route::apiResource('holidays', 'HolidayController');
+
+//exam
 //Route::apiResource('exam_result', 'ExamController');
 Route::apiResource('examtest_result', 'ExamTestController');
 Route::apiResource('subjects', 'SubjectController');

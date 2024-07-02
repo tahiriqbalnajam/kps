@@ -3,6 +3,7 @@
     import moment from 'moment';
     import Resource from '@/api/resource.js';
     import HeadControls from '@/components/HeadControls.vue';
+    import { teacherMonthlyAttReport } from '@/api/attendance.js';
     let attRes = new Resource('teacher_attendance');
     const $this =  reactive({
                 query: {
@@ -15,29 +16,9 @@
                 },
             })
     const getList = async() => {
-        const {data} = await attRes.list($this.query);
-        $this.attendance.teachers = await data.attendace.map((teacher) => {
-        let attend = [];
-        for (let i = 0; i < 31; i++) {
-          let found = teacher.attendance.find( att => {  
-            const date = moment(att.attendance_date); // Thursday Feb 2015
-            const dow = date.date();
-            console.log(dow);
-            return (dow-1) == i
-          });
-          if (!found){
-            attend[i] = ({'id': i, 'teacher_id': teacher.id, 'status': '--'});
-          } else {
-            found.status = (found.status == 'absent') ? 'A' : (found.status == 'present') ? 'P' : 'L';
-            attend[i] = found;
-          }
-        }
-        return {
-          ...teacher,
-          attendance: attend,
-        };
-      });
-    }
+        const {data} = await teacherMonthlyAttReport($this.query);
+        $this.attendance.teachers = data.attendance;
+      }
     getList();
 </script>
 
@@ -69,7 +50,7 @@
             </tr>
             <tr v-for="teacher in  $this.attendance.teachers" :key="teacher.id">
                 <td>{{ teacher.name }}</td>
-                <td v-for="att in teacher.attendance" :key="att.id" :class="{'absent': (att.status == 'A')}">{{att.status}}</td>
+                <td v-for="att in teacher.attendances" :key="att" :class="{'absent': (att == 'A')}">{{att}}</td>
             </tr>
         </table>
     </div>

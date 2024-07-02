@@ -35,7 +35,7 @@ class StudentService implements StudentServiceInterface
         try {
             $user['name'] = $data['name'];
             $user['email'] = $data['name'].rand(10,100).'@idlschool.com';
-            $user['password'] = bcrypt($data['password']);
+            $user['password'] = bcrypt('idl123');
             $user_id = User::create($user)->id;
             $data['user_id'] = $user_id;
             $student = Student::create($data);

@@ -1,16 +1,17 @@
 <script setup>
     import { reactive, getCurrentInstance } from 'vue';
-    import moment from 'moment';
-    import { studentAttReport } from '@/api/student.js'
+    import { studentAttReport } from '@/api/attendance.js'
     import Resource from '@/api/resource.js';
     import HeadControls from '@/components/HeadControls.vue';
-    let attRes = new Resource('attendance');
     let stdRes = new Resource('students');
     import * as echarts from 'echarts'
+    import { debounce } from 'lodash';
     const $this =  reactive({
                 query: {
                     keyword: '',
-                    filtercol: 'name'
+                    filter: {
+                        name: ''
+                   },
                 },
                 students: [],
                 attendance: {
@@ -39,8 +40,14 @@
             ]
         });
     }
+    const debounceInput = debounce(function (e) {
+      this.getList();
+    }, 500);
+
     const selectStudent = async(query) => {
-        $this.query.keyword = query;
+        if(query === '')
+            return;
+        $this.query.filter.name = query;
         const { data } = await stdRes.list($this.query);
         $this.students = data.students.data;
     }
@@ -58,8 +65,7 @@
         tooltip: {
         trigger: 'axis',
         axisPointer: {
-            // 坐标轴指示器，坐标轴触发有效
-            type: 'shadow' // 默认为直线，可选为：'line' | 'shadow'
+            type: 'line' // 默认为直线，可选为：'line' | 'shadow'
         }
         },
         grid: {
@@ -99,6 +105,8 @@
                         :remote-method="selectStudent"
                         :loading="$this.loading"
                         @change="selectAttandance"
+                        clearable
+                        v-on:input="debounceInput"
                     >
                         <el-option
                         v-for="student in $this.students"

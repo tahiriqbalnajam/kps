@@ -75,6 +75,11 @@ class StudentAttendanceController extends Controller
 
     }
 
+    public function absent_student_each_class() {
+        $data = $this->attendanceService->absent_student_each_class();
+        return response()->json(new JsonResponse(['class_student' => $data]));
+    }
+
     public function student_attendance_marked(Request $request) {
         $search = $request->all();
         $attendance = $this->attendanceService->student_attendance_marked($search);
@@ -108,6 +113,9 @@ class StudentAttendanceController extends Controller
 
     public function student_att_report(Request $request) {
         $student_id = $request->student_id;
+        if($student_id == null)
+            return response()->json(new JsonResponse(['attendance' => []]));
+        
         $attendance = DB::SELECT("SELECT student_id, DATE_FORMAT(attendance_date,'%m-%Y') as month, COUNT(student_id) as absent 
                                     FROM `student_attendances` 
                                     WHERE status = 'absent' AND attendance_date > now() - INTERVAL 12 month  AND student_id = ".$student_id."

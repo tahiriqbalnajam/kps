@@ -1,25 +1,48 @@
 <template>
   <el-row :gutter="40" class="panel-group">
-    <el-col :xs="12" :sm="12" :lg="6" class="card-panel-col">
-      <div class="card-panel" @click="handleSetLineChartData('newVisitis')">
-        <div class="card-panel-icon-wrapper icon-people">
-          <icon class-name="people card-panel-icon"/>
-        </div>
+    <el-col :xs="12" :sm="12" :md="3" :lg="3" class="card-panel-col">
+      <div class="card-panel">
         <div class="card-panel-description">
-          <div class="card-panel-text">New Visits</div>
-          <span class="card-panel-num">102400</span>
+          <div class="card-panel-text">Total Students</div>
+          <span class="card-panel-num">{{ data.total_students }}</span>
           <!--<count-to :start-val="0" :end-val="102400" :duration="2600" class="card-panel-num" />-->
         </div>
       </div>
     </el-col>
-    <el-col :xs="12" :sm="12" :lg="6" class="card-panel-col">
-      <div class="card-panel" @click="handleSetLineChartData('messages')">
-        <div class="card-panel-icon-wrapper icon-message">
-          <icon class-name="envelope card-panel-icon"/>
-        </div>
+    <el-col :xs="12" :sm="12" :md="3" :lg="3" class="card-panel-col">
+      <div class="card-panel">
         <div class="card-panel-description">
-          <div class="card-panel-text">Messages</div>
-          <span class="card-panel-num">81212</span>
+          <div class="card-panel-text">Total Absent</div>
+          <span class="card-panel-num">{{ data.total_absent_students }}</span>
+          <!--<count-to :start-val="0" :end-val="81212" :duration="3000" class="card-panel-num" />-->
+        </div>
+      </div>
+    </el-col>
+    <el-col :xs="12" :sm="12" :md="3" :lg="3" class="card-panel-col">
+      <div class="card-panel">
+        <div class="card-panel-description">
+          <div class="card-panel-text">Total Teachers</div>
+          <span class="card-panel-num">{{ data.total_teachers }}</span>
+          <!--<count-to :start-val="0" :end-val="81212" :duration="3000" class="card-panel-num" />-->
+        </div>
+      </div>
+    </el-col>
+    <el-col :xs="12" :sm="12" :md="3" :lg="3" class="card-panel-col">
+      <div class="card-panel">
+        <div class="card-panel-description">
+          <div class="card-panel-text">Absent Teachers</div>
+          <el-row :gutter="20" justify="center">
+            <el-col :span="6">
+              <span class="card-panel-num">{{ data.total_absent_teachers }}</span>
+            </el-col>
+            <el-col :span="18">
+              <el-scrollbar height="30px">
+                <span v-for="teacher in data.absent_teachers" :key="teacher">{{ teacher }}</span>
+              </el-scrollbar>
+            </el-col>
+          </el-row>
+          
+          
           <!--<count-to :start-val="0" :end-val="81212" :duration="3000" class="card-panel-num" />-->
         </div>
       </div>
@@ -52,6 +75,28 @@
 </template>
 
 <script setup>
+import Resource from '@/api/resource';
+let dashRes = new Resource('dashboard');
+import { ref } from 'vue';
+
+const getData = async () => {
+  try {
+    const response = await dashRes.list(); // Assuming there is a method called getData in the dashRes object
+    return response.data;
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+};
+
+const data = ref(null);
+
+getData().then((result) => {
+  if (result) {
+    data.value = result;
+  }
+});
+
 const emit = defineEmits(['handleSetLineChartData'])
 const handleSetLineChartData = (type) => {
   emit('handleSetLineChartData', type)

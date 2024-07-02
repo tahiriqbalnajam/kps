@@ -17,10 +17,17 @@ use App\Models\TeacherPay;
 use Illuminate\Support\Facades\DB;
 use App\Traits\TransactionTrait;
 use Symfony\Contracts\Translation\TranslatorTrait;
+use App\Services\Contracts\AttendanceServiceInterface;
 
 class TeacherAttendanceController extends Controller
 {
     use TranslatorTrait;
+    protected $attendanceService;
+
+    public function __construct(AttendanceServiceInterface $attendanceService)
+    {
+        $this->attendanceService = $attendanceService;
+    }
     /**
      * Display a listing of the resource.
      */
@@ -89,7 +96,7 @@ class TeacherAttendanceController extends Controller
             ->when($date, function($query) use($date) {
                 $query->where('attendance_date',$date);
             })
-            ->orderBy('user_id')->get();
+            ->orderBy('teacher_id')->get();
         }
         return response()->json(new JsonResponse(['attendace' => $result]));
     }
@@ -115,10 +122,12 @@ class TeacherAttendanceController extends Controller
                 return response()->json(new JsonResponse(['examsreult' => $result_teacher_array]));
         }
         else{
-            TeacherAttendance::where('attendance_date', $date)->delete();
+            DB::beginTransaction();
+            try {
+                TeacherAttendance::where('attendance_date', $date)->delete();
                 foreach($teachers as $data){
                     $attendance[] = [
-                        'user_id' => $data['id'],
+                        'teacher_id' => $data['id'],
                         'status' => $data['attendance'],
                         'attendance_date' =>  $date,
                     ];
@@ -132,7 +141,14 @@ class TeacherAttendanceController extends Controller
                 }
                 TeacherAttendance::insert($attendance);
 
-                }
+                DB::commit();
+                return response()->json(new JsonResponse(['success' => true]));
+            } catch (\Exception $e) {
+                DB::rollback();
+                return response()->json(new JsonResponse(['success' => false, 'message' => $e->getMessage()]));
+            }
+
+        }
     }
 
     function format_phone($phone) {
@@ -142,6 +158,12 @@ class TeacherAttendanceController extends Controller
         $replace = array('','');
         $phone = str_replace($find, $replace, $phone);
         return $phone;
+    }
+
+    public function teachers_monthly_att_report(Request $request) {
+        $data = $request->all();
+        $result = $this->attendanceService->teachers_monthly_attendance_report($data);
+        return response()->json(new JsonResponse(['attendance' => $result]));
     }
 
     /**

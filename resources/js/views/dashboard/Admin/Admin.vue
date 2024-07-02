@@ -1,6 +1,5 @@
 <template>
   <div class="dashboard-editor-container">
-    <GithubCorner class="github-corner" />
     <PanelGroup @handleSetLineChartData="handleSetLineChartData" />
     <el-row style="background: #fff; padding: 16px 16px 0; margin-bottom: 32px">
       <LineChart :chart-data="lineChartData ?? {}" />
@@ -60,7 +59,6 @@
 
 <script setup>
 import { toRefs, reactive } from 'vue'
-import GithubCorner from '@/views/dashboard/GithubCorner'
 import PanelGroup from './components/PanelGroup.vue'
 import LineChart from './components/LineChart.vue'
 import RaddarChart from './components/RaddarChart.vue'

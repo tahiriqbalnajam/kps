@@ -11,7 +11,7 @@ class Teacher extends Model {
     ];
 
 
-    public function attendance() {
+    public function attendances() {
         return $this->hasMany(TeacherAttendance::class);
     }
 

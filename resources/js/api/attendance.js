@@ -31,3 +31,27 @@ export function getDailyClasswise(data) {
     data,
   });
 }
+
+export function studentAttReport(data) {
+  return request({
+    url: '/student_att_report',
+    method: 'get',
+    params: data,
+  });
+}
+
+export function absentForeachClass(data) {
+  return request({
+    url: '/absent_student_each_class',
+    method: 'get',
+    params: data,
+  });
+}
+
+export function teacherMonthlyAttReport(data) {
+  return request({
+    url: '/teachers_monthly_att_report',
+    method: 'post',
+    data,
+  });
+}
