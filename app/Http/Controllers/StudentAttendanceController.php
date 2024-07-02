@@ -75,8 +75,9 @@ class StudentAttendanceController extends Controller
 
     }
 
-    public function absent_student_each_class() {
-        $data = $this->attendanceService->absent_student_each_class();
+    public function absent_student_each_class(Request $request) {
+        $data = $request->all();
+        $data = $this->attendanceService->absent_student_each_class($data);
         return response()->json(new JsonResponse(['class_student' => $data]));
     }
 

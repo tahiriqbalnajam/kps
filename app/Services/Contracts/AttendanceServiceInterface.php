@@ -10,5 +10,5 @@ interface AttendanceServiceInterface
     public function student_monthly_attendance_report(array $data);
     public function student_daily_classwise(array $data);
     public function teachers_monthly_attendance_report(array $data);
-    public function absent_student_each_class();
+    public function absent_student_each_class(array $data);
 }

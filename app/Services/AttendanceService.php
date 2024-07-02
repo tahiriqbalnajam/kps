@@ -122,10 +122,47 @@ class AttendanceService implements AttendanceServiceInterface
         }
 
         $query->groupBy('cl.id');
-
+        //return $query->toSql();
         $attendance = $query->get();
         
         return $attendance;
+    }
+
+    public function absent_student_each_class($data) {
+        $today = ($data['date']) ?? Carbon::today();
+
+        $isHoliday = Holiday::whereDate('holiday_date', $today)->exists();
+        if ($isHoliday) {
+            return response()->json([
+                'message' => 'Today is a holiday. No students are absent.'
+            ]);
+        }
+        $absentStudents = Classes::with(['students' => function ($query) use ($today) {
+            $query->whereDoesntHave('attendances', function ($query) use ($today) {
+                $query->whereDate('attendance_date', $today)->where('status', 'present');
+            })->orWhereHas('attendances', function ($query) use ($today) {
+                $query->whereDate('attendance_date', $today)->where('status', 'absent');
+            });
+        }, 'students.parents' => function ($query) {
+            $query->select('id', 'name','phone');
+        }])
+        ->get();
+
+        $result = $absentStudents->map(function ($class) {
+            return [
+                'class_name' => $class->name,
+                'absent_students' => $class->students->map(function ($student) {
+                    return [
+                        'id' => $student->id,
+                        'name' => $student->name,
+                        'parent_name' => $student->parents->name,
+                        'phone' => $student->parents->phone,
+                    ];
+                })
+            ];
+        });
+
+        return $result;
     }
 
     public function teachers_monthly_attendance_report(array $request)
@@ -166,40 +203,5 @@ class AttendanceService implements AttendanceServiceInterface
         return $teachers;
     }
 
-    public function absent_student_each_class() {
-        $today = Carbon::today();
-
-        $isHoliday = Holiday::whereDate('holiday_date', $today)->exists();
-        if ($isHoliday) {
-            return response()->json([
-                'message' => 'Today is a holiday. No students are absent.'
-            ]);
-        }
-        $absentStudents = Classes::with(['students' => function ($query) use ($today) {
-            $query->whereDoesntHave('attendances', function ($query) use ($today) {
-                $query->whereDate('attendance_date', $today)->where('status', 'present');
-            })->orWhereHas('attendances', function ($query) use ($today) {
-                $query->whereDate('attendance_date', $today)->where('status', 'absent');
-            });
-        }, 'students.parents' => function ($query) {
-            $query->select('id', 'name','phone');
-        }])
-        ->get();
-
-        $result = $absentStudents->map(function ($class) {
-            return [
-                'class_name' => $class->name,
-                'absent_students' => $class->students->map(function ($student) {
-                    return [
-                        'id' => $student->id,
-                        'name' => $student->name,
-                        'parent_name' => $student->parents->name,
-                        'phone' => $student->parents->phone,
-                    ];
-                })
-            ];
-        });
-
-        return $result;
-    }
+   
 }

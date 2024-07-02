@@ -1,5 +1,17 @@
 <template>
-    <div>
+    <div class="app-container">
+        <div class="filter-container">
+            <el-date-picker
+                v-model="$this.query.date"
+                type="date"
+                format="DD MMM, YYYY"
+                value-format="YYYY-MM-DD"
+                placeholder="Pick a day" 
+                @change="getList" />
+            <el-button type="primary" :loading="loading"  @click="getList">
+                {{ loading ? 'Submitting ...' : 'Show Report' }}
+            </el-button>
+        </div>
         <el-card shadow="always">
             <el-scrollbar height="700px">
                 <el-row v-for="student in $this.data" justify="end">
@@ -23,6 +35,9 @@
     import { absentForeachClass } from '@/api/attendance.js';
     const $this =  reactive({
                 data: null,
+                query: {
+                    date: new Date().toISOString().split('T')[0]
+                }
             })
     const getList = async() => {
         const { data } = await absentForeachClass($this.query);
