@@ -94,14 +94,16 @@
           </template>
         </el-table-column>
         <el-table-column label="Name" prop="">
-          <template #default="scope">
-              <el-popover trigger="hover" placement="top">
-                <p>B Form# {{ scope.row.b_form }}</p>
-                <template #reference>
-                  {{ scope.row.name }}
-                </template>
-              </el-popover>
-          </template>
+            <template #default="scope">
+              <el-link :href="'#/students/report/'+ scope.row.id">
+                <el-popover trigger="hover" placement="top">
+                  <p>B Form# {{ scope.row.b_form }}</p>
+                  <template #reference>
+                    {{ scope.row.name }}
+                  </template>
+                </el-popover>
+              </el-link>
+            </template>
         </el-table-column>
         <el-table-column label="Parent" prop="parents.name" />
         <el-table-column label="Phone" prop="parents.phone" />
