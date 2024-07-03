@@ -6,8 +6,8 @@
       <el-col :span="9">
         <el-card>
           <template #header>
-            <div class="card-header">
-              <span>Attendance Report</span>
+            <div class="card-header" style="padding: 0 0 0 20px;">
+              <h2>Attendance Report</h2>
             </div>
           </template>
           <attendance-info />

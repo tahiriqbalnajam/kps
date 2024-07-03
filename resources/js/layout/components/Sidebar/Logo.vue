@@ -43,7 +43,7 @@ const { title, logo } = toRefs(resData)
   width: 100%;
   height: 50px;
   line-height: 50px;
-  background: #2b2f3a;
+  background: #0071f3;
   padding-left: 14px;
   text-align: left;
   overflow: hidden;

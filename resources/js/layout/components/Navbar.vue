@@ -82,6 +82,7 @@ const loginOut = async () => {
   position: relative;
   background: #fff;
   box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
+  background: linear-gradient(to right, #0071f3, #73b4ff);
 }
 
 //logo

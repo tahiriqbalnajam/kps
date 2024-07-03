@@ -1,27 +1,86 @@
 <template>
-    <el-row :gutter="20">
-        <el-col :span="8">
-            <div ref="chart" :class="className" :style="{ height: height, width: width }" />
-        </el-col>
-        <el-col :span="8">
-            <el-card>
+    <div>
+        <el-row :gutter="20">
+            <el-col :span="12">
+                <div ref="chart" :class="className" :style="{ height: height, width: width }" />
+            </el-col>
+            <el-col :span="6">
                 <el-progress type="dashboard" :percentage=" this.attendance.percent_present" >
                     <template #default="{ percentage }">
                         <span class="percentage-value">{{ percentage }}%</span>
                         <span class="percentage-label">Overall</span>
                     </template>
                 </el-progress>
-            </el-card>
-        </el-col>
-        <el-col :span="8">
-            <el-card>
-            <div class="box-center">
-                <div class="user-name">afa</div>
-                <div class="user-role">asdfa</div>
-            </div>
-            </el-card>
-        </el-col>   
-    </el-row>
+                <el-tag :type="(this.attendance.today_status == 'present') ? 'success' : 'danger'" effect="light">
+                    Today: {{ this.attendance.today_status }}
+                </el-tag>
+            </el-col>
+            <el-col :span="6">
+                <el-progress type="dashboard" :percentage=" this.attendance.average_present" >
+                    <template #default="{ percentage }">
+                        <span class="percentage-value">{{ percentage }}%</span>
+                        <span class="percentage-label">Overall</span>
+                    </template>
+                </el-progress>
+                <el-tag type="success" effect="light">
+                    Yesterday: {{ this.attendance.yesterday_status }}
+                </el-tag>
+            </el-col>   
+        </el-row>
+        <el-row :gutter="20">
+            <el-col :span="8">
+                <el-card class="blue">
+                    <table class="table" width="100%">
+                        <tr>
+                            <th colspan="2" class="header">PRESENTS</th>
+                        </tr>
+                        <tr>
+                            <td class="total">Total</td>
+                            <td class="total">{{ this.attendance.total_present }}</td>
+                        </tr>
+                        <tr>
+                            <td class="month">This month</td>
+                            <td class="month">{{ this.attendance.this_month_present }}</td>
+                        </tr>
+                    </table>
+                </el-card>
+            </el-col>
+            <el-col :span="8">
+                <el-card  class="red">
+                    <table class="table" width="100%">
+                        <tr>
+                            <th colspan="2"  class="header">ABSENTS</th>
+                        </tr>
+                        <tr>
+                            <td class="total">Total</td>
+                            <td class="total">{{ this.attendance.total_absent }}</td>
+                        </tr>
+                        <tr>
+                            <td class="month">This month</td>
+                            <td class="month">{{ this.attendance.this_month_absent }}</td>
+                        </tr>
+                    </table>
+                </el-card>
+            </el-col>
+            <el-col :span="8">
+                <el-card class="info">
+                    <table class="table" width="100%">
+                        <tr>
+                            <th colspan="2"  class="header">LEAVES</th>
+                        </tr>
+                        <tr>
+                            <td class="total">Total</td>
+                            <td class="total">{{ this.attendance.total_leave }}</td>
+                        </tr>
+                        <tr>
+                            <td class="month">This month</td>
+                            <td class="month">{{ this.attendance.this_month_leave }}</td>
+                        </tr>
+                    </table>
+                </el-card>
+            </el-col>
+        </el-row>
+    </div>
 </template>
 <script>
     import * as echarts from 'echarts';
@@ -107,7 +166,7 @@
 .percentage-value {
   display: block;
   margin-top: 10px;
-  font-size: 28px;
+  font-size: 18px;
 }
 .percentage-label {
   display: block;
@@ -120,5 +179,27 @@
 }
 .demo-progress .el-progress--circle {
   margin-right: 15px;
+}
+.table .header {
+    text-align: left;
+}
+.table .total {
+    font-size: 16px;
+    font-weight: bold;
+}
+.table .month {
+    font-size: 11px;
+}
+.blue {
+    background: linear-gradient(45deg, #5e81f4, #7191f7)!important;
+    color: white;
+}
+.red {
+    background: linear-gradient(45deg, #ff808b, #f79099)!important;
+    color: white;
+}
+.info {
+    background: linear-gradient(45deg, #9698d6, #a9abdb) !important;
+    color: white;
 }
 </style>

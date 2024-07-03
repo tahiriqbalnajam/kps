@@ -51,7 +51,7 @@ let { isFullscreen } = toRefs(resData)
 <style lang="scss">
 .nav-svg-icon {
   font-size: 18px;
-  color: #5a5e66;
+  color: #ffffff;
   margin-top: 4px;
 }
 </style>

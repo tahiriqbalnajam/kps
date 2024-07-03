@@ -59,4 +59,7 @@ export default {
   margin: 0;
   padding: 0;
 }
+.nav-icon {
+  color: #fff;
+}
 </style>

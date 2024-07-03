@@ -129,8 +129,35 @@ class AttendanceService implements AttendanceServiceInterface
     }
 
     public function student_attendance_total($student_id) {
-        $student = Student::with('attendances')->findOrFail($student_id);
 
+        $student = Student::with('attendances')->findOrFail($student_id);
+        $today = Carbon::today();
+        $yesterday = Carbon::yesterday();
+        $startOfMonth = Carbon::now()->startOfMonth();
+        $endOfMonth = Carbon::now()->endOfMonth();
+        
+        // Fetch attendance records for the current month
+        $monthlyAttendance = $student->attendances->filter(function ($attendance) use ($startOfMonth, $endOfMonth) {
+            return Carbon::parse($attendance->attendance_date)->between($startOfMonth, $endOfMonth);
+        });
+        // Count attendance types for the current month
+        $presentCount = $monthlyAttendance->where('status', 'present')->count();
+        $leaveCount = $monthlyAttendance->where('status', 'leave')->count();
+        $absentCount = $monthlyAttendance->where('status', 'absent')->count();
+
+        // Calculate the average present/total for the current month
+        $totalDaysInMonth = $startOfMonth->daysInMonth;
+        $averagePresent = $totalDaysInMonth > 0 ? ($presentCount / $totalDaysInMonth) : 0;
+
+        // Determine today's attendance status
+        $todayAttendance = $student->attendances->firstWhere('attendance_date', $today->toDateString());
+        $todayStatus = $todayAttendance ? $todayAttendance->status : 'absent'; // Default to 'absent' if no record found
+
+        // Determine yesterday's attendance status
+        $yesterdayAttendance = $student->attendances->where('attendance_date', $yesterday->toDateString())->first();
+        $yesterdayStatus = $yesterdayAttendance ? $yesterdayAttendance->status : 'absent'; // Default to 'absent' if no record found
+
+        // Overall attendance data
         $total = $student->attendances->count();
         $totalPresent = $student->attendances->where('status', 'present')->count();
         $totalAbsent = $student->attendances->where('status', 'absent')->count();
@@ -145,7 +172,14 @@ class AttendanceService implements AttendanceServiceInterface
             'total_absent' => $totalAbsent,
             'total_leave' => $totalLeave,
             'percent_present' => round($percentPresent, 2),
+            'average_present' => round($averagePresent, 2),
+            'this_month_present' => $presentCount,
+            'this_month_leave' => $leaveCount,
+            'this_month_absent' => $absentCount,
+            'today_status' => $todayStatus,
+            'yesterday_status' => $yesterdayStatus,
         ];
+
 
         return $attendanceData;
     
