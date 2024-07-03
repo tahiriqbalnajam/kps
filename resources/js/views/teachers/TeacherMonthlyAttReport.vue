@@ -1,62 +1,77 @@
-<script setup>
-    import { reactive } from 'vue';
+<template>
+  <div class="app-container">
+     <div class="filter-container">
+         <head-controls>
+          <el-row>
+            <el-col :span="12">
+              <el-row :gutter="20">
+                <el-col :span="12">
+                  <el-form-item label="Select Month">
+                    <el-date-picker
+                        v-model="query.month"
+                        type="month"
+                        format="MMM"
+                        value-format="YYYY-MM-DD"
+                        placeholder="Pick a month" 
+                    />
+                  </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                  <el-button type="primary" :loading="loading"  @click="getList()">{{ loading ? 'Submitting ...' : 'Get report' }}</el-button>
+                </el-col>
+              </el-row>
+            </el-col>
+          </el-row>
+         </head-controls>
+     </div>
+     <el-scrollbar height="300px">
+       <table class="tblwdborder">
+           <tr>
+               <th>Teacher Name</th>
+               <th v-for="index in 31" :key="index">{{index}}</th>
+           </tr>
+           <tr v-for="teacher in  attendance.teachers" :key="teacher.id">
+               <td>{{ teacher.name }}</td>
+               <td v-for="att in teacher.attendances" :key="att.id" :class="{'absent': (att == 'A')}">{{att}}</td>
+           </tr>
+       </table>
+   </el-scrollbar>
+ </div>
+</template>
+
+<script>
     import moment from 'moment';
     import Resource from '@/api/resource.js';
     import HeadControls from '@/components/HeadControls.vue';
     import { teacherMonthlyAttReport } from '@/api/attendance.js';
     let attRes = new Resource('teacher_attendance');
-    const $this =  reactive({
-                query: {
-                    teacher: '',
-                    month: moment().format("YYYY-MM-DD"),
-                },
-                attendance: {
-                    teachers: [],
-                    date: moment(),
-                },
-            })
-    const getList = async() => {
-        const {data} = await teacherMonthlyAttReport($this.query);
-        $this.attendance.teachers = data.attendance;
-      }
-    getList();
+    export default {
+      name: 'TeacherMonthlyReport',
+      components: {  },
+      directives: { },
+      data() {
+        return {
+          query: {
+              teacher: '',
+              month: moment().format("YYYY-MM-DD"),
+          },
+          attendance: {
+              teachers: [],
+              date: moment(),
+          },
+        };
+      },
+      created() {
+        this.getList();
+      },
+      methods: {
+        async getList(){
+            const {data} = await teacherMonthlyAttReport(this.query);
+            this.attendance.teachers = data.attendance;
+          }
+      },
+    };
 </script>
-
-
-<template>
-     <div class="app-container">
-        <div class="filter-container">
-            <head-controls>
-                <el-form-item label="Select Month">
-                    <el-col :span="4">
-                        <el-date-picker
-                            v-model="$this.query.month"
-                            type="month"
-                            format="MMM"
-                            value-format="YYYY-MM-DD"
-                            placeholder="Pick a month" 
-                        />
-                    </el-col>
-                     <el-col :span="2">
-                        <el-button type="primary" :loading="loading"  @click="getList()">{{ loading ? 'Submitting ...' : 'Get report' }}</el-button>
-                      </el-col>
-                </el-form-item>
-            </head-controls>
-        </div>
-        <table class="tblwdborder">
-            <tr>
-                <th>Teacher Name</th>
-                <th v-for="index in 31" :key="index">{{index}}</th>
-            </tr>
-            <tr v-for="teacher in  $this.attendance.teachers" :key="teacher.id">
-                <td>{{ teacher.name }}</td>
-                <td v-for="att in teacher.attendances" :key="att" :class="{'absent': (att == 'A')}">{{att}}</td>
-            </tr>
-        </table>
-    </div>
-</template>
-
-
 <style  scoped>
   .el-drawer__body {
     flex: 1;

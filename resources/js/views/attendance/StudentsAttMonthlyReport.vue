@@ -20,16 +20,18 @@
         {{ loading ? 'Submitting ...' : 'get report' }}
       </el-button>
     </div>
-    <table class="tblwdborder">
-      <tr>
-        <th>Student Name</th>
-        <th v-for="index in 31" :key="index">{{index}}</th>
-      </tr>
-      <tr v-for="student in attendance.students" :key="student.id">
-        <td>{{ student.name }}</td>
-        <td v-for="att in student.attendances" :key="att.id" :class="{'absent': (att == 'A')}">{{att}}</td>
-      </tr>
-    </table>
+    <el-scrollbar height="700px">
+      <table class="tblwdborder">
+        <tr>
+          <th>Student Name</th>
+          <th v-for="index in 31" :key="index">{{index}}</th>
+        </tr>
+        <tr v-for="student in attendance.students" :key="student.id">
+          <td>{{ student.name }}</td>
+          <td v-for="att in student.attendances" :key="att.id" :class="{'absent': (att == 'A')}">{{att}}</td>
+        </tr>
+      </table>
+    </el-scrollbar>
   </div>
 </template>
 <script>
