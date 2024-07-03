@@ -5,32 +5,12 @@
       </el-col>
       <el-col :span="9">
         <el-card>
-          <el-row :gutter="20">
-            <el-col :span="8">
-              <el-card>
-                <template #header>
-                  PRESENTS
-                </template>
-                <el-text>asdfas</el-text>
-              </el-card>
-            </el-col>
-            <el-col :span="8">
-              <el-card>
-                <div class="box-center">
-                  <div class="user-name">afa</div>
-                  <div class="user-role">asdfa</div>
-                </div>
-              </el-card>
-            </el-col>
-            <el-col :span="8">
-              <el-card>
-                <div class="box-center">
-                  <div class="user-name">afa</div>
-                  <div class="user-role">asdfa</div>
-                </div>
-              </el-card>
-            </el-col>
-          </el-row>
+          <template #header>
+            <div class="card-header">
+              <span>Attendance Report</span>
+            </div>
+          </template>
+          <attendance-info />
         </el-card>     
       </el-col>
       <el-col :span="9">
@@ -39,24 +19,32 @@
     </el-row>
 </template>
 
-<script setup>
-
-import StudentInfo from './components/StudentInfo.vue'
-import { ref, onMounted } from 'vue';
-import { useRoute } from 'vue-router'
-
-// reactive state
-const count = ref(0)
-
-// functions that mutate state and trigger updates
-function increment() {
-  count.value++
-}
-
-// lifecycle hooks
-onMounted(() => {
-  console.log(`The initial count is ${count.value}.`)
-})
+<script>
+import StudentInfo from './components/StudentInfo.vue';
+import AttendanceInfo from './components/AttendanceInfo.vue';
+import Resource from '@/api/resource';
+const student = new Resource('students');
+export default {
+  name: 'StudentReport',
+  components: {
+    StudentInfo,
+    AttendanceInfo
+  },
+  data() {
+    return {
+      presents: 'asdfas',
+      users: [
+        { name: 'afa', role: 'asdfa' },
+        { name: 'afa', role: 'asdfa' }
+      ]
+    };
+  },
+  mounted() {
+    //this.getProfile();
+  },
+  methods: {
+  }
+};
 </script>
 
 <style scoped>

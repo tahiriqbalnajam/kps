@@ -61,6 +61,7 @@ class StudentController extends Controller
      */
     public function show(Student $student)
     {
+        $student = Student::with('parents', 'stdclasses')->find($student->id);
         return response()->json(new JsonResponse(['student' => $student]));
     }
 

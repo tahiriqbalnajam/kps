@@ -3,7 +3,7 @@
       <div class="user-profile">
         <div class="box-center">
           <div class="user-name text-center">
-            Tahir IQbal
+            {{ student.name }}
           </div>
         </div>
         <div class="box-social">
@@ -13,43 +13,57 @@
               border
               :style="{boxShadow: 'Light Shadow', borderRadius: 'Large Radius'}"
           >
-            <el-descriptions-item label="Name">Tahir Iqbal</el-descriptions-item>
-            <el-descriptions-item label="Father">Iqbal</el-descriptions-item>
-            <el-descriptions-item label="Class">One</el-descriptions-item>
-            <el-descriptions-item label="Reg#">4646</el-descriptions-item>
-            <el-descriptions-item label="Name">Tahir Iqbal</el-descriptions-item>
+            <el-descriptions-item label="Father Name">{{ student.parents.name }}</el-descriptions-item>
+            <el-descriptions-item label="Address">{{ student.parents.address }}</el-descriptions-item>
+            <el-descriptions-item label="Registration No">{{ student.adminssion_number }}</el-descriptions-item>
+            <el-descriptions-item label="Date of Admission">{{ student.doa }}</el-descriptions-item>
+            <el-descriptions-item label="Class">{{ student.stdclasses.name }}</el-descriptions-item>
+            <el-descriptions-item label="Date Of Birth">{{ student.dob }}</el-descriptions-item>
+            <el-descriptions-item label="Gender">{{ student.gender }}</el-descriptions-item>
+            <el-descriptions-item label="Student Birth Form ID / NIC">{{ student.b_form }}</el-descriptions-item>
+            <el-descriptions-item label="Cast">{{ student.cast }}</el-descriptions-item>
+            <el-descriptions-item label="Previous School">{{ student.previous_school }}</el-descriptions-item>
+            <el-descriptions-item label="Orphan">{{ student.is_orphan }}</el-descriptions-item>
+            <el-descriptions-item label="Religion">{{ student.religion }}</el-descriptions-item>
           </el-descriptions>
         </div>
       </div>
     </el-card>
 </template>
-<script setup>
-import { ref } from 'vue';
-import { useRoute } from 'vue-router'
-import Resource from '@/api/resource';
-import { get } from 'lodash';
-const student = new Resource('students');
-
-const resData = ref({
-  student: {}
-});
-
-const query = ref({
-  filter: {},
-})
-
-const getStudent = async (query) => {
-  const { data } = await student.list(query);
-  resData.student = data.students.data[0];
-};
-onMounted(() => {
+<script>
+  import Resource from '@/api/resource';
+  import { useRoute } from 'vue-router';
   const route = useRoute()
-  query.filter = {
-        ['id']: route.params.id,
-  }
-  getStudent(query);
-});
-
+  const student = new Resource('students');
+  const parent = new Resource('parents');
+  export default {
+    name: 'StudentInfo',
+    components: {
+    },
+    data() {
+      return {
+        student: {
+          parents: {},
+          stdclasses: {}
+        },
+        parent: {},
+        query: {
+          studentid: '',
+        }
+      };
+    },
+    mounted() {
+      const studentId = this.$route.params.id; // Accessing the URL parameter named 'id'
+      this.getProfile(studentId);
+    },
+    methods: {
+      async getProfile(stdid) {  
+        let { data } = await student.get(stdid);
+        console.log(data);
+        this.student = data.student;
+      }
+    }
+  };
 </script>
 
 <style lang="scss" scoped>

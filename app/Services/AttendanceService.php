@@ -128,6 +128,29 @@ class AttendanceService implements AttendanceServiceInterface
         return $attendance;
     }
 
+    public function student_attendance_total($student_id) {
+        $student = Student::with('attendances')->findOrFail($student_id);
+
+        $total = $student->attendances->count();
+        $totalPresent = $student->attendances->where('status', 'present')->count();
+        $totalAbsent = $student->attendances->where('status', 'absent')->count();
+        $totalLeave = $student->attendances->where('status', 'leave')->count();
+        $percentPresent = $total > 0 ? ($totalPresent / $total) * 100 : 0;
+
+        $attendanceData = [
+            'student_id' => $student->id,
+            'student_name' => $student->name,
+            'total' => $total,
+            'total_present' => $totalPresent,
+            'total_absent' => $totalAbsent,
+            'total_leave' => $totalLeave,
+            'percent_present' => round($percentPresent, 2),
+        ];
+
+        return $attendanceData;
+    
+    }
+
     public function absent_student_each_class($data) {
         $today = ($data['date']) ?? Carbon::today();
 

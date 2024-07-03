@@ -100,6 +100,11 @@ class StudentAttendanceController extends Controller
         return response()->json(new JsonResponse(['students' => $attendance]));
     }
 
+    public function student_attendance_total($student_id) {
+        $attendance = $this->attendanceService->student_attendance_total($student_id);
+        return response()->json(new JsonResponse(['attendance' => $attendance]));
+    }
+    
     public function attendance_student_monthly(Request $request) {
         $student_id = $request->student_id;
         $date = $request->month;

@@ -48,6 +48,13 @@ export function absentForeachClass(data) {
   });
 }
 
+export function getStudentAttTotals(id) {
+  return request({
+    url: '/student_attendance_total'+ '/' + id,
+    method: 'get',
+  });
+}
+
 export function teacherMonthlyAttReport(data) {
   return request({
     url: '/teachers_monthly_att_report',

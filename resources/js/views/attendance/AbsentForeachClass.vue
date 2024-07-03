@@ -1,16 +1,28 @@
 <template>
     <div class="app-container">
         <div class="filter-container">
-            <el-date-picker
-                v-model="$this.query.date"
-                type="date"
-                format="DD MMM, YYYY"
-                value-format="YYYY-MM-DD"
-                placeholder="Pick a day" 
-                @change="getList" />
-            <el-button type="primary" :loading="loading"  @click="getList">
-                {{ loading ? 'Submitting ...' : 'Show Report' }}
-            </el-button>
+            <head-controls>
+                <el-row :gutter="20" justify="space-between">
+                    <el-col :span="12">
+                        <el-row :gutter="20">
+                            <el-col :span="12">
+                                <el-date-picker
+                                    v-model="$this.query.date"
+                                    type="date"
+                                    format="DD MMM, YYYY"
+                                    value-format="YYYY-MM-DD"
+                                    placeholder="Pick a day" 
+                                />
+                            </el-col>
+                            <el-col :span="12">
+                                <el-button type="primary" :loading="loading"  @click="getList">
+                                    {{ loading ? 'Submitting ...' : 'Show Report' }}
+                                </el-button>
+                            </el-col>
+                        </el-row> 
+                    </el-col>
+                </el-row>
+            </head-controls>           
         </div>
         <el-card shadow="always">
             <el-scrollbar height="700px">
@@ -32,6 +44,7 @@
 
 <script setup>
     import { reactive } from 'vue';
+    import HeadControls from '@/components/HeadControls.vue';
     import { absentForeachClass } from '@/api/attendance.js';
     const $this =  reactive({
                 data: null,

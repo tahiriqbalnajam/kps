@@ -1,5 +1,5 @@
 <template>
-  <div :class="className" :style="{ height: height, width: width }" />
+  <div ref="myDiv" :class="className" :style="{ height: height, width: width }" />
 </template>
 
 <script setup>
@@ -49,7 +49,7 @@ onBeforeUnmount(() => {
 
 const { proxy } = getCurrentInstance()
 const initChart = () => {
-  state.chart = echarts.init(proxy.$el, 'macarons')
+  state.chart = echarts.init(this.$refs.myDiv, 'macarons')
   state.chart.setOption({
     tooltip: {
       trigger: 'item',
