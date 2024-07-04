@@ -45,7 +45,8 @@ Route::post('pay_salary', 'TeacherAttendanceController@pay_salary');
 Route::post('generate_pay', 'TeacherAttendanceController@generate_pay');
 Route::post('teachers_monthly_att_report', 'TeacherAttendanceController@teachers_monthly_att_report');
 Route::apiResource('holidays', 'HolidayController');
-
+//Tests
+Route::apiResource('tests', 'TestController');
 //exam
 //Route::apiResource('exam_result', 'ExamController');
 Route::apiResource('examtest_result', 'ExamTestController');

@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
 
+use App\Services\TestService;
+
 class AppServiceProvider extends ServiceProvider
 {
     /**
@@ -16,7 +18,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        //
+        $this->app->singleton(TestService::class, function ($app) {
+            return new TestService();
+        });
     }
 
     /**
