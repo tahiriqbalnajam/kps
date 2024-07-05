@@ -1,22 +1,23 @@
 <?php
 namespace App\Http\Controllers;
 
-use App\Services\TestResultService;
 use Illuminate\Http\Request;
+use App\Laravue\JsonResponse;
+use App\Services\TestService;
 
 class TestResultController extends Controller
 {
     protected $testResultService;
 
-    public function __construct(TestResultService $testResultService)
+    public function __construct(TestService $testResultService)
     {
         $this->testResultService = $testResultService;
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $testResults = $this->testResultService->getAllTestResults();
-        return response()->json($testResults);
+        $testResults = $this->testResultService->getAllTestResults($request->all());
+        return response()->json(new JsonResponse(['results' => $testResults]));
     }
 
     public function store(Request $request)

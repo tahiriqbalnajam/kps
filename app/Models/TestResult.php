@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class TestResult extends Model
 {
+    public $timestamps = false;
     use HasFactory;
 
     protected $fillable = [
@@ -22,6 +23,6 @@ class TestResult extends Model
 
     public function student()
     {
-        return $this->belongsTo(Student::class);
+        return $this->belongsTo(Student::class)->select('id', 'name', 'roll_no', 'class_id', 'parent_id');
     }
 }

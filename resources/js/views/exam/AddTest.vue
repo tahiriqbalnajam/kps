@@ -1,7 +1,7 @@
 <script>
 import Resource from '@/api/resource.js';
 const classes = new Resource('classes');
-let resource = new Resource('exam_result');
+let tests = new Resource('tests');
 const students = new Resource('students');
 const subjectRes = new Resource('subject_class');
 
@@ -55,6 +55,7 @@ export default {
         subject_id: '',
         class_id: '',
         total_marks: 0,
+        date: new Date(),
         students: {},
       },
       query: {
@@ -89,10 +90,18 @@ export default {
       this.classes = data.classes.data;
     },
     async addTest(formName) {
+      alert('asdfasdf');
       this.$refs[formName].validate(
         async (valid) => {
           if (valid) {
-
+            this.listloading = true;
+            const { data } = await tests.store(this.test);
+            this.listloading = false;
+            this.$message({
+              message: 'Test added successfully',
+              type: 'success',
+            });
+            this.handleClose();
           }
         }
       );
@@ -105,7 +114,7 @@ export default {
     validateMarks(obtain, total, student) {
       if(obtain > total || obtain < 0) {
         this.$message.error('Enter correct marks.');
-        student.obtained_marks = 0
+        student.score = 0
       }
 
     }
@@ -116,9 +125,9 @@ export default {
 <template>
 
 <el-drawer title="Add Test" :modelValue="addedittestprop" @close="handleClose" size="90%" :rules="rules">
-      <el-form style="width: 100%" :inline="true" :model="test" class="demo-form-inline" ref="addtest">
+      <el-form style="width: 100%" :inline="true" :model="test" class="demo-form-inline" ref="addtestform">
         <el-row :gutter="10">
-          <el-col :span="6">
+          <el-col :span="5">
             <el-form-item label="Test Name">
               <el-input v-model="test.title" placeholder="Test title" clearable prop="title"/>
             </el-form-item>
@@ -148,26 +157,38 @@ export default {
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="6">
+          <el-col :span="4">
+            <el-form-item label="Date">
+              <el-date-picker
+                v-model="test.date"
+                type="test.date"
+                placeholder="Pick a date"
+                format="DD MMM, YYYY"
+                value-format="YYYY-MM-DD"
+                :default-value="new Date()"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="5">
             <el-form-item label="Total Marks">
               <el-input-number v-model="test.total_marks" />
             </el-form-item>
           </el-col>
           <el-col :span="2">
             <el-form-item>
-              <el-button type="primary" @click="addTest('addtest')" :disabled="!test.students.length">Save</el-button>
+              <el-button type="primary" @click="addTest('addtestform')" :disabled="!test.students.length">Save</el-button>
             </el-form-item>
           </el-col>
         </el-row>
        
-        <el-table :data="test.students" height="400" style="width: 100%">
+        <el-table :data="test.students" height="650" style="width: 100%">
           <el-table-column prop="name" label="Name" width="180" />
           <el-table-column prop="parents.name" label="Father Name" width="180" />
           <el-table-column prop="stdclasses.name" label="Class" width="180" />
           <el-table-column prop="obtainedmarks" label="Obtained Marks" width="180" >
             <template #default="scope">
-              <el-input v-model="scope.row.obtained_marks" required placeholder="Enter Marks" clearable  
-                        @change="validateMarks(scope.row.obtained_marks, test.total_marks, scope.row)"
+              <el-input v-model="scope.row.score" required placeholder="Enter Marks" clearable  
+                        @change="validateMarks(scope.row.score, test.total_marks, scope.row)"
               />
             </template>
           </el-table-column>

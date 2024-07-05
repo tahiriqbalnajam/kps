@@ -3,19 +3,51 @@ namespace App\Services;
 
 use App\Models\Test;
 use App\Models\TestResult;
+use Illuminate\Support\Arr;
 use Illuminate\Http\Request;
+use Spatie\QueryBuilder\QueryBuilder;
+use Spatie\QueryBuilder\AllowedFilter;
 
 class TestService
 {
-    public function getAllTests()
+    const ITEM_PER_PAGE = 100;
+
+    public function getAllTests($searchParams = [])
     {
-        return Test::all();
+        $limit = Arr::get($searchParams, 'limit', static::ITEM_PER_PAGE);
+        return QueryBuilder::for(Test::class)
+            ->allowedIncludes(['class', 'subject', 'testResults','testResults.student','testResults.student.parents'])
+            ->allowedFilters([
+                'id','class_id', 'subject_id', 'title', 'date'
+            ])
+            ->paginate($limit)
+            ->appends(request()->query());
+        return Test::with(['class', 'subject'])->get();
     }
 
     public function createTest(array $data)
     {
         $validatedData = $this->validateTestData($data);
-        return Test::create($validatedData);
+        $test = Test::create($validatedData);
+        return $test;
+        
+    }
+
+    public function createTestWithResults(array $data)
+    {
+        $validatedData = $this->validateTestData($data);
+        $test = Test::create($validatedData);
+        $testresult = array();
+        foreach($data['students'] as $student){
+            $testresult[] = [
+                'test_id' => $test->id,
+                'student_id' => $student['id'],
+                'score' => ($student['score']) ?? 0,
+            ];
+        }
+        TestResult::insert($testresult);
+        return $test;
+
     }
 
     public function getTestById($id)
@@ -45,12 +77,20 @@ class TestService
             'subject_id' => 'required|exists:subjects,id',
             'title' => 'required|string|max:255',
             'date' => 'required|date',
+            'total_marks' => 'required|numeric',
         ])->validate();
     }
 
-    public function getAllTestResults()
+    public function getAllTestResults($searchParams = [])
     {
-        return TestResult::all();
+        $limit = Arr::get($searchParams, 'limit', static::ITEM_PER_PAGE);
+        return QueryBuilder::for(TestResult::class)
+            ->with('student')
+            ->allowedFilters([
+                'id','test_id', 'student_id'
+            ])
+            ->paginate($limit)
+            ->appends(request()->query());
     }
 
     public function createTestResult(array $data)

@@ -1,8 +1,9 @@
 <?php
 namespace App\Http\Controllers;
 
-use App\Services\TestService;
 use Illuminate\Http\Request;
+use App\Laravue\JsonResponse;
+use App\Services\TestService;
 
 class TestController extends Controller
 {
@@ -16,12 +17,12 @@ class TestController extends Controller
     public function index()
     {
         $tests = $this->testService->getAllTests();
-        return response()->json($tests);
+        return response()->json(new JsonResponse(['tests' => $tests]));
     }
 
     public function store(Request $request)
     {
-        $test = $this->testService->createTest($request->all());
+        $test = $this->testService->createTestWithResults($request->all());
         return response()->json($test, 201);
     }
 

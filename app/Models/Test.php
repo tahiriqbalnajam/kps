@@ -1,45 +1,32 @@
 <?php
-namespace App\Http\Controllers;
+namespace App\Models;
 
-use App\Services\TestService;
-use Illuminate\Http\Request;
+use Illuminate\Database\Eloquent\Model;
 
-class TestController extends Controller
+class Test extends Model
 {
-    protected $testService;
+    public $timestamps = false;
+    protected $fillable = [
+        'class_id',
+        'subject_id',
+        'title',
+        'date',
+        'total_marks',
+    ];
 
-    public function __construct(TestService $testService)
+    // Relationships
+    public function class()
     {
-        $this->testService = $testService;
+        return $this->belongsTo(Classes::class)->select('id', 'name');
     }
 
-    public function index()
+    public function subject()
     {
-        $tests = $this->testService->getAllTests();
-        return response()->json($tests);
+        return $this->belongsTo(Subject::class)->select('id', 'title');
     }
 
-    public function store(Request $request)
+    public function testResults()
     {
-        $test = $this->testService->createTest($request->all());
-        return response()->json($test, 201);
-    }
-
-    public function show($id)
-    {
-        $test = $this->testService->getTestById($id);
-        return response()->json($test);
-    }
-
-    public function update(Request $request, $id)
-    {
-        $test = $this->testService->updateTest($id, $request->all());
-        return response()->json($test);
-    }
-
-    public function destroy($id)
-    {
-        $this->testService->deleteTest($id);
-        return response()->json(null, 204);
+        return $this->hasMany(TestResult::class);
     }
 }

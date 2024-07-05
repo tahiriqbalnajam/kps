@@ -47,6 +47,7 @@ Route::post('teachers_monthly_att_report', 'TeacherAttendanceController@teachers
 Route::apiResource('holidays', 'HolidayController');
 //Tests
 Route::apiResource('tests', 'TestController');
+Route::apiResource('tests-result', 'TestResultController');
 //exam
 //Route::apiResource('exam_result', 'ExamController');
 Route::apiResource('examtest_result', 'ExamTestController');

@@ -1,202 +1,109 @@
-<script setup>
+<script>
   import HeadControls from '@/components/HeadControls.vue';
   import AddTest from '@/views/exam/AddTest.vue';
-  import Pagination from '@/components/Pagination/index.vue';
-  import { ElNotification, ElMessage, ElMessageBox } from 'element-plus'
-  import { onMounted, ref } from "vue";
-  import { reactive } from 'vue';
-  import moment from 'moment';
   import Resource from '@/api/resource.js';
-  const resource = new Resource('examstest');
-  const dialogFormVisible = ref(false);
-  const studentexam = ref(false);
-  const dialogEditFormVisible = ref(false);
-
-  const form = reactive({
-    name: '',
-    region: '',
-    date1: '',
-    date2: '',
-    delivery: false,
-    type: [],
-    resource: '',
-    desc: '',
-  });
-  const organizedResultsclass = ref({});
-  const organizedResultsstd = ref({});
-
-  const formInline = reactive({
-    examname: '',
-    classes: '',
-    stdclass: '',
-    resource: '',
-    updateexamresult: '',
-  })
-
-  const updateexams= reactive({
-    filtercol: '',
-    examname: '',
-  })
-
-  const rdata = reactive({
-    addedittestprop: false,
-    result_students: '',
-    result_examname: '',
-    result_classname: '',
-    total: 0,
-    listloading: false,
-    result_id: '',
-  })
-
-  const query = reactive({
-    page: 1,
-    limit: 15,
-    keyword: '',
-    filtercol: 'exams',
-    stdclass: '',
-  })
-
-  const elementsave = reactive({
-    ids: '',
-    exam_ids: '',
-    student_ids: '',
-    class_ids: '',
-    total_markss: '',
-    obtained_markss: '',
-  })
-
-  const get_Exams = async() => {
-    rdata.listloading = true;
-    const { data } = await resource.list(query);
-    rdata.listloading = false;
-    formInline.resource = data.exams.data;
-    rdata.total = data.exams.total;
-   //console.log(formInline.resource);
-  }
- 
-  const updateExamResult= async() =>{
-    rdata.result_examname
-   // console.log(rdata.result_students)
-   updateexams.filtercol = 'update_result';
-    rdata.result_students.forEach(element => {
-      elementsave.ids = element.id;
-      updateexams.id = element.id;
-      updateexams.obtained_marks = element.obtained_marks;
-      resource.update(element.id, updateexams);
-   });
-
-    updateexams.filtercol = 'update_exams';
-    updateexams.id = rdata.result_id;
-    updateexams.examname = rdata.result_examname;
-    resource.update(updateexams.id, updateexams);
-    get_Exams();
-    ElNotification({
-      title: 'Success',
-      message: 'Record Has Been Updated',
-      type: 'success',
-    })
-  }
-
-  const deleteExam = async(examsid) => {
-
-    ElMessageBox.confirm(
-      'Do you want permanently delete the exam. Continue?',
-      'Warning',
-      {
-        confirmButtonText: 'OK',
-        cancelButtonText: 'Cancel',
-        type: 'warning',
-      }
-    ).then(() => {
-      get_Exams();
-      const examid = examsid;
-      resource.destroy(examid);
-      get_Exams();
-      ElMessage({
-        type: 'success',
-        message: 'Delete completed',
+  import Pagination from '@/components/Pagination/index.vue';
+  import moment from 'moment';
+  const tests = new Resource('tests');
+  const test_result = new Resource('tests-result');
+  export default {
+    name: 'TestList',
+    components: {
+      HeadControls,
+      AddTest,
+      Pagination,
+    },
+    data() {
+      return {
+        formInline: {
+          exam: '',
+          resource: [],
+        },
+        listloading: false,
+        showTestStudentList: false,
+        dialogFormVisible: false,
+        dialogEditFormVisible: false,
+        studentexam: false,
+        organizedResultsclass: {},
+        organizedResultsstd: {},
+        testslist: [],
+        rdata: {
+          result_classname: '',
+          result_examname: '',
+          result_students: [],
+          total: 0,
+          addedittestprop: false,
+        },
+        edit: false,
+        results: [],
+        query: {
+          page: 1,
+          limit: 10,
+          keyword: '',
+          role: '',
+          filter: {},
+          include: '',
+        },
+        resultquery: {
+          filter: {},
+          include: '',
+        },
+        form: {
+          result_examname: '',
+          result_students: [],
+        },
+      };
+  },
+  created() {
+    this.get_Exams();
+  },
+  methods: {
+    async get_Exams() {
+      this.listloading = true;
+      this.query.include = 'class,subject';
+      const { data } = await tests.list(this.query);
+      this.testslist = data.tests.data;
+      this.listloading = false;
+    },
+    async getResultClaswise(class_id, class_name) {
+      this.listloading = true;
+      this.resultquery.filter['id'] = class_id;
+      this.resultquery.include = 'class,subject,testResults,testResults.student,testResults.student.parents';
+      const { data } = await tests.list(this.resultquery);
+      this.results = data.tests.data[0];
+      console.log(this.results);
+    },
+    openPopup() {
+      this.rdata.addedittestprop = true;
+    },
+    dateformat: (date) => {
+      return (!date) ? '' : moment(date).format('DD MMM, YYYY');
+    },
+    getSummaries(param) {
+      const { columns, data } = param
+      const sums = []
+      columns.forEach((column, index) => {
+        if (index === 1) {
+          sums[index] = h('div', { style: { fontSize: '18px' } }, [
+            'Average:',
+          ])
+          return
+        }
+        if (index === 2) {
+            const values = data.reduce((total, item) => total + Number(item[column.property]), 0);
+          sums[index] = h('div', { style: { fontSize: '18px' } }, [
+            values/ data.length,
+          ])
+          return;
+        } else {
+          sums[index] = ''
+        }
       })
-    })
-    .catch(() => {
-    })
-  }
-  const printComponent = ref(null);
 
-  const print = ref(() => {
-  if (printComponent.value) {
-    printComponent.value.handlePrint();
+      return sums
+    }
   }
-});
-
-  const getResultClaswise = async(examId) => {
-    // // console.log(formInline.resource);
-    // const result = formInline.resource.filter(item => item.class_id == class_id);
-    // console.log(result);
-    // rdata.result_students = result[0].results;
-    // //rdata.result_students = result;
-    // rdata.result_examname = result[0].examname;
-    // rdata.result_id = result[0].id;
-    // rdata.result_classname = "class: " + result[0].classes.name;
-    try {
-    rdata.listloading = true;
-    const { data } = await resource.get(`${examId}/test_results`);
-    rdata.listloading = false;
-    // formInline.resource = data.classResults;
-    // console.log(formInline.resource);
-    organizedResultsclass.value = data.classResults.reduce((acc, result) => {
-        const className = `Class ${result.class_id}`;
-        if (!acc[className]) {
-          acc[className] = [];
-        }
-        acc[className].push(result);
-        return acc;
-      }, {});
-    //rdata.total = data.testResults.total;
-  } catch (error) {
-    console.error('Error fetching test results:', error);
-  }
-  }
-  // const getResultStudentwise = async(examsid, testname) => {
-  //   const result = formInline.resource.filter(item => item.id == examsid);
-  //   console.log(formInline.resource);
-  //   rdata.result_students = result[0].results;
-  //   rdata.result_examname = result[0].examname;
-  //   rdata.result_id = result[0].id;
-  //   rdata.result_classname = "class: " + result[0].classes.name;
-  // }
-  const getResultStudentwise = async (examId) => {
-  try {
-    rdata.listloading = true;
-    const { data } = await resource.get(`${examId}/test_results`);
-    rdata.listloading = false;
-    // formInline.resource = data.classResults;
-    // console.log(formInline.resource);
-    organizedResultsstd.value = data.classResults.reduce((acc, result) => {
-        const studentName = result.student_name.trim(); // Trim to handle any leading/trailing spaces
-        if (!acc[studentName]) {
-          acc[studentName] = [];
-        }
-        acc[studentName].push(result);
-        return acc;
-      }, {});
-    //rdata.total = data.testResults.total;
-  } catch (error) {
-    console.error('Error fetching test results:', error);
-  }
-}
-
-  const openPopup = () => {
-    rdata.addedittestprop = true
-  }
-
-  const popupClosed = () => {
-    rdata.addedittestprop = false
-    get_Exams();
-  }
-
-  onMounted(() => {
-    get_Exams();
-  });
+ }
 
 
 </script>
@@ -204,7 +111,7 @@
   <div class="app-container">
     <div class="filter-container">
       <head-controls>
-        <el-form-item v-loading="listloading">
+        <el-form-item>
           <el-col :span="4">
             <el-select v-model="formInline.exam" placeholder="Select Test" class="filter-item" clearable>
               <el-option
@@ -227,20 +134,21 @@
     </div>
     <el-card class="box-card">
       <testing />
-      <el-table :data="formInline.resource" height="600" style="width: 100%">
-        <el-table-column prop="examname" label="Exam"  />
-        <el-table-column prop="classes.name" label="Class"  />
+      <el-table :data="testslist" height="600" style="width: 100%" :loading="loading">
+        <el-table-column prop="title" label="Title"  />
+        <el-table-column prop="class.name" label="Class"  />
+        <el-table-column prop="subject.title" label="Subject"  />
         <el-table-column prop="total_marks" label="Total Marks"  />
-        <el-table-column prop="created_at" label="Date">
+        <el-table-column prop="date" label="Date">
           <template #default="scope">
-            {{moment(scope.row.created_at).format('DD/MM/YYYY')}}
+            {{dateformat(scope.row.date)}}
           </template>
         </el-table-column>
         <el-table-column>
           <template #default="scope">
             <el-button-group>
               <el-tooltip content="Class Wise" placement="top">
-                <el-button color="#626aef" :dark="isDark" @click="[getResultClaswise(scope.row.class_id),dialogFormVisible = true]">
+                <el-button color="#626aef" :dark="isDark" @click="[getResultClaswise(scope.row.id, scope.row.class.name),showTestStudentList = true]">
                   <el-icon><ScaleToOriginal /></el-icon>
                 </el-button>
               </el-tooltip>
@@ -268,113 +176,54 @@
         </el-table-column>
       </el-table>
     </el-card>
-
-  <el-dialog v-model="dialogFormVisible" v-model:title="rdata.result_classname">
-    <!-- <el-form :model="form">
-      <el-form label-position="left"  style="max-width: 300px;">
-          <el-form-item label="Exam Name:">
-            <el-input readonly v-model="rdata.result_examname" />
-          </el-form-item>
-        </el-form>
-      <el-table :data="rdata.result_students" style="width: 100%">
-        <el-table-column prop="student.name" label="Student"/>
-        <el-table-column prop="subject.title" label="Subject"/>
-        <el-table-column prop="total_marks" label="Total Marks"  />
-        <el-table-column prop="obtained_marks" label="Obtain Marks" />
-      </el-table>
-    </el-form> -->
-    <div>
-    <el-row v-for="(studentResults, studentName, index) in organizedResultsclass" :key="index">
-      <el-col :span="24">
-        <h2>{{ studentName }}</h2>
-        <el-table :data="studentResults" stripe style="width: 100%">
-          <el-table-column label="Student Name" prop="student_name"></el-table-column>
-          <el-table-column label="Roll #" prop="roll_no"></el-table-column>
-          <el-table-column label="Exam Name" prop="examname"></el-table-column>
-          <el-table-column label="Subject Name" prop="subject_name"></el-table-column>
-          <el-table-column label="Total Marks" prop="total_marks"></el-table-column>
-          <el-table-column label="Obtained Marks" prop="obtained_marks"></el-table-column>
-        </el-table>
-      </el-col>
-    </el-row>
-  </div>
-    <template #footer>
-      <span class="dialog-footer">
-        <el-button @click="dialogFormVisible = false">Cancel</el-button>
-        <el-button type="primary" @click="print.value()">
-          Print
-        </el-button>
-      </span>
-    </template>
-  </el-dialog>
-  <el-dialog v-model="studentexam" v-model:title="rdata.result_classname">
-    <!-- <el-form :model="form">
-      <el-form label-position="left"  style="max-width: 300px;">
-          <el-form-item label="Exam Name1:">
-            <el-input readonly v-model="rdata.result_examname" />
-          </el-form-item>
-        </el-form>
-      <el-table :data="rdata.result_students" style="width: 100%">
-        <el-table-column prop="student.name" label="Student"/>
-        <el-table-column prop="total_marks" label="Total Marks"  />
-        <el-table-column prop="obtained_marks" label="Obtain Marks" />
-      </el-table>
-    </el-form> -->
-    
-    <div>
-      <el-row v-for="(classResults, className, index) in organizedResultsstd" :key="index">
-        <el-col :span="24">
-          <h2>{{ className }}</h2>
-          <el-table :data="classResults" stripe style="width: 100%">
-            <el-table-column label="Student Name" prop="student_name"></el-table-column>
-            <el-table-column label="Roll #" prop="roll_no"></el-table-column>
-            <el-table-column label="Exam Name" prop="examname"></el-table-column>
-            <el-table-column label="Subject Name" prop="subject_name"></el-table-column>
-            <el-table-column label="Total Marks" prop="total_marks"></el-table-column>
-            <el-table-column label="Obtained Marks" prop="obtained_marks"></el-table-column>
-          </el-table>
-        </el-col>
-      </el-row>
-    </div>
-    <template #footer>
-      <span class="dialog-footer">
-        <el-button @click="studentexam = false">Cancel</el-button>
-        <el-button type="primary" @click="print.value">
-          Print
-        </el-button>
-      </span>
-    </template>
-  </el-dialog>
-
-  <el-dialog v-model="dialogEditFormVisible" v-model:title="rdata.result_classname">
-    <el-form :model="form">
-      <el-form label-position="left"  style="max-width: 300px;">
-          <el-form-item label="Exam Name" prop="result_examname">
-            <el-input v-model="rdata.result_examname" />
-          </el-form-item>
-        </el-form>
-      <el-table :data="rdata.result_students" style="width: 100%">
-        <el-table-column prop="student.name" label="Student"/>
-        <el-table-column prop="total_marks" label="Total Marks"  />
-        <el-table-column prop="obtained_marks" label="Obtain Marks" >
-          <template #default="scope">
-              <el-input v-model="scope.row.obtained_marks" required placeholder="Enter Marks" clearable />
-            </template>
-        </el-table-column>
-      </el-table>
-    </el-form>
-    <template #footer>
-      <span class="dialog-footer">
-        <el-button @click="dialogEditFormVisible = false">Cancel</el-button>
-        <el-button type="primary" @click="[updateExamResult(),dialogEditFormVisible = false]">
-          Update
-        </el-button>
-      </span>
-    </template>
-  </el-dialog>
-
-
-  <pagination v-show="rdata.total>0" :total="rdata.total" :page.sync="query.page" :limit.sync="query.limit" @pagination="get_Exams" />
+    <el-drawer v-model="showTestStudentList" :title="results.title" size="90%">
+      <template #default>
+        <div>
+          <el-row :gutter="20">
+            <el-col :span="6">
+              <h2>Title: {{ results.title }}</h2>
+            </el-col>
+            <el-col :span="6">
+              <h2>Subject: {{ results.subject.title }}</h2>
+            </el-col>
+            <el-col :span="6">
+              <h2>Class: {{ results.class.name }}</h2>
+            </el-col>
+            <el-col :span="6">
+              <h2>Total Marks: {{ results.total_marks }}</h2> 
+            </el-col>
+            <el-col :span="6">
+              <el-switch
+                      v-model="edit"
+                      size="small"
+                      active-text="Edit"
+                      inactive-text="No"
+                    />
+            </el-col>
+          </el-row>
+          
+          <el-row>
+            <el-col :span="24">
+              <el-table :data="results.test_results" stripe style="width: 100%" :summary-method="getSummaries"  show-summary>
+                <el-table-column label="Student Name" prop="student.name"></el-table-column>
+                <el-table-column label="Parent Name" prop="student.parents.name"></el-table-column>
+                <el-table-column label="Obtained Marks" prop="score">
+                  <template #default="scope">
+                    <span v-show="!edit">{{scope.row.score}}</span>
+                    <el-input v-model="scope.row.score" size="mini" style="width: 50px" v-show="edit"/>
+                  </template>
+                </el-table-column>
+              </el-table>
+            </el-col>
+          </el-row>
+        </div>
+      </template>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="showTestStudentList = false">Cancel</el-button>
+        </span>
+      </template>
+    </el-drawer>
     <add-test :addedittestprop="rdata.addedittestprop"  @popupclosed="popupClosed"/>
   </div>
 </template>
