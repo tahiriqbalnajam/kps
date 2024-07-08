@@ -18,6 +18,16 @@ export default {
     },
   },
   emits: ['popupclosed'],
+  computed: {
+    filterTableData() {
+      return this.attendance.students.filter(
+        (data) =>
+          !this.search ||
+          data.name.toLowerCase().includes(this.search.toLowerCase())
+      )
+    }
+
+  },
   data() {
     var title = (rule, value, callback) => {
       if (!value) {
@@ -58,6 +68,7 @@ export default {
         date: new Date(),
         students: {},
       },
+      search:'',
       query: {
         filter: {},
       },
@@ -69,6 +80,19 @@ export default {
       },
     };
   },
+  computed: {
+    filterTableData() {
+      if(this.test.students.length)
+        return this.test.students.filter(
+          (data) =>
+            !this.search ||
+            data.name.toLowerCase().includes(this.search.toLowerCase())
+        )
+      else
+        return '';
+    }
+
+  },
   created() {
     this.getClasses();
   },
@@ -77,16 +101,16 @@ export default {
       this.closepopup = false;
       this.$emit('closePopUp', 'yes')
     },
-    async getstudents(){
+    async getstudents() {
       this.query.filter['stdclass'] = this.test.class_id;
       const { data } = await students.list(this.query);
       this.test.students = data.students.data;
 
-      const subjectdata  = await subjectRes.list(this.query);
+      const subjectdata = await subjectRes.list(this.query);
       this.subjects = subjectdata.data.classubj.data[0].subjects;
     },
     async getClasses() {
-      const{ data } = await classes.list();
+      const { data } = await classes.list();
       this.classes = data.classes.data;
     },
     async addTest(formName) {
@@ -112,7 +136,7 @@ export default {
       this.$emit('popupClosed', 'yes')
     },
     validateMarks(obtain, total, student) {
-      if(obtain > total || obtain < 0) {
+      if (obtain > total || obtain < 0) {
         this.$message.error('Enter correct marks.');
         student.score = 0
       }
@@ -123,77 +147,66 @@ export default {
 </script>
 
 <template>
-
-<el-drawer title="Add Test" :modelValue="addedittestprop" @close="handleClose" size="90%" :rules="rules">
-      <el-form style="width: 100%" :inline="true" :model="test" class="demo-form-inline" ref="addtestform">
-        <el-row :gutter="10">
-          <el-col :span="5">
-            <el-form-item label="Test Name">
-              <el-input v-model="test.title" placeholder="Test title" clearable prop="title"/>
-            </el-form-item>
-          </el-col>
-          <el-col :span="4">
-            <el-form-item label="Class">
-              <el-select v-model="test.class_id" placeholder="Select Class" clearable @change="getstudents()"  prop="class_id">
-                <el-option
-                  v-for="item in classes"
-                  :key="item.id"
-                  :label="item.name "
-                  :value="item.id"
-                  @click="onchange"
-                />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="4">
-            <el-form-item label="Subject">
-              <el-select v-model="test.subject_id" placeholder="Select Subject" clearable>
-                <el-option
-                  v-for="item in subjects"
-                  :key="item.id"
-                  :label="item.title"
-                  :value="item.id"
-                />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="4">
-            <el-form-item label="Date">
-              <el-date-picker
-                v-model="test.date"
-                type="test.date"
-                placeholder="Pick a date"
-                format="DD MMM, YYYY"
-                value-format="YYYY-MM-DD"
-                :default-value="new Date()"
-              />
-            </el-form-item>
-          </el-col>
-          <el-col :span="5">
-            <el-form-item label="Total Marks">
-              <el-input-number v-model="test.total_marks" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="2">
-            <el-form-item>
-              <el-button type="primary" @click="addTest('addtestform')" :disabled="!test.students.length">Save</el-button>
-            </el-form-item>
-          </el-col>
-        </el-row>
-       
-        <el-table :data="test.students" height="650" style="width: 100%">
-          <el-table-column prop="name" label="Name" width="180" />
-          <el-table-column prop="parents.name" label="Father Name" width="180" />
-          <el-table-column prop="stdclasses.name" label="Class" width="180" />
-          <el-table-column prop="obtainedmarks" label="Obtained Marks" width="180" >
-            <template #default="scope">
-              <el-input v-model="scope.row.score" required placeholder="Enter Marks" clearable  
-                        @change="validateMarks(scope.row.score, test.total_marks, scope.row)"
-              />
-            </template>
-          </el-table-column>
-        </el-table>
-      </el-form>
-</el-drawer>
- 
+  <el-drawer title="Add Test" :modelValue="addedittestprop" @close="handleClose" size="90%" :rules="rules">
+    <el-form style="width: 100%" :inline="true" :model="test" class="demo-form-inline" ref="addtestform">
+      <el-row :gutter="10">
+        <el-col :span="5">
+          <el-form-item label="Test Name">
+            <el-input v-model="test.title" placeholder="Test title" clearable prop="title" />
+          </el-form-item>
+        </el-col>
+        <el-col :span="4">
+          <el-form-item label="Class">
+            <el-select v-model="test.class_id" placeholder="Select Class" clearable @change="getstudents()"
+              prop="class_id">
+              <el-option v-for="item in classes" :key="item.id" :label="item.name" :value="item.id"
+                @click="onchange" />
+            </el-select>
+          </el-form-item>
+        </el-col>
+        <el-col :span="4">
+          <el-form-item label="Subject">
+            <el-select v-model="test.subject_id" placeholder="Select Subject" clearable>
+              <el-option v-for="item in subjects" :key="item.id" :label="item.title" :value="item.id" />
+            </el-select>
+          </el-form-item>
+        </el-col>
+        <el-col :span="4">
+          <el-form-item label="Date">
+            <el-date-picker v-model="test.date" type="test.date" placeholder="Pick a date" format="DD MMM, YYYY"
+              value-format="YYYY-MM-DD" :default-value="new Date()" />
+          </el-form-item>
+        </el-col>
+        <el-col :span="5">
+          <el-form-item label="Total Marks">
+            <el-input-number v-model="test.total_marks" />
+          </el-form-item>
+        </el-col>
+        <el-col :span="2">
+          <el-form-item>
+            <el-button type="primary" @click="addTest('addtestform')" :disabled="!test.students.length">Save</el-button>
+          </el-form-item>
+        </el-col>
+      </el-row>
+      <el-table :data="filterTableData" height="650" style="width: 100%">
+        <el-table-column prop="name" label="Name" />
+        <el-table-column prop="parents.name" label="Father Name" />
+        <el-table-column prop="stdclasses.name" label="Class" />
+        <el-table-column prop="obtainedmarks" label="Obtained Marks">
+          <template #default="scope">
+            <el-input v-model="scope.row.score" required placeholder="Enter Marks" clearable
+              @change="validateMarks(scope.row.score, test.total_marks, scope.row)" />
+          </template>
+        </el-table-column>
+        <el-table-column label="Search">
+          <template #header>
+            <el-input v-model="search" size="small" placeholder="Type to search" />
+          </template>
+          <template #default="scope">
+            {{ (scope.row.score > 0 && test.total_marks > 0) ? ((scope.row.score / test.total_marks) * 100)+"%" : "0%" }}
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-form>
+  </el-drawer>
 </template>
