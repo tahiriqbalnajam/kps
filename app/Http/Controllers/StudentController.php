@@ -94,6 +94,11 @@ class StudentController extends Controller
         $this->studentService->addAttendance($request->all());
     }
 
+    public function getSubjectWiseScores($studentId) {
+        $results = $this->studentService->getSubjectWiseScores($studentId);
+        return response()->json(new JsonResponse(['results' => $results]));
+    }
+
     public function edit_class(Request $request){
         $selected_students = $request->multiStudent;
         $desired_class = $request->changeClass;

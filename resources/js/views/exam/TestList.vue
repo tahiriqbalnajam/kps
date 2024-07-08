@@ -21,10 +21,8 @@
         },
         listloading: false,
         showTestStudentList: false,
-        dialogFormVisible: false,
         dialogEditFormVisible: false,
         studentexam: false,
-        organizedResultsclass: {},
         organizedResultsstd: {},
         testslist: [],
         rdata: {
@@ -47,10 +45,6 @@
         resultquery: {
           filter: {},
           include: '',
-        },
-        form: {
-          result_examname: '',
-          result_students: [],
         },
       };
   },
@@ -78,6 +72,11 @@
     },
     dateformat: (date) => {
       return (!date) ? '' : moment(date).format('DD MMM, YYYY');
+    },
+    async saveResult() {
+      this.listloading = true;
+      const { data } = await test_result.update(this.results.id, this.results.test_results);
+      this.listloading = false;
     },
     getSummaries(param) {
       const { columns, data } = param
@@ -176,10 +175,10 @@
         </el-table-column>
       </el-table>
     </el-card>
-    <el-drawer v-model="showTestStudentList" :title="results.title" size="90%">
+    <el-drawer v-model="showTestStudentList" size="90%">
       <template #default>
         <div>
-          <el-row :gutter="20">
+          <el-row :gutter="20" class="headerinfo">
             <el-col :span="6">
               <h2>Title: {{ results.title }}</h2>
             </el-col>
@@ -191,14 +190,6 @@
             </el-col>
             <el-col :span="6">
               <h2>Total Marks: {{ results.total_marks }}</h2> 
-            </el-col>
-            <el-col :span="6">
-              <el-switch
-                      v-model="edit"
-                      size="small"
-                      active-text="Edit"
-                      inactive-text="No"
-                    />
             </el-col>
           </el-row>
           
@@ -220,7 +211,11 @@
       </template>
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="showTestStudentList = false">Cancel</el-button>
+          <el-row gutter="20">
+            <el-col :span="8">
+              <el-button @click="showTestStudentList = false">Close</el-button>
+            </el-col>
+          </el-row>
         </span>
       </template>
     </el-drawer>
@@ -232,6 +227,11 @@
 <style  scoped>
   .rdata_result_examname {
       box-shadow: none;
+  }
+  .headerinfo {
+    background: linear-gradient(to right,#0071f3,#73b4ff);
+    color: white;
+    border-radius: 10px;
   }
 </style>
 

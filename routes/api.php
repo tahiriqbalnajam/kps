@@ -14,13 +14,20 @@ use Illuminate\Support\Facades\Route;
 | is assigned the "api" middleware group. Enjoy building your API!
 |
 */
+//students
 Route::apiResource('students', 'StudentController');
+Route::get('students/{id}/subject-wise-scores', 'StudentController@getSubjectWiseScores');
+//classes
 Route::apiResource('classes', 'ClassesController');
+//teachers
 Route::apiResource('teachers', 'TeacherController');
+//parents
 Route::apiResource('parents', 'ParentController');
+//fee
 Route::apiResource('feetypes', 'FeeTypeController');
 Route::apiResource('fee', 'FeeController');
 Route::apiResource('pendingfee', 'PendingFeeController');
+
 Route::apiResource('settings', 'SettingController');
 Route::apiResource('smsqueue', 'SmsQueueController');
 Route::get('sendsms', 'SmsQueueController@sendsms');
@@ -48,6 +55,7 @@ Route::apiResource('holidays', 'HolidayController');
 //Tests
 Route::apiResource('tests', 'TestController');
 Route::apiResource('tests-result', 'TestResultController');
+Route::put('tests/{test_id}/results', 'TestController@updateTestResults');
 //exam
 //Route::apiResource('exam_result', 'ExamController');
 Route::apiResource('examtest_result', 'ExamTestController');

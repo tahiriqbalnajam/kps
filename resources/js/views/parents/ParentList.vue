@@ -53,7 +53,10 @@
       <el-table-column label="CNIC" prop="cnic" />
       <el-table-column label="Children" prop="children">
         <template #default="scope">
-         <span v-for="child in scope.row.students" :key="child.id">{{ child.name + ',' }}</span>
+          <el-table :data=" scope.row.students" size="small">
+            <el-table-column type="index"/>
+            <el-table-column property="name" label="Name" />
+          </el-table>
         </template>
       </el-table-column>
       <el-table-column align="right">

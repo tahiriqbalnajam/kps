@@ -14,3 +14,10 @@ export function editClass(stdData){
     data: stdData,
   });
 }
+
+export function getSubjectWiseScores(id) {
+  return request({
+    url: '/students/' + id + '/subject-wise-scores/',
+    method: 'get',
+  });
+}

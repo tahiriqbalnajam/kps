@@ -10,4 +10,5 @@ interface StudentServiceInterface
     public function updateStudent(Student $student, array $data);
     public function addAttendance(array $data);
     public function editClass(array $selectedStudents, $desiredClass);
+    public function getSubjectWiseScores(int $studentid);
 }

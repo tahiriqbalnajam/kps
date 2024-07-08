@@ -14,7 +14,7 @@
         </el-card>     
       </el-col>
       <el-col :span="9">
-        Exam report
+        <TestInfo />
       </el-col>
     </el-row>
 </template>
@@ -22,13 +22,15 @@
 <script>
 import StudentInfo from './components/StudentInfo.vue';
 import AttendanceInfo from './components/AttendanceInfo.vue';
+import TestInfo from './components/TestInfo.vue';
 import Resource from '@/api/resource';
 const student = new Resource('students');
 export default {
   name: 'StudentReport',
   components: {
     StudentInfo,
-    AttendanceInfo
+    AttendanceInfo,
+    TestInfo
   },
   data() {
     return {

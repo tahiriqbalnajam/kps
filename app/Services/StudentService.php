@@ -1,14 +1,15 @@
 <?php
 namespace App\Services;
 
-use App\Models\Student;
-use App\Models\StudentAttendance;
 use App\Models\User;
+use App\Models\Student;
+use App\Models\TestResult;
+use Illuminate\Support\Arr;
+use App\Models\StudentAttendance;
 use Illuminate\Support\Facades\DB;
-use App\Services\Contracts\StudentServiceInterface;
 use Spatie\QueryBuilder\QueryBuilder;
 use Spatie\QueryBuilder\AllowedFilter;
-use Illuminate\Support\Arr;
+use App\Services\Contracts\StudentServiceInterface;
 
 class StudentService implements StudentServiceInterface
 {
@@ -74,5 +75,44 @@ class StudentService implements StudentServiceInterface
             Student::where('id', '=', $studentId)
                 ->update(['class_id' => $desiredClass]);
         }
+    }
+
+    public function getSubjectWiseScores($studentId)
+    {
+        $results = TestResult::where('student_id', $studentId)
+        ->join('tests', 'test_results.test_id', '=', 'tests.id')
+        ->join('subjects', 'tests.subject_id', '=', 'subjects.id')
+        ->select(
+            'subjects.title as subject',
+            'tests.id as test_id',
+            'tests.date as test_date',
+            'tests.total_marks',
+            'test_results.score',
+            \DB::raw('(test_results.score / tests.total_marks) * 100 as percentage')
+        )
+        ->get()
+        ->groupBy('subject'); // Group results by subject
+
+        // Structure the results
+        $structuredResults = $results->map(function($tests, $subject) {
+            $totalScore = $tests->sum('score');
+            $totalMarks = $tests->sum('total_marks');
+            $overallPercentage = ($totalScore / $totalMarks) * 100;
+            return [
+                'subject' => $subject,
+                'overall_percentage' => $overallPercentage,
+                'tests' => $tests->map(function($test) {
+                    return [
+                        'test_id' => $test->test_id,
+                        'test_date' => $test->test_date,
+                        'total_marks' => $test->total_marks,
+                        'score' => $test->score,
+                        'percentage' => $test->percentage,
+                    ];
+                })
+            ];
+        });
+
+        return $structuredResults;
     }
 }
