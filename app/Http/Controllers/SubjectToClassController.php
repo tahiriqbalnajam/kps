@@ -7,6 +7,8 @@ use App\Models\Classes;
 use Illuminate\Support\Arr;
 use Illuminate\Http\Request;
 use App\Laravue\JsonResponse;
+use Spatie\QueryBuilder\QueryBuilder;
+use Spatie\QueryBuilder\AllowedFilter;
 
 class SubjectToClassController extends Controller
 {
@@ -22,6 +24,12 @@ class SubjectToClassController extends Controller
         $limit = Arr::get($searchParams, 'limit', static::ITEM_PER_PAGE);
         $keyword = $request->get('keyword');
         $stdclass = $request->get('stdclass');
+        return QueryBuilder::for(Classes::class)->with('subjects')
+        ->allowedFilters([
+            'id','title', 'subject_id', 'title', 'date'
+        ])
+        ->paginate($limit)
+        ->appends(request()->query());
         //DB::enableQueryLog(); // Enable query log
         $subjects = Classes::with('subjects')
         ->when($keyword, function ($query) use ($keyword) {

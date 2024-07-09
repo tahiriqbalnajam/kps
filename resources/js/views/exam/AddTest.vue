@@ -137,7 +137,7 @@ export default {
     },
     validateMarks(obtain, total, student) {
       if (obtain > total || obtain < 0) {
-        this.$message.error('Enter correct marks.');
+        this.$message.error('Obtain marks should not be greater than Total marks.');
         student.score = 0
       }
 
@@ -150,7 +150,7 @@ export default {
   <el-drawer title="Add Test" :modelValue="addedittestprop" @close="handleClose" size="90%" :rules="rules">
     <el-form style="width: 100%" :inline="true" :model="test" class="demo-form-inline" ref="addtestform">
       <el-row :gutter="10">
-        <el-col :span="5">
+        <el-col :span="4">
           <el-form-item label="Test Name">
             <el-input v-model="test.title" placeholder="Test title" clearable prop="title" />
           </el-form-item>
@@ -188,14 +188,14 @@ export default {
           </el-form-item>
         </el-col>
       </el-row>
-      <el-table :data="filterTableData" height="650" style="width: 100%">
+      <el-table :data="filterTableData" height="650" style="width: 100%" size="small" stripe>
         <el-table-column prop="name" label="Name" />
         <el-table-column prop="parents.name" label="Father Name" />
         <el-table-column prop="stdclasses.name" label="Class" />
         <el-table-column prop="obtainedmarks" label="Obtained Marks">
           <template #default="scope">
             <el-input v-model="scope.row.score" required placeholder="Enter Marks" clearable
-              @change="validateMarks(scope.row.score, test.total_marks, scope.row)" />
+              @change="validateMarks(scope.row.score, test.total_marks, scope.row)" size="small" />
           </template>
         </el-table-column>
         <el-table-column label="Search">
