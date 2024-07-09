@@ -4,6 +4,7 @@ const classes = new Resource('classes');
 let tests = new Resource('tests');
 const students = new Resource('students');
 const subjectRes = new Resource('subject_class');
+const testRes = new Resource('tests-result');
 
 export default {
   name: "AddTest",
@@ -12,22 +13,12 @@ export default {
       type: Boolean,
       required: true,
     },
-    parentid: {
+    editid: {
       type: Number,
       default: null,
     },
   },
   emits: ['popupclosed'],
-  computed: {
-    filterTableData() {
-      return this.attendance.students.filter(
-        (data) =>
-          !this.search ||
-          data.name.toLowerCase().includes(this.search.toLowerCase())
-      )
-    }
-
-  },
   data() {
     var title = (rule, value, callback) => {
       if (!value) {
@@ -71,6 +62,16 @@ export default {
       search:'',
       query: {
         filter: {},
+        fields: {},
+      },
+      testquery: {
+        filter: {},
+      },
+      testresult: {
+        filter: {},
+      },
+      class_subject: {
+        filter: {},
       },
       rules: {
         title: [{ validator: title, trigger: 'blur' }],
@@ -79,6 +80,27 @@ export default {
         total_marks: [{ validator: total_marks, trigger: 'blur' }],
       },
     };
+  },
+  async mounted() {
+    console.log(this.editid);
+    if (this.editid !== null) {
+      console.log('in mounted condition');
+      this.testquery.filter['id'] = this.editid;
+      const { data } = await tests.list(this.testquery);
+      this.test = data.tests.data[0];
+      this.testresult.filter['test_id'] = this.editid;
+      let results = await testRes.list(this.testresult);
+      results = results.data.results.data;
+      await this.getstudents();
+      this.test.students.forEach(student => {
+        let result = results.find(result => result.student_id === student.id);
+        if (result) {
+          student.score = result.score;
+          student.test_id = result.id;
+        }
+      });
+      
+    }
   },
   computed: {
     filterTableData() {
@@ -103,10 +125,12 @@ export default {
     },
     async getstudents() {
       this.query.filter['stdclass'] = this.test.class_id;
+      this.query.fields['students']= 'id,name,parent_id,class_id,parent.id, parent.name, class.id, class.name';
+      this.query.fields['parents']= 'id,name';
       const { data } = await students.list(this.query);
       this.test.students = data.students.data;
-
-      const subjectdata = await subjectRes.list(this.query);
+      this.class_subject.filter['id'] = this.test.class_id;
+      const subjectdata = await subjectRes.list(this.class_subject);
       this.subjects = subjectdata.data.classubj.data[0].subjects;
     },
     async getClasses() {
@@ -114,26 +138,44 @@ export default {
       this.classes = data.classes.data;
     },
     async addTest(formName) {
-      alert('asdfasdf');
       this.$refs[formName].validate(
         async (valid) => {
           if (valid) {
             this.listloading = true;
-            const { data } = await tests.store(this.test);
-            this.listloading = false;
-            this.$message({
-              message: 'Test added successfully',
-              type: 'success',
-            });
+            if (this.editid) {
+              const { data } = await tests.update(this.editid, this.test);
+              this.listloading = false;
+              this.$message({
+                message: 'Test updated successfully',
+                type: 'success',
+              });
+              this.handleClose();
+            } else {
+              const { data } = await tests.store(this.test);
+              this.listloading = false;
+              this.$message({
+                message: 'Test added successfully',
+                type: 'success',
+              });
+              this.test = {
+                subject_id: '',
+                class_id: '',
+                total_marks: 0,
+                date: new Date(),
+                students: {},
+              };
             this.handleClose();
           }
         }
+      }
       );
 
     },
     handleClose() {
-      this.addedittestprop = false;
-      this.$emit('popupClosed', 'yes')
+      //this.addedittestprop = false;
+      //this.editid = null;
+      console.log('close child called');
+      this.$emit('popupClosed', 'yes');
     },
     validateMarks(obtain, total, student) {
       if (obtain > total || obtain < 0) {

@@ -59,6 +59,21 @@ class TestService
     {
         $validatedData = $this->validateTestData($data);
         $test = Test::findOrFail($id);
+        // Check if test exists
+        if ($test) {
+            $testresult = array();
+            foreach($data['students'] as $student){
+                $testresult = [
+                    'score' => ($student['score']) ?? 0,
+                ];
+                $testResult = TestResult::find( $student['test_id']);
+                $testResult->update($data);
+            }
+        } else {
+            return response()->json([
+                'message' => 'Test not found!',
+            ], 404);
+        }
         $test->update($validatedData);
         return $test;
     }
@@ -109,28 +124,8 @@ class TestService
         // $validatedData = validator($data, [
         //     'test_results' => 'required|array',
         // ])->validate();
-
-        // Find the test by id
-        $test = Test::find($id);
-
-        // Check if test exists
-        if ($test) {
-            // Update test_results
-            $test->test_results = $data;
-            $test->save();
-
-            return response()->json([
-                'message' => 'Test results updated successfully!',
-                'test' => $test
-            ], 200);
-        } else {
-            return response()->json([
-                'message' => 'Test not found!',
-            ], 404);
-        }
-        //$validatedData = $this->validateTestResultData($data);
         $testResult = TestResult::findOrFail($id);
-        $testResult->update($validatedData);
+        $testResult->update($data);
         return $testResult;
     }
 

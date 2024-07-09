@@ -19,6 +19,9 @@ class StudentService implements StudentServiceInterface
     {
         $limit = Arr::get($searchParams, 'limit', static::ITEM_PER_PAGE);
         return QueryBuilder::for(Student::class)
+            ->allowedFields(['id','user_id','roll_no','name','adminssion_number','parent_id','class_id','session_id','dob','doa','b_form','gender',
+                                'is_orphan','cast','previous_school','monthly_fee','sibling','religion','pef_admission','nadra_pending',
+                                'action_required','action_details','status','parents.id','parents.name','parent.phone','stdclasses.id','stdclasses.name'])
             ->with('parents', 'stdclasses', 'class_session')
             ->allowedFilters([
                 'id', 'name', 'roll_no', 'adminssion_number', 'is_orphan', 'pef_admission', 'nadra_pending', 'gender',
