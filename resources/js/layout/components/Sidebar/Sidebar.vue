@@ -73,7 +73,15 @@ const activeMenu = computed(() => {
     padding-bottom: 10vh;
   }
 }
-
+.el-sub-menu .el-menu-item {
+  height: 33px !important;
+}
+.el-sub-menu .el-menu-item:hover {
+  color:white;
+}
+.el-sub-menu__title {
+  height: 40px !important;
+}
 .el-menu-vertical {
   width: $sideBarWidth;
 
