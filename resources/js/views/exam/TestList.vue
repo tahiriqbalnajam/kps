@@ -67,7 +67,8 @@
       this.results = data.tests.data[0];
       console.log(this.results);
     },
-    openPopup() {
+    openPopup(id = null) {
+      this.rdata.editid = id;
       this.rdata.addedittestprop = true;
     },
     dateformat: (date) => {
@@ -100,6 +101,11 @@
       })
 
       return sums
+    },
+    handlePopupClosed() {
+      console.log('popup closed parent called');
+      this.rdata.addedittestprop = false;
+      this.rdata.editid = null;
     }
   }
  }
@@ -123,7 +129,7 @@
           </el-col>
           <el-col :span="2">
             <el-tooltip content="Add Test" placement="top">
-              <el-button class="filter-item" style="margin-left: 10px;" type="success" @click="openPopup">
+              <el-button class="filter-item" style="margin-left: 10px;" type="success" @click="openPopup(null)">
                 <el-icon><Plus /></el-icon>
               </el-button>
             </el-tooltip>
@@ -159,7 +165,7 @@
               </el-tooltip>
 
               <el-tooltip content="Edit Test" placement="top">
-                <el-button type="primary" @click="[getResultClaswise(scope.row.id, scope.row.examname),dialogEditFormVisible = true]">
+                <el-button type="primary" @click="openPopup(scope.row.id)">
                   <el-icon><Edit /></el-icon>
                 </el-button>
               </el-tooltip>
@@ -219,7 +225,7 @@
         </span>
       </template>
     </el-drawer>
-    <add-test :addedittestprop="rdata.addedittestprop"  @popupclosed="popupClosed"/>
+    <add-test v-if="rdata.addedittestprop" :addedittestprop="rdata.addedittestprop" :editid="rdata.editid"  @popupClosed="handlePopupClosed"/>
   </div>
 </template>
 

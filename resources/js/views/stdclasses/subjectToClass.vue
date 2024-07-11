@@ -27,6 +27,7 @@
       direction="rtl"
       custom-class="demo-drawer"
       ref="drawer"
+      :before-close="handleClose"
     >
       <div class="demo-drawer__content">
         <el-form :model="model">
@@ -122,7 +123,11 @@ export default {
     async search_data() {
       await this.getList();
     },
+    handleClose(){
+      this.editnow = false;
+    },
     async handleEdit(id, name) {
+
       const { data } = await stocPro.get(id);
       const clsubj = data.classubj;
       this.model.class_id = clsubj.id;

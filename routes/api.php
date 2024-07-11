@@ -59,8 +59,10 @@ Route::put('tests/{test_id}/results', 'TestController@updateTestResults');
 //exam
 //Route::apiResource('exam_result', 'ExamController');
 Route::apiResource('examtest_result', 'ExamTestController');
+//subjects
 Route::apiResource('subjects', 'SubjectController');
 Route::apiResource('subject_class', 'SubjectToClassController');
+
 Route::apiResource('exams', 'ExamController');
 Route::apiResource('examstest', 'ExamTestController');
 Route::get('examstest/{examstest}/test_results', 'ExamTestController@test_results');
