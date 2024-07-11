@@ -12,4 +12,9 @@ class Subject extends Model
     {
         return $this->belongsToMany(Classes::class, 'class_id');
     }
+
+    public function chapters()
+    {
+        return $this->hasMany(Chapter::class);
+    }
 }
