@@ -14,9 +14,10 @@ class TestController extends Controller
         $this->testService = $testService;
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $tests = $this->testService->getAllTests();
+        $data = $request->all();
+        $tests = $this->testService->getAllTests($data);
         return response()->json(new JsonResponse(['tests' => $tests]));
     }
 

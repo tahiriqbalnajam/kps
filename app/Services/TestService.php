@@ -5,6 +5,7 @@ use App\Models\Test;
 use App\Models\TestResult;
 use Illuminate\Support\Arr;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Spatie\QueryBuilder\QueryBuilder;
 use Spatie\QueryBuilder\AllowedFilter;
 
@@ -57,24 +58,34 @@ class TestService
 
     public function updateTest($id, array $data)
     {
-        $validatedData = $this->validateTestData($data);
-        $test = Test::findOrFail($id);
-        // Check if test exists
-        if ($test) {
-            $testresult = array();
-            foreach($data['students'] as $student){
-                $testresult = [
-                    'score' => ($student['score']) ?? 0,
-                ];
-                $testResult = TestResult::find( $student['test_id']);
-                $testResult->update($data);
+        DB::beginTransaction();
+        try {
+            $validatedData = $this->validateTestData($data);
+            $test = Test::findOrFail($id);
+            // Check if test exists
+            if ($test) {
+                $testresult = array();
+                foreach($data['students'] as $student){
+                    $testresultarray = [
+                        'test_id' => $test->id,
+                        'student_id' => $student['id'],
+                        'score' => ($student['score']) ?? 0,
+                    ];
+                    $test_result_id = $student['test_result_id'] ?? '0';
+                    $testResult = TestResult::firstOrNew(array('id' => $test_result_id) );
+                    $testResult = TestResult::updateOrCreate( ['id' => $test_result_id],  $testresultarray );
+                }
+            } else {
+                return response()->json([
+                    'message' => 'Test not found!',
+                ], 404);
             }
-        } else {
-            return response()->json([
-                'message' => 'Test not found!',
-            ], 404);
+            $test->update($validatedData);
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollback();
+            throw $e;
         }
-        $test->update($validatedData);
         return $test;
     }
 

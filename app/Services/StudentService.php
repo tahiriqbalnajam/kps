@@ -1,6 +1,7 @@
 <?php
 namespace App\Services;
 
+use App\Models\Role;
 use App\Models\User;
 use App\Models\Student;
 use App\Models\TestResult;
@@ -40,8 +41,10 @@ class StudentService implements StudentServiceInterface
             $user['name'] = $data['name'];
             $user['email'] = $data['name'].rand(10,100).'@idlschool.com';
             $user['password'] = bcrypt('idl123');
-            $user_id = User::create($user)->id;
-            $data['user_id'] = $user_id;
+            $user = User::create($user);
+            $role = Role::findByName('student');
+            $user->syncRoles($role);
+            $data['user_id'] = $user->id;
             $student = Student::create($data);
             DB::commit();
             return $student;

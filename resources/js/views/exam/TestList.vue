@@ -3,6 +3,7 @@
   import AddTest from '@/views/exam/AddTest.vue';
   import Resource from '@/api/resource.js';
   import Pagination from '@/components/Pagination/index.vue';
+  import { ElNotification, ElMessage, ElMessageBox } from 'element-plus'
   import moment from 'moment';
   const tests = new Resource('tests');
   const test_result = new Resource('tests-result');
@@ -25,6 +26,7 @@
         studentexam: false,
         organizedResultsstd: {},
         testslist: [],
+        total: 0,
         rdata: {
           result_classname: '',
           result_examname: '',
@@ -57,7 +59,16 @@
       this.query.include = 'class,subject';
       const { data } = await tests.list(this.query);
       this.testslist = data.tests.data;
+      this.total = data.tests.total;
       this.listloading = false;
+    },
+    async handleSizeChange (val) {
+      this.query.limit = val
+      await this.get_Exams()
+    },
+    async handleCurrentChange (val) {
+      this.query.page = val
+      await this.get_Exams()
     },
     async getResultClaswise(class_id, class_name) {
       this.listloading = true;
@@ -103,9 +114,29 @@
       return sums
     },
     handlePopupClosed() {
-      console.log('popup closed parent called');
       this.rdata.addedittestprop = false;
       this.rdata.editid = null;
+      this.get_Exams();
+    },
+    deleteTest(testid) {
+      ElMessageBox.confirm(
+      'Do you want permanently delete the test. Continue?',
+      'Warning',
+      {
+        confirmButtonText: 'OK',
+        cancelButtonText: 'Cancel',
+        type: 'warning',
+      }
+    ).then(async () => {
+      tests.destroy(testid);
+      await this.get_Exams();
+      ElMessage({
+        type: 'success',
+        message: 'Delete completed',
+      })
+    })
+    .catch(() => {
+    })
     }
   }
  }
@@ -139,7 +170,7 @@
     </div>
     <el-card class="box-card">
       <testing />
-      <el-table :data="testslist" height="600" style="width: 100%" :loading="loading">
+      <el-table :data="testslist" height="400" style="width: 100%" :loading="loading">
         <el-table-column prop="title" label="Title"  />
         <el-table-column prop="class.name" label="Class"  />
         <el-table-column prop="subject.title" label="Subject"  />
@@ -171,7 +202,7 @@
               </el-tooltip>
 
               <el-tooltip content="Delete Test" placement="top">
-                <el-button type="danger" @click="[deleteExam(scope.row.id)]">
+                <el-button type="danger" @click="deleteTest(scope.row.id)">
                   <el-icon><Delete /></el-icon>
                 </el-button>
               </el-tooltip>
@@ -180,6 +211,19 @@
           </template>
         </el-table-column>
       </el-table>
+      <el-pagination
+        v-show="total>0"
+        v-model:current-page="query.page"
+        v-model:page-size="query.limit"
+        :page-sizes="[10, 15, 20, 30, 50, 100]"
+        :small="small"
+        :disabled="disabled"
+        background="white"
+        layout="total, sizes, prev, pager, next, jumper"
+        :total="total"
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
+      />
     </el-card>
     <el-drawer v-model="showTestStudentList" size="90%">
       <template #default>

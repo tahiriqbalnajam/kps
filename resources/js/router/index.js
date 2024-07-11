@@ -287,7 +287,6 @@ export const constantRoutes = [
 ]
 
 export const asyncRoutes = [
-  chartsRoutes,
   adminRoutes,
   errorRoutes,
   { path: '/:pathMatch(.*)*', name: 'NotFound', redirect: '/404', hidden: true }

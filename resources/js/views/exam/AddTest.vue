@@ -96,7 +96,7 @@ export default {
         let result = results.find(result => result.student_id === student.id);
         if (result) {
           student.score = result.score;
-          student.test_id = result.id;
+          student.test_result_id = result.id;
         }
       });
       
