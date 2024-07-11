@@ -45,7 +45,10 @@
     </div>
     <el-table
       :data="list"
-      style="width: 100%"
+      style="width: 100%;"
+      size="small"
+      max-height="500"
+
     >
       <el-table-column label="ID" prop="id" />
       <el-table-column label="Name" prop="name" />

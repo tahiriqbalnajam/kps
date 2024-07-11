@@ -112,10 +112,12 @@ class TeacherController extends Controller
 
         $teachers = Teacher::all();
         $pay=array();
-        foreach($teachers as $teacher)
-            $pay[] = $teacher->calculatePay($month, $year, $allowedLeaves, $teacher->pay);
-
-        return response()->json(['pay' => $pay]);
+        foreach($teachers as $teacher){
+            $teacher_details = array('name'=> $teacher->name);
+            $pay_details = $teacher->calculatePay($month, $year, $allowedLeaves, $teacher->pay);
+            $pay[] = array_merge($teacher_details, $pay_details);
+        }
+        return response()->json(new JsonResponse(['pay' => $pay]));
     }
 
     public function calculateTeacherPay(Request $request, $teacherId)

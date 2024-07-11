@@ -2,7 +2,6 @@
   <div class="app-container">
      <div class="filter-container">
          <head-controls>
-          <el-alert :title="alertTitle" type="success" v-if="formInline.alertRec"></el-alert>
           <el-form-item label="Select Month">
               <el-col :span="4">
                 <el-date-picker
@@ -25,54 +24,21 @@
          </head-controls>
      </div>
      <el-card class="box-card">
-      <el-table :data="formInline.resource" height="600" style="width: 100%" empty-text="Not Generated">
+      <el-table size="small" :data="teachers" height="600" style="width: 100%;" max-height="550" empty-text="Not Generated">
         <el-table-column prop="name" label="Teacher"  />
-        <el-table-column prop="pay" label="Total Pay"  />
-        <el-table-column prop="month" label="Pay/ Day">
+        <el-table-column prop="total_days_month" label="Total Days"  />
+        <el-table-column prop="working_days" label="Working Days" />
+        <el-table-column prop="attende_days" label="Present Days"  />
+        <el-table-column prop="absent_days" label="Absent Days"  />
+        <el-table-column prop="payable_days" label="Payable Days"  />
+        <el-table-column prop="daily_salary" label="Daily Salary" />
+        <el-table-column prop="total_pay" label="Estimated Pay">
           <template #default="scope">
-            {{ scope.row.pay ? ( Math.round(scope.row.pay/30)) : '' }}
+            <el-tag type="success">{{ scope.row.total_pay }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="allowed_holidays" label="Allowed Holidays"  />
-        <el-table-column prop="absent" label="Absent Days"  />
-        <el-table-column prop="leaves" label="Leave Days"  />
-        <el-table-column prop="working" label="Working Days" />
-        <el-table-column prop="estimated_pay" label="Estimated Pay">
-          <template #default="scope">
-            {{ scope.row.estimated_pay ? (Math.round( scope.row.estimated_pay)) : '' }}
-          </template>
-        </el-table-column>
-        <el-table-column align="right" fixed="right">
-          <template #default="scope">
-            <el-tooltip content="Pay Salary" placement="top">
-              <el-button type="success" @click="payFee(scope.row.id)">
-                  <el-icon><Coin /></el-icon>
-                </el-button>
-            </el-tooltip>
-          </template>
-        </el-table-column>
-
       </el-table>
     </el-card>
-    <el-drawer
-      title="Pay Salary"
-      :modelValue="formInline.paysalary"
-      direction="rtl"
-      custom-class="demo-drawer"
-      ref="drawer"
-    >
-      <div class="demo-drawer__content">
-        <el-form :model="model">
-          <el-form-item label="Amount" :label-width="formLabelWidth">
-            <el-input-number v-model="model.amount" :min="1" :max="10000" />
-          </el-form-item>
-        </el-form>
-        <div class="demo-drawer__footer">
-          <el-button @click="paysalary = false">Cancel</el-button>
-          <el-button type="primary" @click="onSubmit" :loading="loading">{{ loading ? 'Submitting ...' : 'Submit' }}</el-button>
-        </div>
-      </div>
-    </el-drawer>
  </div>
 </template>
 <script>
@@ -86,6 +52,7 @@ export default {
     return {
       teachers:{},
       query:{
+        month: new Date().toISOString().substr(0, 7),
 
       }
     }
@@ -95,7 +62,7 @@ export default {
   },
   methods: {
       async getPay(){
-        const {data} = allTeachersPay();
+        const { data } = await allTeachersPay();
         this.teachers = data.pay
       }
   }
