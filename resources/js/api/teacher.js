@@ -7,6 +7,14 @@ export function getAttendacne(data) {
   });
 }
 
+export function allTeachersPay(data) {
+  return request({
+    url: '/teacher/all-teaches-pay',
+    method: 'post',
+    data,
+  });
+}
+
 export function checkSalaryGenerated(data) {
   return request({
     url: '/check_salary_generated',

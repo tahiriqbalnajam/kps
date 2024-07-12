@@ -103,4 +103,30 @@ class TeacherController extends Controller
         User::destroy($id);
         return response()->json(new JsonResponse(['msg' => 'Deleted successfully.']));
     }
+
+    public function calculateAllTeachersPay(Request $request)
+    {
+        $month = $request->input('month') ?? date('m');
+        $year = $request->input('year') ?? date('Y');
+        $allowedLeaves = $request->input('allowed_leaves', 2);
+
+        $teachers = Teacher::all();
+        $pay=array();
+        foreach($teachers as $teacher)
+            $pay[] = $teacher->calculatePay($month, $year, $allowedLeaves, $teacher->pay);
+
+        return response()->json(['pay' => $pay]);
+    }
+
+    public function calculateTeacherPay(Request $request, $teacherId)
+    {
+        $month = $request->input('month');
+        $year = $request->input('year');
+        $allowedLeaves = $request->input('allowed_leaves', 2);
+
+        $teacher = Teacher::findOrFail($teacherId);
+        $pay = $teacher->calculatePay($month, $year, $allowedLeaves);
+
+        return response()->json(['pay' => $pay]);
+    }
 }

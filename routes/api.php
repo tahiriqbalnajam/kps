@@ -21,6 +21,8 @@ Route::get('students/{id}/subject-wise-scores', 'StudentController@getSubjectWis
 Route::apiResource('classes', 'ClassesController');
 //teachers
 Route::apiResource('teachers', 'TeacherController');
+Route::post('/teacher/all-teaches-pay', 'TeacherController@calculateAllTeachersPay');
+Route::get('/teacher/{id}/calculate-pay','TeacherController@calculateTeacherPay');
 //parents
 Route::apiResource('parents', 'ParentController');
 //fee
