@@ -36,7 +36,7 @@ class Teacher extends Model {
         
         // Calculate the daily salary
         $dailySalary = round($salary / $totalDaysInMonth);
-        
+        $previous_balance = 0;
         // Calculate the total pay
         $totalPay = $dailySalary * $payableDays;
 
@@ -46,7 +46,9 @@ class Teacher extends Model {
                      'absent_days' => $absentDays,
                      'payable_days'=> $payableDays,
                      'daily_salary' => $dailySalary,
-                     'total_pay' => $totalPay);
+                     'total_pay' => $totalPay,
+                     'previous_balance' => $previous_balance
+                    );
     }
 
 }
