@@ -108,12 +108,12 @@ class TeacherController extends Controller
     {
         $month = $request->input('month') ?? date('m');
         $year = $request->input('year') ?? date('Y');
-        $allowedLeaves = $request->input('allowed_leaves', 2);
+        $allowedLeaves = $request->input('allowed_leaves', 1);
 
         $teachers = Teacher::all();
         $pay=array();
         foreach($teachers as $teacher){
-            $teacher_details = array('name'=> $teacher->name);
+            $teacher_details = array('name'=> $teacher->name, 'pay' => $teacher->pay, 'allow_leaves' => $allowedLeaves);
             $pay_details = $teacher->calculatePay($month, $year, $allowedLeaves, $teacher->pay);
             $pay[] = array_merge($teacher_details, $pay_details);
         }

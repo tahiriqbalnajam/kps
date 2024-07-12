@@ -20,13 +20,10 @@ class Teacher extends Model {
         return $this->belongsTo(User::class,'user_id');
     }
 
-    public function calculatePay($month, $year, $allowedLeaves = 2, $salary)
+    public function calculatePay($month, $year, $allowedLeaves = 1, $salary)
     {
-        $totalDaysInMonth = Carbon::createFromDate($year, $month, 1)->daysInMonth;
-        $workingDays = Calendar::whereMonth('date', $month)
-                               ->whereYear('date', $year)
-                               ->whereNotIn('date', Holiday::pluck('holiday_date'))
-                               ->count();
+        $totalDaysInMonth = '30';
+        $workingDays = '30';
 
         $attendedDays = $this->attendances()
                              ->whereMonth('attendance_date', $month)
@@ -38,7 +35,7 @@ class Teacher extends Model {
         $payableDays = $workingDays - max(0, $absentDays - $allowedLeaves);
         
         // Calculate the daily salary
-        $dailySalary = $salary / $totalDaysInMonth;
+        $dailySalary = round($salary / $totalDaysInMonth);
         
         // Calculate the total pay
         $totalPay = $dailySalary * $payableDays;
