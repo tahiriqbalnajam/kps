@@ -24,7 +24,7 @@
          </head-controls>
      </div>
      <el-card class="box-card">
-      <el-table size="small" :data="teachers" style="width: 100%;" max-height="550" empty-text="Not Generated">
+      <el-table size="small" :data="teachers" style="width: 100%;" max-height="550" empty-text="Not Generated" show-summary :summary-method="getSummaries">
         <el-table-column prop="name" label="Teacher"  />
         <el-table-column prop="pay" label="Salary"  />
         <el-table-column prop="working_days" label="Working Days" />
@@ -99,7 +99,33 @@ export default {
     async getPay(){
       const { data } = await allTeachersPay();
       this.teachers = data.pay
-    }
+    },
+    getSummaries(param) {
+      const { columns, data } = param
+      const sums = []
+      columns.forEach((column, index) => {
+        if (index === 1) {
+          const values = data.reduce((total, item) => total + Number(item[column.property]), 0);
+          sums[index] = h('div', { style: { fontSize: '18px' } }, [
+            'Total Pay:',
+            values
+          ])
+          return
+        }
+        else if (index === 2) {
+          const values = data.reduce((total, item) => total + Number(item[column.property]), 0);
+          sums[index] = h('div', { style: { fontSize: '18px' } }, [
+            values,
+          ])
+          return;
+        } else {
+          sums[index] = ''
+        }
+      })
+
+      return sums
+    },
+
   }
 }
 </script>
