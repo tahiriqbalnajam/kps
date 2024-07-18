@@ -30,9 +30,9 @@ export function generatePay(data) {
     data,
   });
 }
-export function PaySalary(data) {
+export function saveSalary(data) {
   return request({
-    url: '/pay_salary',
+    url: '/save_salary',
     method: 'post',
     data,
   });

@@ -22,9 +22,13 @@ Route::apiResource('classes', 'ClassesController');
 //teachers
 Route::apiResource('teachers', 'TeacherController');
 Route::post('/teacher/all-teaches-pay', 'TeacherController@calculateAllTeachersPay');
+Route::post('save_salary', 'TeacherController@save_salary');
 Route::get('/teacher/{id}/calculate-pay','TeacherController@calculateTeacherPay');
 //parents
 Route::apiResource('parents', 'ParentController');
+//chapters
+Route::apiResource('chapters', 'ChapterController');
+Route::apiResource('questions', 'QuestionController')->only(['index', 'store']);;
 //fee
 Route::apiResource('feetypes', 'FeeTypeController');
 Route::apiResource('fee', 'FeeController');

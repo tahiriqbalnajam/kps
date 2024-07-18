@@ -3,7 +3,7 @@
      <div class="filter-container">
          <head-controls>
           <el-form-item label="Select Month">
-              <el-col :span="4">
+              <el-col :span="4" :sm="6">
                 <el-date-picker
                     v-model="query.month"
                     type="month"
@@ -14,9 +14,9 @@
                 />
               </el-col>
               <el-col :span="4">
-                <el-tooltip :content="tooltipContent" placement="top">
-                  <el-button type="primary" @click="generate_pay()">
-                    <el-icon><Money /></el-icon>
+                <el-tooltip content="Click to save Salaries" placement="top">
+                  <el-button type="primary" @click="savePay()">
+                    <el-icon><Money /></el-icon> Save Salaries
                   </el-button>
                 </el-tooltip>
               </el-col>
@@ -60,17 +60,17 @@
       </el-table-column>
       <el-table-column label="Balance">
         <template #default="scope">
-          {{ total_pay(scope.row) }}
+          {{ scope.row.balance = total_pay(scope.row) }}
         </template>
       </el-table-column>
-      >
+
       </el-table>
     </el-card>
  </div>
 </template>
 <script>
 import HeadControls from '@/components/HeadControls.vue';
-import { allTeachersPay } from '@/api/teacher';
+import { allTeachersPay, saveSalary } from '@/api/teacher';
 
 export default {
   name:'TeachersPay',
@@ -79,7 +79,7 @@ export default {
     return {
       teachers:{},
       query:{
-        month: new Date().toISOString().substr(0, 7),
+        month: new Date().toISOString().substr(0, 7) + '-01',
 
       }
     }
@@ -96,9 +96,27 @@ export default {
       const previous_balance = (row.previous_balance) ?? 0;
       return parseInt(total_pay) - parseInt(fine) + parseInt(bonus) - parseInt(paid) + parseInt(previous_balance);
     },
+    savePay() {
+      this.$confirm('Do you really want to save? This action cannot be undone', 'Warning', {
+        confirmButtonText: 'OK',
+        cancelButtonText: 'Cancel',
+        type: 'warning'
+    }).then(async () => {
+        await saveSalary({'salaries' : this.teachers});
+        this.$message({
+          type: 'success',
+          message: 'Salaries saved successfully'
+        });
+      })
+    },  
     async getPay(){
-      const { data } = await allTeachersPay();
-      this.teachers = data.pay
+      const { data } = await allTeachersPay(this.query);
+      this.teachers = data.pay.map((item) => ({
+            ...item,
+            fine: item.fine || '0', // Set default value if none exists
+            bonus: item.bonus || '0', // Set default value if none exists
+            paid: item.paid || '0', // Set default value if none exists
+          }));
     },
     getSummaries(param) {
       const { columns, data } = param
@@ -106,15 +124,15 @@ export default {
       columns.forEach((column, index) => {
         if (index === 1) {
           const values = data.reduce((total, item) => total + Number(item[column.property]), 0);
-          sums[index] = h('div', { style: { fontSize: '18px' } }, [
-            'Total Pay:',
+          sums[index] = h('div', { style: { fontWeight: 'bold' } }, [
+            '',
             values
           ])
           return
         }
-        else if (index === 2) {
+        else if (index === 8 ||  index === 13) {
           const values = data.reduce((total, item) => total + Number(item[column.property]), 0);
-          sums[index] = h('div', { style: { fontSize: '18px' } }, [
+          sums[index] = h('div', { style: { fontWeight: 'bold' } }, [
             values,
           ])
           return;
@@ -125,7 +143,6 @@ export default {
 
       return sums
     },
-
   }
 }
 </script>

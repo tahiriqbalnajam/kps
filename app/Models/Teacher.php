@@ -42,7 +42,7 @@ class Teacher extends Model {
 
         return array('total_days_month' => $totalDaysInMonth, 
                      'working_days' => $workingDays,
-                     'attende_days' => $attendedDays,
+                     'present_days' => $attendedDays,
                      'absent_days' => $absentDays,
                      'payable_days'=> $payableDays,
                      'daily_salary' => $dailySalary,

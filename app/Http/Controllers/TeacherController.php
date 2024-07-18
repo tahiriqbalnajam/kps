@@ -2,19 +2,20 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Log;
+use App\Models\Role;
 use App\Models\User;
 use App\Models\Teacher;
+use App\Models\Permission;
 use Illuminate\Support\Arr;
 use Illuminate\Http\Request;
 use App\Laravue\JsonResponse;
-use Illuminate\Support\Facades\Validator;
+use App\Models\TeacherSalary;
 use Illuminate\Validation\Rule;
-use App\Models\Log;
-use App\Models\Permission;
-use App\Models\Role;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
 
 class TeacherController extends Controller
 {
@@ -104,16 +105,61 @@ class TeacherController extends Controller
         return response()->json(new JsonResponse(['msg' => 'Deleted successfully.']));
     }
 
+
+    public function save_salary(Request $request) {
+
+        $validated = $request->validate([
+            'salaries' => 'required|array',
+            'salaries.*.teacher_id' => 'required|integer|exists:teachers,id',
+            'salaries.*.salary' => 'required|numeric',
+            'salaries.*.month' => 'required|date',
+            'salaries.*.present_days' => 'required|integer',
+            'salaries.*.absent_days' => 'required|integer',
+            'salaries.*.allow_leaves' => 'required|integer',
+            'salaries.*.payable_days' => 'required|integer',
+            'salaries.*.daily_salary' => 'required|integer',
+            'salaries.*.total_pay' => 'required|integer',
+            'salaries.*.fine' => 'required|integer',
+            'salaries.*.bonus' => 'required|integer',
+            'salaries.*.paid' => 'required|integer',
+            'salaries.*.previous_balance' => 'required|integer',
+            'salaries.*.balance' => 'required|integer',
+        ]);
+
+        // Loop through each salary data and create a new TeacherSalary record
+        foreach ($validated['salaries'] as $salaryData) {
+            TeacherSalary::create([
+                'teacher_id' => $salaryData['teacher_id'],
+                'salary' => $salaryData['salary'],
+                'month' => $salaryData['month'],
+                'present_days' => $salaryData['present_days'],
+                'absent_days' => $salaryData['absent_days'],
+                'allow_leaves' => $salaryData['allow_leaves'],
+                'payable_days' => $salaryData['payable_days'],
+                'estimated_salary' => $salaryData['total_pay'],
+                'fine' => $salaryData['fine'],
+                'bonus' => $salaryData['bonus'],
+                'paid' => $salaryData['paid'],
+                'previous_balance' => $salaryData['previous_balance'],
+                'balance' => $salaryData['balance'],
+            ]);
+        }
+
+         return response()->json(new JsonResponse(['salaries' => 'saved successfully']));
+        
+    }
+
     public function calculateAllTeachersPay(Request $request)
     {
-        $month = $request->input('month') ?? date('m');
-        $year = $request->input('year') ?? date('Y');
+        $month = $request->input('month') ? date('m', strtotime($request->input('month'))): date('m');
+        $year = $request->input('month') ? date('Y', strtotime($request->input('month'))): date('Y');
         $allowedLeaves = $request->input('allowed_leaves', 1);
 
         $teachers = Teacher::all();
         $pay=array();
         foreach($teachers as $teacher){
-            $teacher_details = array('name'=> $teacher->name, 'pay' => $teacher->pay, 'allow_leaves' => $allowedLeaves);
+            $teacher_details = array('teacher_id' => $teacher->id, 'name'=> $teacher->name, 'month' => $request->input('month'),
+                                        'salary' => $teacher->pay, 'allow_leaves' => $allowedLeaves);
             $pay_details = $teacher->calculatePay($month, $year, $allowedLeaves, $teacher->pay);
             $pay[] = array_merge($teacher_details, $pay_details);
         }

@@ -230,6 +230,12 @@ export const constantRoutes = [
         name: 'Add Test',
         meta: {title: 'Test', bootstrapIcon: 'journal-text', noCache: true},
       },
+      {
+        path: 'online-test-admin',
+        component: () => import('@/views/exam/OnlineTestAdmin.vue'),
+        name: 'Online Test',
+        meta: {title: 'Online Test', bootstrapIcon: 'journal-text', noCache: true},
+      },
     ],
   },
   {
