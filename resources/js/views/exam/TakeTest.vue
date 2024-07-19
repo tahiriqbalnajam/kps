@@ -1,9 +1,8 @@
 <template>
     <div id="app">
-      <el-steps :active="activeStep" finish-status="success">
-        <el-step v-for="(question, index) in questions" :key="index" :title="'Question ' + (index + 1)">
-        </el-step>
-        <el-step title="Result"></el-step>
+      <el-steps :active="activeStep" finish-status="success" align-center>
+        <el-step v-for="(question, index) in questions" :key="index" :title="'Question ' + (index + 1)" />
+        <el-step title="result" :icon="Picture" />
       </el-steps>
   
       <div v-if="activeStep < questions.length">
@@ -11,17 +10,18 @@
           :question="questions[activeStep]"
           @answer-selected="handleAnswerSelected"
         />
-      </div>
-  
+      </div>      
       <div v-else>
-        <Result :score="calculateScore()" />
+        <Result :score="calculateScore()" :questions="questions" :userAnswers="userAnswers" />
       </div>
     </div>
+
   </template>
   
   <script>
+  import { Edit, Picture, Upload } from '@element-plus/icons-vue'
   import { filter } from 'lodash';
-import ChapterList from './components/Chapters.vue';
+  import ChapterList from './components/Chapters.vue';
   import QuestionCard from './components/QuestionCard.vue';
   import Result from './components/ResultCard.vue';
   import resource from '@/api/resource';
@@ -42,7 +42,8 @@ import ChapterList from './components/Chapters.vue';
                 filter:{}
             },
             question_query: {
-                filter:{}
+                filter:{},
+                sort:''
             }
             
         };
@@ -54,27 +55,26 @@ import ChapterList from './components/Chapters.vue';
 
         async handleChapterSelected () {
             this.question_query.filter['chapter_id'] = 9;
+            this.question_query.sort = 'random';
             const { data } = await questions.list(this.question_query);
-            this.questions = data.questions.data
-
-            questions.splice(0, questions.length, ...response.data);
+            this.questions = data.questions.data;
          },
          handleAnswerSelected(questionId, answer){
-            userAnswers[questionId] = answer;
-            if (activeStep.value < questions.length - 1) {
-                activeStep.value++;
+            this.userAnswers[questionId] = answer;
+            if (this.activeStep < questions.length - 1) {
+                this.activeStep++;
             } else {
-                activeStep.value++;
+                this.activeStep++;
             }
         },
         calculateScore() {
             let correctCount = 0;
-            questions.forEach(question => {
-            if (userAnswers[question.id] === question.correct_choice) {
-                correctCount++;
-            }
+            this.questions.forEach(question => {
+              if (this.userAnswers[question.id] === question[question.correct_choice]) {
+                  correctCount++;
+              }
             });
-            return ((correctCount / questions.length) * 100).toFixed(2);
+            return ((correctCount / this.questions.length) * 100).toFixed(2);
         },
     },
     mounted() {
