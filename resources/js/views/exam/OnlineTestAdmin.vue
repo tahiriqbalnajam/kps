@@ -28,6 +28,21 @@
             <el-table-column prop="choice_3" label="Choice 3"></el-table-column>
             <el-table-column prop="choice_4" label="Choice 4"></el-table-column>
             <el-table-column prop="correct_choice" label="Correct"></el-table-column>
+            <el-table-column>
+                <template #default="scope">
+                    <el-tooltip content="Edit Test" placement="top">
+                        <el-button type="primary" @click="openPopup(scope.row.id)">
+                        <el-icon><Edit /></el-icon>
+                        </el-button>
+                    </el-tooltip>
+
+                    <el-tooltip content="Delete Test" placement="top">
+                        <el-button type="danger" @click="deleteQuestions(scope.row.id)">
+                        <el-icon><Delete /></el-icon>
+                        </el-button>
+                    </el-tooltip>
+                </template>
+            </el-table-column>
         </el-table>
         <add-online-question v-if="drawerAddQuestion" :drawerAddQuestion="drawerAddQuestion" @closeAddQuestion="closeAddQuestion" />
         <add-chapter v-if="drawerAddChapter" :drawerAddChapter="drawerAddChapter" @closeAddChapter="closeAddChapter" />

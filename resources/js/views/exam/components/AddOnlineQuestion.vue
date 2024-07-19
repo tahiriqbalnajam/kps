@@ -1,6 +1,6 @@
 <template>
     <el-drawer title="Add Chapter" modelValue="drawerAddQuestion" size="95%" :before-close="handleClose">
-        <el-row :gutter="20" justify="start" style="margin-bottom: 20px;">
+        <el-row :gutter="20" justify="start" class="header">
                 <el-col :xs="6" :sm="6" :md="6" :lg="6" :xl ="6">
                     <el-select v-model="query.class_id" value-key="" placeholder="Select Class" clearable filterable @change="getSubjects()">
                         <el-option v-for="stdclass in classes"
@@ -11,25 +11,27 @@
                     </el-select>
                 </el-col>
                 <el-col :xs="6" :sm="6" :md="6" :lg="6" :xl ="6">
-                    <el-select v-model="query.subject_id" value-key="" placeholder="Select Subject" clearable filterable @change="getChapters()">
+                    <el-select v-model="query.subject_id" no-data-text="select class first" placeholder="Select Subject" clearable filterable @change="getChapters()">
                         <el-option v-for="subject in subjects"
                             :key="subject.id"
                             :label="subject.title"
-                            :value="subject.id">
+                            :value="subject.id"
+                            >
                         </el-option>
                     </el-select>
                 </el-col>
                 <el-col :xs="6" :sm="6" :md="6" :lg="6" :xl ="6">
-                    <el-select v-model="chapter_question.chapter_id" value-key="" placeholder="Select Subject" clearable filterable @change="getChapters()">
+                    <el-select v-model="chapter_question.chapter_id" no-data-text="select class and subject first" placeholder="Select Subject" clearable filterable @change="getChapters()">
                         <el-option v-for="chapter in chapters"
                             :key="chapter.id"
                             :label="chapter.title"
-                            :value="chapter.id">
+                            :value="chapter.id"
+                            >
                         </el-option>
                     </el-select>
                 </el-col>
                 <el-col :xs="6" :sm="6" :md="6" :lg="6" :xl ="6">
-                    <el-button type="primary" icon="el-icon-plus" @click="addQuestionGroup">Add Question Group</el-button>
+                    <el-button type="primary" @click="addQuestionGroup"><el-icon><Plus /></el-icon> Add Question Group</el-button>
                 </el-col>
             </el-row>
 
@@ -62,7 +64,9 @@
                         </el-col>
                     </el-radio-group>
                         <el-col :span="2">
-                            <el-button type="danger" icon="el-icon-delete" @click="removeQuestionGroup(index)">Remove</el-button>
+                            <el-button type="danger" @click="removeQuestionGroup(index)">
+                                <el-icon><Close /></el-icon>
+                            </el-button>
                         </el-col>
                 </el-row>
             </el-form>
@@ -72,7 +76,7 @@
                     Cancel
                     </el-button>
                     <el-button type="primary" :loading="loading" @click="handleSubmit()">
-                        Add Questions
+                        Save Questions
                     </el-button>
                 </div>
             </template>
@@ -80,7 +84,7 @@
 </template>
 
 <script>
-import { QuestionFilled } from '@element-plus/icons-vue'
+import { QuestionFilled, Close, Plus } from '@element-plus/icons-vue'
 import resource from '@/api/resource';
 const classes = new resource('classes');
 const subjectRes = new resource('subject_class');
@@ -178,5 +182,14 @@ export default {
 </script>
 
 <style scoped>
-/* Your component's CSS styles go here */
+.header {
+    margin-left: -10px;
+    margin-right: -10px;
+    margin-bottom: 40px;
+    border: 1px solid #cccccc85;
+    padding: 10px;
+    border-radius: 5px;
+    background: white;
+    box-shadow: 0px 1px 6px #ccc;
+}
 </style>

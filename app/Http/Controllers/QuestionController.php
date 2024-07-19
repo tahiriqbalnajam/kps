@@ -10,7 +10,7 @@ use Spatie\QueryBuilder\QueryBuilder;
 
 class QuestionController extends Controller
 {
-    const ITEM_PER_PAGE = 100;
+    const ITEM_PER_PAGE = 10;
     /**
      * Display a listing of the resource.
      */
@@ -21,7 +21,7 @@ class QuestionController extends Controller
         $questions = QueryBuilder::for(Question::class)
             ->with(['chapter'])
             ->allowedFilters([
-                'id','subject_id', 'question_text', 'choice_1', 'choice_2', 'choice_3', 'choice_4'
+                'id','chapter_id', 'question_text', 'choice_1', 'choice_2', 'choice_3', 'choice_4'
             ])
             ->paginate($limit)
             ->appends(request()->query());

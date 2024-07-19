@@ -15,6 +15,11 @@ export const constantRoutes = [
     hidden: true,
   },
   {
+    path: '/take-test',
+    component: () => import('@/views/exam/TakeTest.vue'),
+    hidden: true,
+  },
+  {
     path: '/auth-redirect',
     component: () => import('@/views/login/AuthRedirect.vue'),
     hidden: true,
