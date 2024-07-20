@@ -1,12 +1,12 @@
 <!-- components/QuestionCard.vue -->
 <template>
     <el-card>
-      <p>{{ question.choice_1 }}</p>
+      <p>{{ question.question_text }}</p>
       <el-radio-group v-model="selectedAnswer" @change="handleAnswerChange">
-        <el-radio :label="1">{{ question.choice_1 }}</el-radio>
-        <el-radio :label="2">{{ question.choice_2 }}</el-radio>
-        <el-radio :label="3">{{ question.choice_3 }}</el-radio>
-        <el-radio :label="4">{{ question.choice_4 }}</el-radio>
+        <el-radio :value="question.choice_1" border>{{ question.choice_1 }}</el-radio>
+        <el-radio :value="question.choice_2" border>{{ question.choice_2 }}</el-radio>
+        <el-radio :value="question.choice_3" border>{{ question.choice_3 }}</el-radio>
+        <el-radio :value="question.choice_4" border>{{ question.choice_4 }}</el-radio>
       </el-radio-group>
     </el-card>
   </template>
@@ -22,6 +22,7 @@
     methods: {
       handleAnswerChange() {
         this.$emit('answer-selected', this.question.id, this.selectedAnswer);
+        this.selectedAnswer = null;
       }
     }
   };

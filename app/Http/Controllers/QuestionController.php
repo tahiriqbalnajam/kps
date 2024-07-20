@@ -6,7 +6,9 @@ use App\Models\Question;
 use Illuminate\Support\Arr;
 use Illuminate\Http\Request;
 use App\Laravue\JsonResponse;
+use Spatie\QueryBuilder\AllowedSort;
 use Spatie\QueryBuilder\QueryBuilder;
+use App\Actions\RandomSort;
 
 class QuestionController extends Controller
 {
@@ -22,6 +24,9 @@ class QuestionController extends Controller
             ->with(['chapter'])
             ->allowedFilters([
                 'id','chapter_id', 'question_text', 'choice_1', 'choice_2', 'choice_3', 'choice_4'
+            ])
+            ->allowedSorts([
+                AllowedSort::custom('random', new RandomSort(), 'name'),
             ])
             ->paginate($limit)
             ->appends(request()->query());
