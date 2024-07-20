@@ -38,7 +38,10 @@ class Teacher extends Model {
         $dailySalary = round($salary / $totalDaysInMonth);
         $previous_balance = 0;
         // Calculate the total pay
-        $totalPay = $dailySalary * $payableDays;
+        if($attendedDays > 0)
+            $totalPay = $dailySalary * $payableDays;
+        else
+            $totalPay = 0;
 
         return array('total_days_month' => $totalDaysInMonth, 
                      'working_days' => $workingDays,
