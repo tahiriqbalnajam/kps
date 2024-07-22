@@ -28,11 +28,18 @@
   }
 
   const getAccounts = async() => {
-    const { data } = await balanceRes.list($this.query.keyword);
+    const { data } = await balanceRes.list($this.query);
     $this.accounts = data.balances.data;
     $this.query.total = data.balances.total;
   }
-
+  const handleSizeChange =  async(val) => {
+      $this.query.limit = val
+      await getAccounts()
+    }
+  const handleCurrentChange = async (val) =>{
+      $this.query.page = val
+      await getAccounts()
+  }
   getAccounts();
 </script>
 <template>
@@ -55,13 +62,27 @@
             </el-form-item>
           </head-controls>
       </div>
-      <el-table :data="$this.accounts" style="width: 100%">
+      <el-table :data="$this.accounts" style="width: 100%" max-height="600px">
         <el-table-column prop="accounts.name" label="Name" />
         <el-table-column prop="accounts.phone" label="Phone#" />
         <el-table-column prop="jama" label="Jama(Cr)" />
         <el-table-column prop="naam" label="Naam(Dr)" />
         <el-table-column prop="balance" label="Balance" />
       </el-table>
-      <pagination v-show="$this.query.total>0" :total="$this.query.total" :page.sync="$this.query.page" :limit.sync="$this.query.limit" @pagination="getAccounts()" />
+      <div class="demo-pagination-block">
+        <el-pagination
+          v-show="$this.query.total > 0"
+          v-model:current-page="$this.query.page"
+          v-model:page-size="$this.query.limit"
+          :page-sizes="[10, 15, 20, 30, 50, 100]"
+          :small="small"
+          :disabled="disabled"
+          background="white"
+          layout="total, sizes, prev, pager, next, jumper"
+          :total="$this.query.total"
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange"
+        />
+      </div>
   </div>
 </template>

@@ -16,9 +16,11 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use App\Traits\TransactionTrait;
 
 class TeacherController extends Controller
 {
+    use TransactionTrait;
     const ITEM_PER_PAGE = 1000;
 
     private $column_select = array('id','class_id', 'name', 'father_name','father_cnic',
@@ -108,7 +110,7 @@ class TeacherController extends Controller
 
     public function save_salary(Request $request) {
 
-        $validated = $request->validate([
+       $validated = $request->validate([
             'salaries' => 'required|array',
             'salaries.*.teacher_id' => 'required|integer|exists:teachers,id',
             'salaries.*.salary' => 'required|numeric',
@@ -126,27 +128,61 @@ class TeacherController extends Controller
             'salaries.*.balance' => 'required|integer',
         ]);
 
-        // Loop through each salary data and create a new TeacherSalary record
-        foreach ($validated['salaries'] as $salaryData) {
-            TeacherSalary::create([
-                'teacher_id' => $salaryData['teacher_id'],
-                'salary' => $salaryData['salary'],
-                'month' => $salaryData['month'],
-                'present_days' => $salaryData['present_days'],
-                'absent_days' => $salaryData['absent_days'],
-                'allow_leaves' => $salaryData['allow_leaves'],
-                'payable_days' => $salaryData['payable_days'],
-                'estimated_salary' => $salaryData['total_pay'],
-                'fine' => $salaryData['fine'],
-                'bonus' => $salaryData['bonus'],
-                'paid' => $salaryData['paid'],
-                'previous_balance' => $salaryData['previous_balance'],
-                'balance' => $salaryData['balance'],
-            ]);
-        }
+        DB::beginTransaction();
 
-         return response()->json(new JsonResponse(['salaries' => 'saved successfully']));
+        try {
+            // Loop through each salary data and create a new TeacherSalary record
+            foreach ($validated['salaries'] as $salaryData) {
+                //fiend teacher and get user id, and with this user id save a transaction of balance
+                $teacher = Teacher::find($salaryData['teacher_id']);
+                $jama_account = $teacher->user_id;
+                $naam_account = 1;
+                $amount = $salaryData['balance'];
+                $comment = 'salary for teacher '.$teacher->name.' for month '.$salaryData['month'];
+
+               $this->doTransaction($naam_account, $jama_account, $amount,'others', '', $comment);
+
+
+
+                TeacherSalary::create([
+                    'teacher_id' => $salaryData['teacher_id'],
+                    'salary' => $salaryData['salary'],
+                    'month' => $salaryData['month'],
+                    'present_days' => $salaryData['present_days'],
+                    'absent_days' => $salaryData['absent_days'],
+                    'allow_leaves' => $salaryData['allow_leaves'],
+                    'payable_days' => $salaryData['payable_days'],
+                    'estimated_salary' => $salaryData['total_pay'],
+                    'fine' => $salaryData['fine'],
+                    'bonus' => $salaryData['bonus'],
+                    'paid' => $salaryData['paid'],
+                    'previous_balance' => $salaryData['previous_balance'],
+                    'balance' => $salaryData['balance'],
+                ]);
+            }
+
+            DB::commit();
+
+            return response()->json(new JsonResponse(['salaries' => 'saved successfully']));
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(new JsonResponse(['error' => $e->getMessage()]));
+
+        }
         
+    }
+
+    public function find_already_saved_salary(Request $request) {
+        $date = $request->input('month');
+        $month = date('Y-m-d', strtotime($date));
+        $salaries = TeacherSalary::where('month', $month)
+                                ->count();
+
+        if ($salaries) {
+            return response()->json(new JsonResponse(['salaries' => $salaries]));
+        } else {
+            return response()->json(new JsonResponse(['message' => 'No salaries found for this month.']));
+        }
     }
 
     public function calculateAllTeachersPay(Request $request)

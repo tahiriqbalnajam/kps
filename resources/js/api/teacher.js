@@ -15,6 +15,14 @@ export function allTeachersPay(data) {
   });
 }
 
+export function findSavedPay(data) {
+  return request({
+    url: '/teacher/find_save_salary',
+    method: 'post',
+    data,
+  });
+}
+
 export function checkSalaryGenerated(data) {
   return request({
     url: '/check_salary_generated',

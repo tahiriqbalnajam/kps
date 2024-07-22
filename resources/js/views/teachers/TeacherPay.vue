@@ -71,7 +71,7 @@
 </template>
 <script>
 import HeadControls from '@/components/HeadControls.vue';
-import { allTeachersPay, saveSalary } from '@/api/teacher';
+import { allTeachersPay, saveSalary, findSavedPay } from '@/api/teacher';
 
 export default {
   name:'TeachersPay',
@@ -100,10 +100,16 @@ export default {
       const previous_balance = (row.previous_balance) ?? 0;
       return parseInt(total_pay) - parseInt(fine) + parseInt(bonus) - parseInt(paid) + parseInt(previous_balance);
     },
-    findSavedPay() {
+    async savePay() {
+      const { data } = await findSavedPay(this.query);
+      if(data.salaries) {
+        this.$message({
+          type: 'error',
+          message: 'Salaries are already saved for this month'
+        });
+        return;
+      }
 
-    },
-    savePay() {
       this.$confirm('Do you really want to save? This action cannot be undone', 'Warning', {
         confirmButtonText: 'OK',
         cancelButtonText: 'Cancel',

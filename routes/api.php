@@ -22,6 +22,7 @@ Route::apiResource('classes', 'ClassesController');
 //teachers
 Route::apiResource('teachers', 'TeacherController');
 Route::post('/teacher/all-teaches-pay', 'TeacherController@calculateAllTeachersPay');
+Route::post('/teacher/find_save_salary', 'TeacherController@find_already_saved_salary');
 Route::post('save_salary', 'TeacherController@save_salary');
 Route::get('/teacher/{id}/calculate-pay','TeacherController@calculateTeacherPay');
 //parents
