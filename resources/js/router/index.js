@@ -241,6 +241,12 @@ export const constantRoutes = [
         name: 'Chapters',
         meta: {title: 'Chapters', bootstrapIcon: 'journal-text', noCache: true},
       },
+      {
+        path: 'chapter_options',
+        component: () => import('@/views/exam/ChapterQuestions.vue'),
+        name: 'Options',
+        meta: {title: 'options', bootstrapIcon: 'journal-text', noCache: true, hidden: true},
+      },
     ],
   },
   {

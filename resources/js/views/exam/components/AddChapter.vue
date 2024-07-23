@@ -51,6 +51,10 @@ export default {
             type: Boolean,
             default: false,
         },
+        chapterId: {
+            type: Number,
+            default: null
+        },
     },
     data() {
         return {
@@ -67,9 +71,19 @@ export default {
         };
     },
     created() {
+        if(this.chapterId) {
+            this.getChapter()
+        }
+        
         this.getClasses();
     },
     methods: {
+        async getChapter() {
+            const { data } = await chapter.get(this.chapterId);
+            this.chapter.class_id = data.chapter.class_id;
+            this.chapter.subject_id = data.chapter.subject_id;
+            this.chapter.title = data.chapter.title;
+        },
         async getClasses() {
             const { data } = await classes.list();
             this.classes = data.classes.data;
