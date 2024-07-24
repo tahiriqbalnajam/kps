@@ -29,7 +29,7 @@ Route::get('/teacher/{id}/calculate-pay','TeacherController@calculateTeacherPay'
 Route::apiResource('parents', 'ParentController');
 //chapters
 Route::apiResource('chapters', 'ChapterController');
-Route::apiResource('questions', 'QuestionController')->only(['index', 'store']);;
+Route::apiResource('questions', 'QuestionController');
 //fee
 Route::apiResource('feetypes', 'FeeTypeController');
 Route::apiResource('fee', 'FeeController');

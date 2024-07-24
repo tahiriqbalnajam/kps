@@ -94,6 +94,20 @@ export default {
             this.subjects = subjectdata.data.classubj.data[0].subjects;
         },
         async saveChapter() {
+            if(this.chapterId)
+            {
+                await chapter.update(this.chapterId, this.chapter);
+                this.$message({
+                    message:
+                      'Chapter  ' +
+                      this.chapter.title +
+                      ' has been updated successfully.',
+                    type: 'success',
+                    duration: 5 * 1000,
+                  });
+                this.handleClose();
+                return;
+            } 
             await chapter.store(this.chapter);
             this.$message({
                   message:

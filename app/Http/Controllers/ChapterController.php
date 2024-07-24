@@ -65,14 +65,34 @@ class ChapterController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        $chapter = Chapter::find($id);
+
+        if (!$chapter) {
+            return response()->json(new JsonResponse(), 404);
+        }
+
+        $validatedData = $request->validate([
+            'class_id' => 'required',
+            'subject_id' => 'required',
+            'title' => 'required',
+        ]);
+
+        $chapter->class_id = $validatedData['class_id'];
+        $chapter->subject_id = $validatedData['subject_id'];
+        $chapter->title = $validatedData['title'];
+        $chapter->save();
+        return response()->json(new JsonResponse(['chapter' => $chapter]));
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Chapter $chapter)
     {
-        //
+        if($chapter)
+            $chapter->delete();
+        else
+            return response()->json(new JsonResponse(['error' => 'Sorry chapter not found'], 404));
+
     }
 }

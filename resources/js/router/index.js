@@ -15,7 +15,7 @@ export const constantRoutes = [
     hidden: true,
   },
   {
-    path: '/take-test',
+    path: '/take-test/:chapterid/:question',
     component: () => import('@/views/exam/TakeTest.vue'),
     hidden: true,
   },
@@ -242,10 +242,11 @@ export const constantRoutes = [
         meta: {title: 'Chapters', bootstrapIcon: 'journal-text', noCache: true},
       },
       {
-        path: 'chapter_options',
+        path: 'chapter_options/:id',
+        hidden: true,
         component: () => import('@/views/exam/ChapterQuestions.vue'),
         name: 'Options',
-        meta: {title: 'options', bootstrapIcon: 'journal-text', noCache: true, hidden: true},
+        meta: {title: 'options', bootstrapIcon: 'journal-text', noCache: true},
       },
     ],
   },

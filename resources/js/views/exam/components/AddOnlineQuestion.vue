@@ -2,36 +2,14 @@
     <el-drawer title="Add Chapter" modelValue="drawerAddQuestion" size="95%" :before-close="handleClose">
         <el-row :gutter="20" justify="start" class="header">
                 <el-col :xs="6" :sm="6" :md="6" :lg="6" :xl ="6">
-                    <el-select v-model="query.class_id" value-key="" placeholder="Select Class" clearable filterable @change="getSubjects()">
-                        <el-option v-for="stdclass in classes"
-                            :key="stdclass.id"
-                            :label="stdclass.name"
-                            :value="stdclass.id">
-                        </el-option>
-                    </el-select>
+
                 </el-col>
                 <el-col :xs="6" :sm="6" :md="6" :lg="6" :xl ="6">
-                    <el-select v-model="query.subject_id" no-data-text="select class first" placeholder="Select Subject" clearable filterable @change="getChapters()">
-                        <el-option v-for="subject in subjects"
-                            :key="subject.id"
-                            :label="subject.title"
-                            :value="subject.id"
-                            >
-                        </el-option>
-                    </el-select>
-                </el-col>
-                <el-col :xs="6" :sm="6" :md="6" :lg="6" :xl ="6">
-                    <el-select v-model="chapter_question.chapter_id" no-data-text="select class and subject first" placeholder="Select Subject" clearable filterable @change="getChapters()">
-                        <el-option v-for="chapter in chapters"
-                            :key="chapter.id"
-                            :label="chapter.title"
-                            :value="chapter.id"
-                            >
-                        </el-option>
-                    </el-select>
-                </el-col>
-                <el-col :xs="6" :sm="6" :md="6" :lg="6" :xl ="6">
-                    <el-button type="primary" @click="addQuestionGroup"><el-icon><Plus /></el-icon> Add Question Group</el-button>
+                    <el-row :gutter="20" justify="end">
+                        <el-col :xs="6" :sm="6" :md="6" :lg="6" :xl ="6">
+                            <el-button type="primary" @click="addQuestionGroup"><el-icon><Plus /></el-icon> Add Question Group</el-button>
+                        </el-col>
+                    </el-row>
                 </el-col>
             </el-row>
 
@@ -98,6 +76,10 @@ export default {
             type: Boolean,
             default: false,
         },
+        chapterId: {
+            type: Number,
+            default: null
+        }
     },
     data() {
         return {
@@ -130,6 +112,8 @@ export default {
     },
     created() {
        this.getClasses();
+       alert(this.chapterId);
+       this.chapter_question.chapter_id = this.chapterId;
     },
     methods: {
         async getClasses() {
@@ -167,6 +151,7 @@ export default {
             this.drawerAddQuestion = false;
         },
         async handleSubmit() {
+            this.chapter_question.chapter_id = this.chapterId;
             await question.store(this.chapter_question);
             this.$message({
                 message: 'Questions added successfully',
