@@ -1,24 +1,27 @@
 <template>
   <div class="app-container">
     <div class="filter-container">
-      <el-date-picker
-        v-model="query.date"
-        type="date"
-        format="DD MMM, YYYY"
-        value-format="YYYY-MM-DD"
-        placeholder="Pick a day"
-        @change="getAttendanceByDate()"/>
-      <el-button type="primary" :loading="loading" :disabled="attendance.teachers.length <= 0" @click="submitAttendance">
-        {{ loading ? 'Submitting ...' : 'Save Attendance' }}
-      </el-button>
-    </div>
-    <div style="margin-top: 20px; margin-bottom: 20px">
-      <el-radio-group v-model="attendance_day" size="medium">
-        <el-radio-button label="Week day" class="weekday" fill="#ff4949" />
-        <el-radio-button label="Sunday" class="sunday" />
-        <el-radio-button label="Holliday" class="holliday" />
-      </el-radio-group>
-    </div>
+      <head-controls>
+        <el-row>
+          <el-col :span="5">
+            <el-form-item>
+              <el-date-picker
+              v-model="query.date"
+              type="date"
+              format="DD MMM, YYYY"
+              value-format="YYYY-MM-DD"
+              placeholder="Pick a day"
+              @change="getAttendanceByDate()"/>
+            </el-form-item>
+          </el-col>
+          <el-col :span="5">
+            <el-button type="primary" :loading="loading" :disabled="attendance.teachers.length <= 0" @click="submitAttendance">
+              {{ loading ? 'Submitting ...' : 'Save Attendance' }}
+            </el-button>
+          </el-col>
+        </el-row>
+      </head-controls>
+      </div>
     <el-table
       :data="attendance.teachers"
       style="width: 100%"
@@ -42,6 +45,7 @@
 </template>
 <script>
 import Pagination from '@/components/Pagination/index.vue';
+import HeadControls from '@/components/HeadControls.vue';
 import Resource from '@/api/resource';
 const teachersPro = new Resource('teachers');
 const attendPro = new Resource('teacher_attendance');
@@ -50,7 +54,7 @@ const resourcePro = new Resource('resource');
 export default {
   name: 'TeacherAttendance',
   props: [],
-  components: { Pagination },
+  components: { Pagination, HeadControls },
   directives: { },
   data() {
     return {

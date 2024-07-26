@@ -6,6 +6,7 @@
                     <el-col :span="12">
                         <el-row :gutter="20">
                             <el-col :span="12">
+                                <el-form-item>
                                 <el-date-picker
                                     v-model="$this.query.date"
                                     type="date"
@@ -13,6 +14,7 @@
                                     value-format="YYYY-MM-DD"
                                     placeholder="Pick a day" 
                                 />
+                                </el-form-item>
                             </el-col>
                             <el-col :span="12">
                                 <el-button type="primary" :loading="loading"  @click="getList">

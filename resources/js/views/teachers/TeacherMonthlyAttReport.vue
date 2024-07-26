@@ -32,7 +32,10 @@
            </tr>
            <tr v-for="teacher in  attendance.teachers" :key="teacher.id">
                <td>{{ teacher.name }}</td>
-               <td v-for="att in teacher.attendances" :key="att.id" :class="{'absent': (att == 'A')}">{{att}}</td>
+               <td v-for="att in teacher.attendances" :key="att.id" :class="{'absent': (att == 'absent')}">
+                {{(att == 'absent') ? 'A' : (att == leave) ? 'L' : 'P'}}
+
+              </td>
            </tr>
        </table>
    </el-scrollbar>
@@ -47,8 +50,8 @@
     let attRes = new Resource('teacher_attendance');
     export default {
       name: 'TeacherMonthlyReport',
-      components: {  },
-      directives: { },
+      components: {  HeadControls  },
+      directives: {  },
       data() {
         return {
           query: {

@@ -1,24 +1,38 @@
 <template>
   <div class="app-container">
     <div class="filter-container">
-      <el-select v-model="query.class" placeholder="Select class">
-        <el-option
-          v-for="stdclass in classes"
-          :key="stdclass.id"
-          :label="stdclass.name"
-          :value="stdclass.id"
-        />
-      </el-select>
-      <el-date-picker
-        v-model="query.month"
-        type="month"
-        format="MMM"
-        value-format="YYYY-MM-DD"
-        placeholder="Pick a month" 
-      />
-      <el-button type="primary" :loading="loading"  @click="getReport()">
-        {{ loading ? 'Submitting ...' : 'get report' }}
-      </el-button>
+      <head-controls>
+        <el-row :gutter="20">
+          <el-col :span="5">
+            <el-form-item>
+              <el-select v-model="query.class" placeholder="Select class">
+                <el-option
+                  v-for="stdclass in classes"
+                  :key="stdclass.id"
+                  :label="stdclass.name"
+                  :value="stdclass.id"
+                />
+              </el-select>
+              </el-form-item>
+          </el-col>
+          <el-col :span="5">
+            <el-form-item>
+              <el-date-picker
+                v-model="query.month"
+                type="month"
+                format="MMM"
+                value-format="YYYY-MM-DD"
+                placeholder="Pick a month" 
+              />
+             </el-form-item>
+          </el-col>
+          <el-col :span="5">
+            <el-button type="primary" :loading="loading"  @click="getReport()">
+              {{ loading ? 'Submitting ...' : 'get report' }}
+            </el-button>
+          </el-col>
+        </el-row>
+      </head-controls>
     </div>
     <el-scrollbar height="700px">
       <table class="tblwdborder">
@@ -36,6 +50,7 @@
 </template>
 <script>
 import Pagination from '@/components/Pagination/index.vue';
+import HeadControls from '@/components/HeadControls.vue';
 import Resource from '@/api/resource';
 import moment from 'moment';
 import { debounce } from 'lodash';
@@ -44,7 +59,7 @@ const classPro = new Resource('classes');
 const attendPro = new Resource('attendance');
 export default {
   name: '',
-  components: { Pagination },
+  components: { Pagination, HeadControls },
   directives: { },
   filters: {
     dateformat: (date) => {

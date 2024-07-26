@@ -1,12 +1,12 @@
 <!-- components/QuestionCard.vue -->
 <template>
-    <el-card>
-      <p>{{ question.question_text }}</p>
+    <el-card style="margin-top: 50px;">
+      <p style="font-size: 18px; margin-bottom: 30px;">{{ question.question_text }}</p>
       <el-radio-group v-model="selectedAnswer" @change="handleAnswerChange">
-        <el-radio :value="question.choice_1" border>{{ question.choice_1 }}</el-radio>
-        <el-radio :value="question.choice_2" border>{{ question.choice_2 }}</el-radio>
-        <el-radio :value="question.choice_3" border>{{ question.choice_3 }}</el-radio>
-        <el-radio :value="question.choice_4" border>{{ question.choice_4 }}</el-radio>
+        <el-radio :value="question.choice_1" border class="bigsize">{{question.choice_1 }}</el-radio>
+        <el-radio :value="question.choice_2" border class="bigsize">{{ question.choice_2 }}</el-radio>
+        <el-radio :value="question.choice_3" border class="bigsize">{{ question.choice_3 }}</el-radio>
+        <el-radio :value="question.choice_4" border class="bigsize">{{ question.choice_4 }}</el-radio>
       </el-radio-group>
     </el-card>
   </template>
@@ -27,3 +27,8 @@
     }
   };
   </script>
+  <style scoped>
+    .bigsize {
+      font-size:16px;
+    }
+  </style>

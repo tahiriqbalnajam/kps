@@ -1,24 +1,36 @@
 <template>
   <div class="app-container">
     <div class="filter-container">
-      <el-select v-model="attendance.stdclass" placeholder="Select class" @change="getStudent">
-        <el-option
-          v-for="stdclass in classes"
-          :key="stdclass.id"
-          :label="stdclass.name"
-          :value="stdclass.id"
-        />
-      </el-select>
-      <el-date-picker
-        v-model="attendance.date"
-        type="date"
-        format="DD MMM, YYYY"
-        value-format="YYYY-MM-DD"
-        placeholder="Pick a day" 
-        @change="getStudent" />
-      <el-button type="primary" :loading="loading" :disabled="attendance.students.length <= 0" @click="submitAttendance">
-        {{ loading ? 'Submitting ...' : 'Save Attendance' }}
-      </el-button>
+      <head-controls>
+        <el-row :gutter="20">
+          <el-col :span="5">
+            <el-form-item>
+              <el-select v-model="attendance.stdclass" placeholder="Select class" @change="getStudent">
+                <el-option
+                  v-for="stdclass in classes"
+                  :key="stdclass.id"
+                  :label="stdclass.name"
+                  :value="stdclass.id"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="5">
+            <el-date-picker
+              v-model="attendance.date"
+              type="date"
+              format="DD MMM, YYYY"
+              value-format="YYYY-MM-DD"
+              placeholder="Pick a day" 
+              @change="getStudent" />
+          </el-col>
+          <el-col :span="3">
+            <el-button type="primary" :loading="loading" :disabled="attendance.students.length <= 0" @click="submitAttendance">
+              {{ loading ? 'Submitting ...' : 'Save Attendance' }}
+            </el-button>
+          </el-col>
+        </el-row>
+      </head-controls>
     </div>
     <el-table
       :data="filterTableData"
@@ -48,6 +60,7 @@
 </template>
 <script>
 import Pagination from '@/components/Pagination/index.vue';
+import HeadControls from '@/components/HeadControls.vue';
 import Resource from '@/api/resource';
 const classPro = new Resource('classes');
 const studentPro = new Resource('students');
@@ -56,7 +69,7 @@ import {studentAttMarked} from '@/api/attendance';
 import { debounce } from 'lodash';
 export default {
   name: '',
-  components: { Pagination },
+  components: { Pagination, HeadControls },
   directives: { },
   data() {
     return {
