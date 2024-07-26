@@ -251,6 +251,26 @@ export const constantRoutes = [
     ],
   },
   {
+    path: '/timetable',
+    component: Layout,
+    redirect: '/timetable/index',
+    name: 'TimeTable',
+    alwaysShow: true,
+    meta: {
+      title: 'TimeTable',
+      bootstrapIcon: 'calendar-week-fill',
+      permissions: ['view menu timetable'],
+    },
+    children: [
+      {
+        path: 'index',
+        component: () => import('@/views/timetable/TimeTable.vue'),
+        name: 'timetable',
+        meta: { title: 'TimeTable', bootstrapIcon: 'people', noCache: true },
+      },
+    ],
+  },
+  {
     path: '/accounts',
     component: Layout,
     redirect: '/accounts/index',
