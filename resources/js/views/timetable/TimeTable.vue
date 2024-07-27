@@ -1,14 +1,13 @@
 <template>
     <el-table :data="timetable" border>
       <!-- Column for Period Names -->
-      <el-table-column label="Period" width="120">
-        <template v-slot="scope">
-          <div>{{ periods[scope.$index].name }}</div>
-        </template>
-      </el-table-column>
+      <el-table-column label="Classes" prop="classes.name" width="120"/>
   
       <!-- Columns for Weekdays -->
-      <el-table-column v-for="(weekday, columnIndex) in weekdays" :key="columnIndex" :label="weekday">
+      <el-table-column v-for="(period, columnIndex) in periods" :key="columnIndex" align="center">
+        <template #header="scope">
+          {{period.name}}<br> <span style='font-size:9px'>({{period.start}} - {{period.end}})</span>
+        </template>
         <template v-slot="scope">
           <div
             class="slot"
@@ -32,25 +31,46 @@
   </template>
   
   <script>
-  import { teachers, subjects, weekdays, periods } from './components/data';
+  import { subjects, periods } from './components/data';
   import SlotPopup from './components/SlotPopup.vue';
-  
+  import Resource from '@/api/resource';
+  const teacherRes = new Resource('teachers');
+  const classRes = new Resource('classes');
   export default {
+    name: 'TimeTable',
     components: { SlotPopup },
     data() {
       return {
-        timetable: periods.map(() => weekdays.map(() => ({}))), // Create a matrix for the timetable
-        weekdays,
+        classes: [],
         periods,
-        teachers,
+        teachers: [],
         subjects,
         showPopup: false,
         selectedSlot: null,
         disabledTeachers: [],
-        disabledSubjects: []
+        disabledSubjects: [],
+        timetable: [], // Create a matrix for the timetable
       };
     },
+    created() {
+      this.getTeachers();
+      this.getClasses();
+    },
+    mounted() {
+      this.setTimeTable();
+    }, 
     methods: {
+      async getTeachers() {
+        const { data } = await teacherRes.list();
+        this.teachers = data.teachers.data;
+      },
+      async getClasses() {
+        const { data } = await classRes.list();
+        this.classes = data.classes.data;
+      },
+      setTimeTable() {
+        this.timetable = this.classes.map(() => this.periods.map(() => ({})));
+      },
       openPopup(rowIndex, columnIndex) {
         this.selectedSlot = { rowIndex, columnIndex };
         this.showPopup = true;

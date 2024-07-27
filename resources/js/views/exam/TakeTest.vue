@@ -24,9 +24,9 @@
   import ChapterList from './components/Chapters.vue';
   import QuestionCard from './components/QuestionCard.vue';
   import Result from './components/ResultCard.vue';
-  import resource from '@/api/resource';
-  const chapters  = new resource('chapters');
-  const questions  = new resource('questions');
+  import Resource from '@/api/resource';
+  const chapters  = new Resource('chapters');
+  const questions  = new Resource('questions');
 
   export default {
     name: 'OnlineTestAdmin',

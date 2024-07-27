@@ -63,11 +63,11 @@
 
 <script>
 import { QuestionFilled, Close, Plus } from '@element-plus/icons-vue'
-import resource from '@/api/resource';
-const classes = new resource('classes');
-const subjectRes = new resource('subject_class');
-const chapter = new resource('chapters');
-const question = new resource('questions');
+import Resource from '@/api/resource';
+const classes = new Resource('classes');
+const subjectRes = new Resource('subject_class');
+const chapter = new Resource('chapters');
+const question = new Resource('questions');
 export default {
     name: 'ComponentName',
     emits: ['closeAddQuestion'],
@@ -112,7 +112,6 @@ export default {
     },
     created() {
        this.getClasses();
-       alert(this.chapterId);
        this.chapter_question.chapter_id = this.chapterId;
     },
     methods: {
