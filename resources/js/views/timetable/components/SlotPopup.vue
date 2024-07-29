@@ -5,9 +5,9 @@
           <el-select v-model="selectedTeacher" placeholder="Select Teacher">
             <el-option
               v-for="teacher in teachers"
-              :key="teacher"
-              :label="teacher"
-              :value="teacher"
+              :key="teacher.id"
+              :label="teacher.name"
+              :value="teacher.id"
               :disabled="disabledTeachers.includes(teacher)"
             />
           </el-select>

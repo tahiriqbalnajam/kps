@@ -1,7 +1,7 @@
 <template>
     <div id="app">
       <el-steps :active="activeStep" finish-status="success" align-center>
-        <el-step v-for="(question, index) in questions" :key="index" :title="'Question ' + (index + 1)" />
+        <el-step v-for="(question, index) in questions" :key="index" :title="'Q# ' + (index + 1)" />
         <el-step title="result" :icon="Picture" />
       </el-steps>
   
