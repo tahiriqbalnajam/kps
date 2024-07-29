@@ -7,9 +7,7 @@
               <el-col :span="12">
                 <el-row :gutter="20">
                   <el-col :xs="8" :sm="8" :md="8" :lg="8" :xl ="8">
-                    <el-select v-model="query.filtercol" placeholder="Filter" class="filter-item">
-                      <el-option v-for="filter in filtercol" :key="filter.id" :label="filter.display | uppercaseFirst" :value="filter.title" />
-                    </el-select>
+                    <el-input v-model="query.keyword" placeholder="Type to search"/>
                   </el-col>
                   <el-col :xs="8" :sm="8" :md="8" :lg="8" :xl ="8">
                     <el-button  class="filter-item" type="primary" :icon="Search"  @click="handleFilter">
@@ -21,17 +19,10 @@
               <el-col :span="12">
                 <el-row :gutter="20" justify="end">
                   <el-col :span="3">
-                    <el-tooltip content="Add Teacher" placement="top">
+                    <el-tooltip content="Add Period" placement="top">
                       <el-button class="filter-item" style="margin-left: 10px;" type="info" :icon="el-icon-plus" @click="openAddNew()">
                           <el-icon :size="15"><Plus /></el-icon>
                       </el-button>
-                    </el-tooltip>
-                  </el-col>
-                  <el-col :span="2">
-                    <el-tooltip content="Teacher Excel" placement="top">
-                      <el-button class="filter-item" :loading="downloadLoading"  type="danger" :icon="Search"  @click="handleDownload">
-                        <el-icon><Download /></el-icon>
-                    </el-button>
                     </el-tooltip>
                   </el-col>
                 </el-row>
@@ -97,7 +88,7 @@
         @close="updatelist()"
       >
         <div class="demo-drawer__content">
-          <el-form :model="period" :rules="rules" ref="teacher">
+          <el-form :model="period" :rules="rules" ref="period">
             <el-row :gutter="20">
               <el-col :span="8">
                 <el-form-item label="Title" :label-width="formLabelWidth" prop="title">
@@ -106,7 +97,7 @@
               </el-col>
               <el-col :span="8">
                 <el-time-select
-                    v-model="period.period_start"
+                    v-model="period.start"
                     style="width: 240px"
                     :max-time="endTime"
                     class="mr-4"
@@ -116,9 +107,9 @@
                     end="18:30"
                     />
                 <el-time-select
-                    v-model="period.period_end"
+                    v-model="period.end"
                     style="width: 240px"
-                    :min-time="startTime"
+                    :min-time="period.start"
                     placeholder="End time"
                     start="08:30"
                     step="00:15"
@@ -131,7 +122,7 @@
         <template #footer>
             <div style="flex: auto">
               <el-button @click="editnow = false">Cancel</el-button>
-              <el-button type="primary" @click="onSubmit('teacher')" :loading="loading">{{ loading ? 'Submitting ...' : 'Submit' }}</el-button>
+              <el-button type="primary" @click="onSubmit('period')" :loading="loading">{{ loading ? 'Submitting ...' : 'Submit' }}</el-button>
             </div>
           </template>
       </el-drawer>
@@ -203,38 +194,16 @@
             { required: true, message: 'Please select class', trigger: 'blur' },
           ],
         },
-        teacher: {
+        resetperiod: {
           id: '',
-          name: '',
-          cnic: '',
-          father_name: '',
-          father_cnic: '',
-          pay: '',
-          education: '',
-          phone: '',
-          address: '',
-          gender:'',
-          status:'active',
-          class_id: '',
-        },
-        resetteacher: {
-          id: '',
-          name: '',
-          cnic: '',
-          father_name: '',
-          father_cnic: '',
-          pay: '',
-          education: '',
-          phone: '',
-          address: '',
-          gender:'',
-          status:'active',
-          class_id: '',
+          title: '',
+          start: '',
+          end: '',
         },
         period: {
-         title: '',
-         period_start: '',
-         period_end: '',
+          title: '',
+          start: '',
+          end: '',
         },
         query: {
           page: 1,
@@ -264,12 +233,12 @@
         await this.getList()
       },
       openAddNew() {
-        this.teacher = {...this.resetteacher}
+        this.period = {...this.resetperiod}
         this.editnow = true;
       },
       updatelist() {
         this.getList();
-        this.update = false;
+        this.editnow = false;
       }, 
       async getClasses() {
         const { data } = await stdClass.list();
@@ -287,8 +256,8 @@
         await this.getList();
       },
       async handleEdit(id, name) {
-        const { data } = await resourcePro.get(id);
-        this.teacher = data.teacher[0];
+        const { data } = await periodPro.get(id);
+        this.period = data.period;
         this.editnow = true;
       },
       async handleDelete(id, name) {
@@ -297,7 +266,7 @@
           cancelButtonText: 'Cancel',
           type: 'warning'
         }).then(async () => {
-          await resourcePro.destroy(id);
+          await periodPro.destroy(id);
           this.getList();
           this.$message({
             type: 'success',
@@ -309,8 +278,8 @@
         this.loading = true;
         await this.$refs[formName].validate(valid => {
           if (valid) {
-            if(this.teacher.id != '') {
-              resourcePro.update(this.teacher.id, this.teacher);
+            if(this.period.id != '') {
+              periodPro.update(this.period.id, this.period);
               this.editnow = false;
               this.getList();
               this.loading = false;
@@ -327,19 +296,6 @@
           }
         });
       },
-      async generateCard() {
-        let text = "Tahir iqbal";
-  
-        await QRCode.toCanvas(document.getElementById('canvas'),
-          'sample text', { toSJISFunc: QRCode.toSJIS }, function (error) {
-            if (error) {
-              console.error(error);
-            } else {
-              console.log('success!');
-            }
-          });
-        this.showcard = true;
-      },
       closeAddStudent() {
         this.addstudentpop = !this.addstudentpop;
         this.stdid = null;
@@ -350,46 +306,6 @@
       },
       addStudentFunc() {
         this.addstudentpop = true;
-      },
-      handleDownload() {
-        this.downloadLoading = true;
-        import('@/vendor/Export2Excel').then(excel => {
-          const tHeader = ['Name', 'Gender', 'DOB','CNIC','Pay','Phone','address'];
-          const filterVal = ['name', 'gender', 'dob','cnic','pay','phone','address'];
-          const list = this.formateData(this.list);
-          const data = this.formatJson(filterVal, list);
-          excel.export_json_to_excel({
-            header: tHeader,
-            data,
-            filename: 'paid_fee_today',
-          });
-        });
-      },
-      formateData(data) {
-        const formatedData = data.map(record => (
-          {
-            roll_no: record.roll_no,
-            name: record.name,
-            parent_name: record.parents.name,
-            phone: record.parents.phone,
-            class: record.stdclasses.name,
-            gender: record.gender,
-            fee: record.monthly_fee,
-            dob: record.dob,
-          }
-        )
-        );
-        this.downloadLoading = false;
-        return formatedData;
-      },
-      formatJson(filterVal, jsonData) {
-        return jsonData.map(v => filterVal.map(j => {
-          if (j === 'timestamp') {
-            return parseTime(v[j]);
-          } else {
-            return v[j];
-          }
-        }));
       },
     },
   };

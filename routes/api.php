@@ -32,6 +32,8 @@ Route::apiResource('chapters', 'ChapterController');
 Route::apiResource('questions', 'QuestionController');
 //periods
 Route::apiResource('periods', 'PeriodController');
+//timetable
+Route::apiResource('timetable', 'TimetableController');
 //fee
 Route::apiResource('feetypes', 'FeeTypeController');
 Route::apiResource('fee', 'FeeController');

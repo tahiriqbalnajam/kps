@@ -51,6 +51,12 @@
         this.$emit('close');
       },
       handleSave() {
+        if (!this.selectedTeacher || !this.selectedSubject) {
+          this.$message.error('Please select a teacher and subject.');
+          return;
+
+        }
+
         this.$emit('save', {
           teacher: this.selectedTeacher,
           subject: this.selectedSubject

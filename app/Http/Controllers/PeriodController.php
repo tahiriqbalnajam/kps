@@ -17,7 +17,8 @@ class PeriodController extends Controller
         $periods =  QueryBuilder::for(Period::class)
             ->allowedIncludes('subject', 'class')
             ->allowedFilters([
-                'id', 'title', 'class_id', 'title',
+                'id', 'title', 'start', 'end',
+
             ])
             ->paginate($limit)
             ->appends(request()->query());
@@ -25,14 +26,37 @@ class PeriodController extends Controller
     }
 
     public function store(Request $request){
-       print_r($request->all());
+        $request->validate([
+            'title' => 'required',
+            'start' => 'required',
+            'end' => 'required',
+        ]); 
 
-    $period = Period::create([
-        'title' => $request->title,
-        'start' => $request->period_start,
-        'end' =>  $request->period_end,
-    ]);
+        $period = Period::create([
+            'title' => $request->title,
+            'start' => $request->start,
+            'end' =>  $request->end,
+        ]);
 
-    return $period;
+        return response()->json(new JsonResponse(['period' => $period]));
     }
+
+    public function show($id) {
+        $period = Period::find($id);
+        return response()->json(new JsonResponse(['period' => $period]));
+    }
+
+    public function update(Request $request, $id) {
+        $period = Period::find($id);
+        $period->update($request->all());
+        return response()->json(new JsonResponse(['period' => $period]));
+    }
+
+    public function destroy($id) {
+        Period::destroy($id);
+        return response()->json(new JsonResponse(['msg' => 'Deleted successfully.']));
+    }
+
+
+
 }
