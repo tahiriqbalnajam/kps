@@ -16,8 +16,9 @@
         <div
           class="slot"
           @click="openPopup(scope.$index, columnIndex)"
+          v-html="getSlotData(scope.$index, columnIndex) "
         >
-          {{ getSlotData(scope.$index, columnIndex) }}
+          
         </div>
       </template>
     </el-table-column>
@@ -35,12 +36,13 @@
 </template>
 
 <script>
-import { subjects, periods } from './components/data';
+import { periods } from './components/data';
 import SlotPopup from './components/SlotPopup.vue';
 import Resource from '@/api/resource';
 
 const teacherRes = new Resource('teachers');
 const classRes = new Resource('classes');
+const subjectRes = new Resource('subjects');
 
 export default {
   name: 'TimeTable',
@@ -50,7 +52,7 @@ export default {
       classes: [],
       periods,
       teachers: [],
-      subjects,
+      subjects: [],
       showPopup: false,
       selectedSlot: null,
       disabledTeachers: [],
@@ -61,6 +63,7 @@ export default {
   created() {
     this.getTeachers();
     this.getClasses();
+    this.getSubjects();
   },
   watch: {
     classes(newClasses) {
@@ -78,6 +81,10 @@ export default {
       const { data } = await classRes.list();
       this.classes = data.classes.data;
     },
+    async getSubjects() {
+      const { data } = await subjectRes.list();
+      this.subjects = data.subjects.data;
+    },
     setTimeTable() {
       this.timetable = this.classes.map(() => this.periods.map(() => ({})));
     },
@@ -92,13 +99,29 @@ export default {
     },
     saveSlot(data) {
       const { rowIndex, columnIndex } = this.selectedSlot;
-      this.$set(this.timetable[rowIndex], columnIndex, data);
+      this.timetable[rowIndex][columnIndex] = data;
+      //this.timetable[rowIndex][columnIndex] = data;
+      //this.$set(this.timetable[rowIndex], columnIndex, data);
       this.closePopup();
+    },
+    getTeacherNameById(id) {
+      const teacher = this.teachers.find(teacher => teacher.id === id);
+      if (teacher)
+       return  teacher.name;
+      
+      return '';
+    },
+    getSubjectNameById(id) {
+      const subject = this.subjects.find(subject => subject.id === id);
+      if (subject)
+        return  subject.title;
+     
+      return '';
     },
     getSlotData(rowIndex, columnIndex) {
       const slot = this.timetable[rowIndex][columnIndex];
       return slot.teacher && slot.subject
-        ? `${slot.teacher} - ${slot.subject}`
+        ? '<b>'+this.getSubjectNameById(slot.subject)+'</b><br><span style="font-size:10px">'+this.getTeacherNameById(slot.teacher)+'</span>'
         : '';
     },
     updateDisabledOptions(rowIndex, columnIndex) {
@@ -123,8 +146,6 @@ export default {
 .slot {
   cursor: pointer;
   height: 50px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  text-align: center;
 }
 </style>

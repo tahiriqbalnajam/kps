@@ -8,7 +8,7 @@
               :key="teacher.id"
               :label="teacher.name"
               :value="teacher.id"
-              :disabled="disabledTeachers.includes(teacher)"
+              :disabled="disabledTeachers.some(teach => teach == teacher.id)"
             />
           </el-select>
         </el-form-item>
@@ -16,10 +16,10 @@
           <el-select v-model="selectedSubject" placeholder="Select Subject">
             <el-option
               v-for="subject in subjects"
-              :key="subject"
-              :label="subject"
-              :value="subject"
-              :disabled="disabledSubjects.includes(subject)"
+              :key="subject.id"
+              :label="subject.title"
+              :value="subject.id"
+              :disabled="disabledSubjects.some(sub => sub == subject.id)"
             />
           </el-select>
         </el-form-item>

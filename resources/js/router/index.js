@@ -253,20 +253,20 @@ export const constantRoutes = [
   {
     path: '/timetable',
     component: Layout,
-    redirect: '/timetable/index',
-    name: 'TimeTable',
-    alwaysShow: true,
-    meta: {
-      title: 'TimeTable',
-      bootstrapIcon: 'calendar-week-fill',
-      permissions: ['view menu timetable'],
-    },
+    redirect: '/timetable/create',
+    meta: {title: 'TimeTable', bootstrapIcon: 'calendar', noCache: true},
     children: [
       {
-        path: 'index',
+        path: 'generator',
         component: () => import('@/views/timetable/TimeTable.vue'),
-        name: 'timetable',
-        meta: { title: 'TimeTable', bootstrapIcon: 'people', noCache: true },
+        name: 'Generat',
+        meta: {title: 'Generat Timetable', bootstrapIcon: 'journal-text', noCache: true},
+      },
+      {
+        path: 'periods',
+        component: () => import('@/views/timetable/Periods.vue'),
+        name: 'Periods',
+        meta: {title: 'Add/Edit Periods', bootstrapIcon: 'watch', noCache: true},
       },
     ],
   },

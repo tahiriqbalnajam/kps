@@ -30,6 +30,8 @@ Route::apiResource('parents', 'ParentController');
 //chapters
 Route::apiResource('chapters', 'ChapterController');
 Route::apiResource('questions', 'QuestionController');
+//periods
+Route::apiResource('periods', 'PeriodController');
 //fee
 Route::apiResource('feetypes', 'FeeTypeController');
 Route::apiResource('fee', 'FeeController');
