@@ -102,7 +102,6 @@ export default {
     },
     setTimeTable() {
       this.timetable = this.classes.map(() => this.periods.map(() => ({})));
-
     },
     getSummaries(param) {
       const { columns, data } = param
