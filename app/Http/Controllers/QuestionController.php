@@ -23,7 +23,7 @@ class QuestionController extends Controller
         $questions = QueryBuilder::for(Question::class)
             ->with(['chapter'])
             ->allowedFilters([
-                'id','chapter_id', 'question_text', 'choice_1', 'choice_2', 'choice_3', 'choice_4'
+                'id','lang','chapter_id', 'question_text', 'choice_1', 'choice_2', 'choice_3', 'choice_4'
             ])
             ->allowedSorts([
                 AllowedSort::custom('random', new RandomSort(), 'name'),

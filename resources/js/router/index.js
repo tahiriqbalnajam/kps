@@ -15,7 +15,7 @@ export const constantRoutes = [
     hidden: true,
   },
   {
-    path: '/take-test/:chapterid/:question',
+    path: '/take-test/:chapterid/:question/:lang',
     component: () => import('@/views/exam/TakeTest.vue'),
     hidden: true,
   },

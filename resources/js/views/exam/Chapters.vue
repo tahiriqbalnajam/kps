@@ -174,7 +174,7 @@ export default {
                 inputErrorMessage: 'Invalid number',
             })
             .then(({ value }) => {
-                const routeData = this.$router.resolve(`/take-test/${id}/${value}`);
+                const routeData = this.$router.resolve(`/take-test/${id}/${value}/eng`);
                 window.open(routeData.href, '_blank');
             })
             .catch(() => {

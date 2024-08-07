@@ -57,6 +57,7 @@
 
         async handleChapterSelected () {
             this.question_query.filter['chapter_id'] = this.$route.params.chapterid;
+            this.question_query.filter['lang'] = this.$route.params.lang;
             this.question_query.sort = 'random';
             this.question_query.limit = this.$route.params.question;
             const { data } = await questions.list(this.question_query);
