@@ -22,13 +22,23 @@ class FeeController extends Controller
     {
         $searchParams = $request->all();
         $limit = Arr::get($searchParams, 'limit', static::ITEM_PER_PAGE);
+        $keyword = $request->get('keyword');
         $stdclass = $request->get('stdclass');
+        //$stdclass = '11';
         $student_id = $request->get('id');
         $date = $request->get('date');
         $pending = $request->get('pending');
-        $fee = Fee::with(['feetype','student.stdclasses']) 
+        $fee = Fee::with(['feetype','fee_meta','student.stdclasses']) 
                     ->when($student_id,  function($q) use ($student_id) {
                         return $q->where('student_id', $student_id);
+                    })
+                    ->when( $keyword,  function($q) use ($keyword) {
+                        return $q->where( 'student.name', 'like', '%'.$keyword.'%');
+                    })
+                    ->whereHas('student.stdclasses', function ($query) use ($stdclass) {
+                        if ($stdclass) {
+                            $query->where('class_id', $stdclass);
+                        }
                     })
                     ->when($date, function($q) use($date) {
                         $start_date = Carbon::parse($date[0])->startOfDay();
@@ -36,14 +46,15 @@ class FeeController extends Controller
                         return $q->whereBetween('created_at', [$start_date, $end_date]);
                     }) 
                     ->orderBy('created_at', 'desc')
+                    //->toSql();
                     ->paginate($limit); 
-            $total_fee = Fee::select(DB::raw('sum(amount) as fee'))->when($date, function($q) use($date) {
-            $start_date = Carbon::parse($date[0])->startOfDay();
-            $end_date = Carbon::parse($date[1])->endOfDay();
-            return $q->whereBetween('created_at', [$start_date, $end_date]);
-        })->first();
+        // $total_fee = Fee::select(DB::raw('sum(amount) as fee'))->when($date, function($q) use($date) {
+        //     $start_date = Carbon::parse($date[0])->startOfDay();
+        //     $end_date = Carbon::parse($date[1])->endOfDay();
+        //     return $q->whereBetween('created_at', [$start_date, $end_date]);
+        // })->first();
         //dd(DB::getQueryLog());
-        return response()->json(new JsonResponse(['fee' => $fee, 'totalfee' => $total_fee]));
+        return response()->json(new JsonResponse(['fee' => $fee]));
     }
 
     /**

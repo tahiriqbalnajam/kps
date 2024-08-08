@@ -98,6 +98,7 @@ export default {
       this.$emit('doneFeeDetail');
     },
     async getFeeDetail() {
+      this.query.id = this.stdid;
       const { data } = await feePro.list(this.query);
       this.fees = data.fee.data;
     }

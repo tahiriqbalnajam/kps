@@ -26,12 +26,12 @@
       <el-table-column label="Class" prop="classname" />
       <el-table-column label="Paid Till">
         <template #default="scope">
-          <span style="font-weight:bold; color: #000">{{ scope.row.payment_to_date | dateformat}}</span>
+          <span style="font-weight:bold; color: #000">{{ dateformat(scope.row.payment_to_date)}}</span>
         </template>
       </el-table-column>
       <el-table-column label="Paid at">
         <template #default="scope">
-          {{ scope.row.paidat | dateformat}}
+          {{ dateformat(scope.row.paidat)}}
         </template>
       </el-table-column>
       <el-table-column align="right">
@@ -102,6 +102,9 @@ export default {
     this.getList();
   },
   methods: {
+    dateformat(date){
+      return (!date) ? '' : moment(date).format('DD MMM, YYYY');
+    },
     debounceInput: debounce(function (e) {
       this.getList();
     }, 500),
