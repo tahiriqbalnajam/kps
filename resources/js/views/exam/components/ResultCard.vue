@@ -14,9 +14,9 @@
             <h3>Incorrect Questions:</h3>
             <ul>
               <li v-for="(question, index) in incorrectQuestions" :key="index">
-                <p><strong>Question {{ index + 1 }}: {{ question.text }}</strong></p>
-                <p>Selected Option: {{ question.selectedOption }}</p>
-                <p>Correct Option: {{ question.correctOption }}</p>
+                <p><strong>Question {{ index + 1 }}: {{ question.question_text }}</strong></p>
+                <p class="wrong">Selected Option: {{ question.selectedOption }}</p>
+                <p class="correct">Correct Option: {{ question.correctOption }}</p>
               </li>
             </ul>
           </div>
@@ -61,7 +61,7 @@
         return selectedOption !== correctOption;
       }).map(question => {
         return {
-          text: question.text,
+          question_text: question.question_text,
           selectedOption: this.userAnswers[question.id],
           correctOption: question[question.correct_choice]
         };
@@ -91,5 +91,11 @@
   .heading {
     font-size: 17;
     font-weight: bold;
+  }
+  .wrong {
+    color:#ff0000d1
+  }
+  .correct {
+    color:#00a500fa;
   }
   </style>
