@@ -48,7 +48,7 @@
         <el-input v-model="search" size="small" placeholder="Type to search" />
       </template>
         <template  #default="scope">
-          <el-radio-group v-model="scope.row.attendance" size="small" text-color="" :fill="(scope.row.attendance == 'Present') ? '#67c23a' : (scope.row.attendance == 'Absent') ? '#f56c6c' : '#909399'">
+          <el-radio-group v-model="scope.row.attendance" size="small" text-color="" :fill="(scope.row.attendance == 'present') ? '#67c23a' : (scope.row.attendance == 'absent') ? '#f56c6c' : '#909399'">
             <el-radio-button label="Present" value="present" />
             <el-radio-button label="Absent" value="absent"/>
             <el-radio-button label="Leave" value="leave"/>
@@ -68,7 +68,7 @@ const attendPro = new Resource('attendance');
 import {studentAttMarked} from '@/api/attendance';
 import { debounce } from 'lodash';
 export default {
-  name: '',
+  name: 'StudentAttendance',
   components: { Pagination, HeadControls },
   directives: { },
   data() {
@@ -135,6 +135,7 @@ export default {
     },
     async getStudent() {
       this.query.filter.stdclass = this.attenquery.stdclass = this.attendance.stdclass;
+      this.query.fields = 'id,name,roll_no,class_id,parents.id';
       const { data } = await studentPro.list(this.query);
       this.attenquery.month = this.attendance.date;
       const attenDD = await studentAttMarked(this.attenquery);
@@ -148,9 +149,9 @@ export default {
       this.attendance.students = data.students.data.map(std => {
         const atten = attenDD.data.attendance.find(att => att.student_id == std.id);
         if(atten) {
-          return { ...std, 'attendance': atten.status[0].toUpperCase() + atten.status.slice(1) };
+          return { ...std, 'attendance': atten.status[0] + atten.status.slice(1) };
         }
-        return { ...std, 'attendance': 'Present' };
+        return { ...std, 'attendance': 'present' };
       });
     },
     async search_data() {

@@ -167,7 +167,7 @@
         @current-change="handleCurrentChange"
       />
     </div>
-    <add-student  :if="addstudentpop" :addeditstudentprop="addstudentpop" :stdid="stdid" @closeAddStudent="closeAddStudent()"/>
+    <add-student  v-if="addstudentpop" :addeditstudentprop="addstudentpop" :stdid="stdid" @closeAddStudent="closeAddStudent()"/>
     <pay-fee v-if="openpayfee" :openpayfee="openpayfee" :stdid="stdid" @donePayFee="donePayFee" />
     <fee-detail v-if="openfeedetail" :openfeedetail="openfeedetail" :stdid="studentid" @doneFeeDetail="doneFeeDetail" />
     <character-certificate  v-if="showcharactercertificate" :showcharactercertificate="showcharactercertificate" :stdid="studentid" @doneFeeDetail="doneFeeDetail" />

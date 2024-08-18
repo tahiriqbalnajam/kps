@@ -89,7 +89,8 @@ const getData = async () => {
   }
 };
 
-const data = ref(null);
+const data = ref({total_students: 0, total_absent_students: 0, total_teachers: 0, total_absent_teachers: 0, absent_teachers: []});
+
 
 getData().then((result) => {
   if (result) {

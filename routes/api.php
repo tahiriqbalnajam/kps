@@ -43,7 +43,7 @@ Route::apiResource('settings', 'SettingController');
 Route::apiResource('smsqueue', 'SmsQueueController');
 Route::get('sendsms', 'SmsQueueController@sendsms');
 Route::post('change_status', 'SmsQueueController@change_status');
-Route::apiResource('dashboard', 'dashboardController');
+Route::apiResource('dashboard', 'DashboardController');
 //student attendance
 Route::apiResource('has_student_attendance', 'StudentAttendanceController@has_student_attendance');
 Route::apiResource('attendance', 'StudentAttendanceController');
