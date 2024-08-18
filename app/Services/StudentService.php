@@ -103,7 +103,12 @@ class StudentService implements StudentServiceInterface
         $structuredResults = $results->map(function($tests, $subject) {
             $totalScore = $tests->sum('score');
             $totalMarks = $tests->sum('total_marks');
-            $overallPercentage = ($totalScore / $totalMarks) * 100;
+            if ($totalMarks == 0) {
+                $overallPercentage = 0;
+            } else {
+                $overallPercentage = ($totalScore / $totalMarks) * 100;
+            }
+
             return [
                 'subject' => $subject,
                 'overall_percentage' => $overallPercentage,

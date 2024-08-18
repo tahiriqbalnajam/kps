@@ -99,6 +99,7 @@ class TestService
     protected function validateTestData(array $data)
     {
         return validator($data, [
+            'teacher_id' => 'required|exists:teachers,id',
             'class_id' => 'required|exists:classes,id',
             'subject_id' => 'required|exists:subjects,id',
             'title' => 'required|string|max:255',
