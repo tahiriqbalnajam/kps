@@ -195,31 +195,48 @@ class AttendanceService implements AttendanceServiceInterface
             ]);
         }
         $absentStudents = Classes::with(['students' => function ($query) use ($today) {
-            $query->whereDoesntHave('attendances', function ($query) use ($today) {
-                $query->whereDate('attendance_date', $today)->where('status', 'present');
-            })->orWhereHas('attendances', function ($query) use ($today) {
-                $query->whereDate('attendance_date', $today)->where('status', 'absent');
+            $query->whereHas('attendances', function ($query) use ($today) {
+                $query->whereDate('attendance_date', $today)
+                      ->where(function ($query) {
+                          $query->where('status', 'absent')
+                                ->orWhere('status', 'leave');
+                      });
             });
         }, 'students.parents' => function ($query) {
-            $query->select('id', 'name','phone');
+            $query->select('id', 'name', 'phone');
         }])
         ->get();
 
-        $result = $absentStudents->map(function ($class) {
+        $result = $absentStudents->map(function ($class) use ($today) {
             return [
                 'class_name' => $class->name,
-                'absent_students' => $class->students->map(function ($student) {
+                'absent_students' => $class->students->map(function ($student) use ($today) {
+                    $attendance = $student->attendances->where('attendance_date', $today)->first();
                     return [
                         'id' => $student->id,
                         'name' => $student->name,
                         'parent_name' => $student->parents->name,
                         'phone' => $student->parents->phone,
+                        'attendace_id' => $attendance->id,
+                        'comment' => $attendance->comment,
+
+
                     ];
                 })
             ];
         });
 
         return $result;
+    }
+
+    public function absent_comment($data) {
+        $attendance = StudentAttendance::findOrFail($data['attendance_id']);
+        $attendance->comment = $data['comment'];
+        $attendance->save();
+
+        return response()->json([
+            'message' => 'Absent comment updated successfully.'
+        ]);
     }
 
     public function teachers_monthly_attendance_report(array $request)

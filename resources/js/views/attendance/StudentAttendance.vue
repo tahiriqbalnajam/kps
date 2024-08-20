@@ -40,6 +40,7 @@
       :border="true"
       empty-text="Select a class first!"
       size="small"
+      v-loading="student_loading"
     >
       <el-table-column label="Roll No." prop="roll_no" />
       <el-table-column label="Student Name" prop="name" />
@@ -73,6 +74,7 @@ export default {
   directives: { },
   data() {
     return {
+      student_loading: false,
       classes: [],
       attendance_day: 'Week day',
       search: '',
@@ -134,6 +136,7 @@ export default {
       return today;
     },
     async getStudent() {
+      this.student_loading = true;
       this.query.filter.stdclass = this.attenquery.stdclass = this.attendance.stdclass;
       this.query.fields = 'id,name,roll_no,class_id,parents.id';
       const { data } = await studentPro.list(this.query);
@@ -153,6 +156,7 @@ export default {
         }
         return { ...std, 'attendance': 'present' };
       });
+      this.student_loading = false;
     },
     async search_data() {
       await this.getList();

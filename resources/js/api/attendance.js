@@ -47,6 +47,13 @@ export function absentForeachClass(data) {
     params: data,
   });
 }
+export function addAbsentComment(data) {
+  return request({
+    url: '/absent_comment',
+    method: 'post',
+    data,
+  });
+}
 
 export function getStudentAttTotals(id) {
   return request({

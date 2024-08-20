@@ -38,38 +38,7 @@ class StudentAttendanceController extends Controller
         $attendance = StudentAttendance::where('class_id', $class_id)
                                         ->whereBetween('attendance_date',array($start_month,$end_month))
                                         ->orderBy('student_id')
-                                        ->toSql();
-
-        // $students = QueryBuilder::for(Student::class)
-        //             ->with('parents','stdclasses','class_session')
-        //             ->allowedFilters(['id','name', 'roll_no', 'adminssion_number', 
-        //                                 AllowedFilter::partial('parent_phone', 'parents.phone'),
-        //                                 AllowedFilter::partial('parent_name', 'parents.name'),
-        //                                 AllowedFilter::exact('stdclass', 'stdclasses.id')
-        //                             ])
-        //             ->paginate($limit)
-        //             ->appends(request()->query());
-
-        // $students = Student::with(['attend' => function($query) use($class_id, $start_month, $end_month){
-        //     return $query->where('class_id', $class_id)->whereBetween('attendance_date',array($start_month,$end_month));
-        // }])->where('class_id', $class_id)->select('roll_no','name','id')->get();
-
-        // $period = CarbonPeriod::create($start_month, $end_month);
-        // $attend = array();
-        // $students->map( function($student) use($attendance, $period, $attend) {
-        //     $attend['student_name'] = $student->name;
-        //     foreach ($period as $date) {
-        //         $record = $attendance->where('student_id', $student->id)->shift();
-        //         print_r($record);
-        //         if($record)
-        //             $attend['attendance'][] = $record->status;
-        //         else
-        //             $attend['attendance'][] = '-';
-        //     }
-        // });
-        
-        // Iterate over the period
-        
+                                        ->toSql();        
         
          return response()->json(new JsonResponse(['attendance' => $attendance]));
 
@@ -80,6 +49,14 @@ class StudentAttendanceController extends Controller
         $data = $this->attendanceService->absent_student_each_class($data);
         return response()->json(new JsonResponse(['class_student' => $data]));
     }
+
+    public function absent_comment(Request $request) {
+        $data = $request->all();
+        $data = $this->attendanceService->absent_comment($data);
+        return response()->json(new JsonResponse(['attendance' => $data]));
+
+    }
+
 
     public function student_attendance_marked(Request $request) {
         $search = $request->all();
