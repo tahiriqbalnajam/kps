@@ -1,6 +1,6 @@
 <!-- components/QuestionCard.vue -->
 <template>
-    <el-card style="margin-top: 50px;">
+    <el-card style="margin-top: 50px;" :class="(this.$route.params.lang == 'eng') ? 'ltr' : 'rtl'">
       <p style="font-size: 18px; margin-bottom: 30px;">{{ question.question_text }}</p>
       <el-radio-group v-model="selectedAnswer" @change="handleAnswerChange">
         <el-radio :value="question.choice_1" border class="bigsize">{{question.choice_1 }}</el-radio>
@@ -31,4 +31,15 @@
     .bigsize {
       font-size:16px;
     }
+    .ltr {
+      text-align: left;
+      direction: ltr;
+    }
+    .rtl {
+      text-align: right;
+      direction: rtl;
+    }
+
+
+
   </style>
