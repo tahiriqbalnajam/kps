@@ -11,6 +11,7 @@
             </div>
           </template>
           <attendance-info />
+          <attendance-comments />
         </el-card>     
       </el-col>
       <el-col :span="9">
@@ -22,6 +23,7 @@
 <script>
 import StudentInfo from './components/StudentInfo.vue';
 import AttendanceInfo from './components/AttendanceInfo.vue';
+import AttendanceComments from './components/AttendanceComments.vue';
 import TestInfo from './components/TestInfo.vue';
 import Resource from '@/api/resource';
 const student = new Resource('students');
@@ -30,6 +32,7 @@ export default {
   components: {
     StudentInfo,
     AttendanceInfo,
+    AttendanceComments,
     TestInfo
   },
   data() {

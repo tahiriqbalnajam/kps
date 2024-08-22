@@ -62,6 +62,13 @@ export function getStudentAttTotals(id) {
   });
 }
 
+export function getAttComments(id) {
+  return request({
+    url: '/get_att_comments'+ '/' + id,
+    method: 'get',
+  });
+}
+
 export function teacherMonthlyAttReport(data) {
   return request({
     url: '/teachers_monthly_att_report',

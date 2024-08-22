@@ -13,4 +13,6 @@ interface AttendanceServiceInterface
     public function absent_student_each_class(array $data);
     public function absent_comment(array $data);
     public function student_attendance_total(int $student_id);
+
+    public function get_student_attendace_comments(int $student_id);
 }

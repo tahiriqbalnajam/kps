@@ -481,7 +481,10 @@ export default {
       });
     },
     async getStudent() {
-      let { data } = await stdRes.get(this.student_id);
+      if(!this.stdid)
+        return;
+      
+      let { data } = await stdRes.get(this.stdid);
       this.student = data.student;
       data = await stdParent.get(this.student.parent_id);
       this.parents = [data.data.parent];

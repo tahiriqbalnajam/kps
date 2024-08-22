@@ -50,6 +50,12 @@ class StudentAttendanceController extends Controller
         return response()->json(new JsonResponse(['class_student' => $data]));
     }
 
+    public function get_att_comment($student_id) {
+        $data = $this->attendanceService->get_student_attendace_comments($student_id);
+        return response()->json(new JsonResponse(['comments' => $data]));
+
+    }
+
     public function absent_comment(Request $request) {
         $data = $request->all();
         $data = $this->attendanceService->absent_comment($data);

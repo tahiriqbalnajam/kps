@@ -277,5 +277,13 @@ class AttendanceService implements AttendanceServiceInterface
         return $teachers;
     }
 
+    public function get_student_attendace_comments($student_id) {
+        $attendancesWithComments = StudentAttendance::where('student_id', $student_id)
+        ->where('comment', '<>', '')
+        ->get();
+
+        return $attendancesWithComments;
+    }
+
    
 }

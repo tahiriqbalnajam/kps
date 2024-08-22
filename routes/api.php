@@ -56,6 +56,7 @@ Route::get('student_att_report', 'StudentAttendanceController@student_att_report
 Route::get('absent_student_each_class', 'StudentAttendanceController@absent_student_each_class');
 Route::get('student_attendance_total/{id}', 'StudentAttendanceController@student_attendance_total');
 Route::post('absent_comment', 'StudentAttendanceController@absent_comment');
+Route::get('get_att_comments/{id}', 'StudentAttendanceController@get_att_comment');
 
 //teacher attendance
 Route::apiResource('teacher_attendance', 'TeacherAttendanceController');
