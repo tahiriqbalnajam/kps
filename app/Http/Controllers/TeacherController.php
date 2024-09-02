@@ -213,4 +213,25 @@ class TeacherController extends Controller
 
         return response()->json(['pay' => $pay]);
     }
+
+    public function get_tests(Request $request, $teacherId) {
+        $teacher = Teacher::findOrFail($teacherId);
+        $tests = $teacher->getTestsWithAverageMarks();
+        $groupedTests = $tests->groupBy('class_name')->map(function ($classTests, $className) {
+            return [
+                'class' => $className,
+                'subjects' => $classTests->groupBy('subject_title')->map(function ($subjectTests) {
+                    return $subjectTests->map(function ($test) {
+                        return [
+                            'test_title' => $test->test_title,
+                            'average_marks' => $test->average_marks,
+                        ];
+                    });
+                })
+            ];
+        })->values();
+        return response()->json(new JsonResponse(['tests' => $groupedTests]));
+
+
+    }
 }

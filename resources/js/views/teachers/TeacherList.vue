@@ -51,7 +51,13 @@
 
     >
       <el-table-column label="ID" prop="id" />
-      <el-table-column label="Name" prop="name" />
+      <el-table-column label="Name">
+        <template #default="scope">
+          <el-link :href="'#/teacher/profile/'+ scope.row.id">
+            {{ scope.row.name }}
+          </el-link>
+        </template>
+      </el-table-column>
       <el-table-column label="CNIC" prop="cnic" />
       <el-table-column label="Phone" prop="phone" />
       <el-table-column label="Gender" prop="gender" />

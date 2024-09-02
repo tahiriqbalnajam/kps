@@ -45,3 +45,10 @@ export function saveSalary(data) {
     data,
   });
 }
+
+export function getTests(id) {
+  return request({
+    url: '/teacher/' + id + '/test-classwise',
+    method: 'get',
+  });
+}

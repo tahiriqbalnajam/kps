@@ -1,7 +1,8 @@
 <?php
 namespace App\Models;
-use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Eloquent\Model;
 
 class Teacher extends Model {
 
@@ -52,6 +53,26 @@ class Teacher extends Model {
                      'total_pay' => $totalPay,
                      'previous_balance' => $previous_balance
                     );
+    }
+
+    public function getTestsWithAverageMarks() {
+        
+        return DB::table('tests as t')
+            ->join('classes as c', 't.class_id', '=', 'c.id')
+            ->join('subjects as s', 't.subject_id', '=', 's.id')
+            ->join('test_results as tr', 't.id', '=', 'tr.test_id')
+            ->select(
+                'c.name as class_name',
+                's.title as subject_title',
+                't.title as test_title',
+                DB::raw('AVG(tr.score) as average_marks')
+            )
+            ->where('t.teacher_id', $this->id) // Using $this->id to get the current teacher's ID
+            ->groupBy('c.id', 's.id', 't.id')
+            ->orderBy('c.name')
+            ->orderBy('s.title')
+            ->orderBy('t.title')
+            ->get();
     }
 
 }

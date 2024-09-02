@@ -158,7 +158,20 @@ export const constantRoutes = [
         component: () => import('@/views/teachers/TeacherPay.vue'),
         name: 'Teacher Pay',
         meta: { title: 'Pay', bootstrapIcon: 'currency-exchange', noCache: true },
-      }
+      },
+      {
+        path: 'teacher-attendance',
+        component: () => import('@/views/teachers/QrcodeAtt.vue'),
+        name: 'Teacher Attendance',
+        meta: { title: 'Attendance', bootstrapIcon: 'currency-exchange', noCache: true },
+      },
+      {
+        path: 'profile/:id' ,
+        hidden: true,
+        component: () => import('@/views/teachers/TeacherProfile.vue'),
+        name: 'Teacher Profile',
+        meta: { title: 'Profile', bootstrapIcon: 'currency-exchange', noCache: true },
+      },
     ],
   },
   {
