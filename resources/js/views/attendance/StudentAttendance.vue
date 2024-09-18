@@ -138,6 +138,7 @@ export default {
     async getStudent() {
       this.student_loading = true;
       this.query.filter.stdclass = this.attenquery.stdclass = this.attendance.stdclass;
+      this.query.filter.status = 'enable';
       this.query.fields = 'id,name,roll_no,class_id,parent_id';
       const { data } = await studentPro.list(this.query);
       this.attenquery.month = this.attendance.date;

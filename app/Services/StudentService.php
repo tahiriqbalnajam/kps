@@ -25,7 +25,7 @@ class StudentService implements StudentServiceInterface
                                 'action_required','action_details','status','parents.id','parents.name','parent.phone','stdclasses.id','stdclasses.name'])
             ->with('parents', 'stdclasses', 'class_session')
             ->allowedFilters([
-                'id', 'name', 'roll_no', 'adminssion_number', 'is_orphan', 'pef_admission', 'nadra_pending', 'gender',
+                'id', 'name', 'roll_no', 'adminssion_number', 'is_orphan', 'pef_admission', 'nadra_pending', 'gender', 'status',
                 AllowedFilter::partial('parent_phone', 'parents.phone'),
                 AllowedFilter::partial('parent_name', 'parents.name'),
                 AllowedFilter::exact('stdclass', 'stdclasses.id'),

@@ -1,42 +1,42 @@
 <template>
-  <el-drawer title="Add Test" :modelValue="addedittestprop" @close="handleClose" size="90%" :rules="rules">
+  <el-drawer title="Add Test" :modelValue="addedittestprop" @close="handleClose" size="95%" :rules="rules">
     <el-form style="width: 100%" :inline="true" :model="test" class="demo-form-inline" ref="addtestform">
       <el-row :gutter="10">
         <el-col :span="4">
           <el-form-item label="Test Name">
-            <el-input v-model="test.title" placeholder="Test title" clearable prop="title" />
+            <el-input v-model="test.title" placeholder="Test title" clearable prop="title" size="small"/>
           </el-form-item>
         </el-col>
         <el-col :span="3">
           <el-form-item label="Teacher" style="width: 100%;">
-            <el-select v-model="test.teacher_id" placeholder="Select Class" clearable prop="teacher_id">
+            <el-select v-model="test.teacher_id" placeholder="Select Class" clearable prop="teacher_id" size="small">
               <el-option v-for="item in teachers" :key="item.id" :label="item.name" :value="item.id"/>
             </el-select>
           </el-form-item>
         </el-col>
         <el-col :span="3">
           <el-form-item label="Class" style="width: 100%;">
-            <el-select v-model="test.class_id" placeholder="Select Class" clearable @change="getstudents()" prop="class_id">
+            <el-select v-model="test.class_id" placeholder="Select Class" clearable @change="getstudents()" prop="class_id" size="small">
               <el-option v-for="item in classes" :key="item.id" :label="item.name" :value="item.id"/>
             </el-select>
           </el-form-item>
         </el-col>
         <el-col :span="3">
           <el-form-item label="Subject"  style="width: 100%;">
-            <el-select v-model="test.subject_id" placeholder="Select Subject" clearable>
+            <el-select v-model="test.subject_id" placeholder="Select Subject" clearable size="small">
               <el-option v-for="item in subjects" :key="item.id" :label="item.title" :value="item.id" />
             </el-select>
           </el-form-item>
         </el-col>
-        <el-col :span="3">
+        <el-col :span="5">
           <el-form-item label="Date">
             <el-date-picker v-model="test.date" type="test.date" placeholder="Pick a date" format="DD MMM, YYYY"
-              value-format="YYYY-MM-DD" :default-value="new Date()" />
+              value-format="YYYY-MM-DD" :default-value="new Date()" size="small"/>
           </el-form-item>
         </el-col>
-        <el-col :span="5">
+        <el-col :span="4">
           <el-form-item label="Total Marks">
-            <el-input-number v-model="test.total_marks" />
+            <el-input-number v-model="test.total_marks" size="small"/>
           </el-form-item>
         </el-col>
         <el-col :span="2">
@@ -46,13 +46,21 @@
         </el-col>
       </el-row>
       <el-table :data="filterTableData" height="650" style="width: 100%" size="small" stripe>
+        <el-table-column label="Absent">
+          <template #default="scope">
+            <el-switch
+              v-model="scope.row.absent"
+              size="small"
+            />
+          </template>
+        </el-table-column>
         <el-table-column prop="name" label="Name" />
         <el-table-column prop="parents.name" label="Father Name" />
         <el-table-column prop="stdclasses.name" label="Class" />
         <el-table-column prop="obtainedmarks" label="Obtained Marks">
           <template #default="scope">
-            <el-input v-model="scope.row.score" required placeholder="Enter Marks" clearable
-              @change="validateMarks(scope.row.score, test.total_marks, scope.row)" size="small" />
+            <el-input :tabindex="scope.row.id" v-model="scope.row.score" required placeholder="Enter Marks" clearable
+              @change="validateMarks(scope.row.score, test.total_marks, scope.row)" size="small" :disabled="scope.row.absent == true"/>
           </template>
         </el-table-column>
         <el-table-column label="Search">
@@ -196,6 +204,7 @@ export default {
     },
     async getstudents() {
       this.query.filter['stdclass'] = this.test.class_id;
+      this.query.filter['status'] = 'enable';
       this.query.fields['students']= 'id,name,parent_id,class_id,parent.id, parent.name, class.id, class.name';
       this.query.fields['parents']= 'id,name';
       const { data } = await students.list(this.query);
