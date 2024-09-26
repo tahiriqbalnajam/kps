@@ -59,6 +59,8 @@
       :data="fee"
       style="width: 100%"
       :loading="tblloading"
+      max-height="600"
+      size="small"
     >
       <el-table-column label="ID" prop="student.roll_no" />
       <el-table-column label="Student" prop="student.name" />
@@ -86,24 +88,32 @@
           <el-input ref="search" v-model="query.keyword" size="mini" placeholder="Type to search" v-on:input="debounceInput" />
         </template>
         <template slot="header" #default="scope">
-          <el-tooltip content="Print" placement="top">
             <el-button
               type="primary"
               size="mini"
               @click="printIt(scope.row.id)"
             ><el-icon><Printer /></el-icon></el-button>
-          </el-tooltip>
-          <el-tooltip content="Delete" placement="top">
             <el-button
               size="mini"
               type="danger"
               @click="handleDelete(scope.row.id, scope.row.name)"
             ><el-icon><Delete /></el-icon></el-button>
-          </el-tooltip>
         </template>
       </el-table-column>
     </el-table>
-    <pagination v-show="total>0" :total="total" :page.sync="query.page" :limit.sync="query.limit" @pagination="getList" />
+    <el-pagination
+        v-show="total>0"
+        v-model:current-page="query.page"
+        v-model:page-size="query.limit"
+        :page-sizes="[10, 15, 20, 30, 50, 100]"
+        :small="small"
+        :disabled="disabled"
+        background="white"
+        layout="total, sizes, prev, pager, next, jumper"
+        :total="total"
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
+      />
     <fee-print v-if="openfeeprint" :feeid="feeid" :openfeeprint="openfeeprint" @doneFeePrint="doneFeePrint"/>
     <el-drawer
       title="Edit Record"
@@ -227,6 +237,14 @@ export default {
     }, 500),
     showpayment(from, to) {
       return from + ' - ' + to;
+    },
+    async handleSizeChange (val) {
+      this.query.limit = val
+      await this.getList()
+    },
+    async handleCurrentChange (val) {
+      this.query.page = val
+      await this.getList()
     },
     donePayFee() {
       this.getList();

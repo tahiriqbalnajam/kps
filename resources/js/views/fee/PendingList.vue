@@ -47,7 +47,19 @@
         </template>
       </el-table-column>
     </el-table>
-    <pagination v-show="total>0" :total="total" :page.sync="query.page" :limit.sync="query.limit" @pagination="getList" />
+    <el-pagination
+        v-show="total>0"
+        v-model:current-page="query.page"
+        v-model:page-size="query.limit"
+        :page-sizes="[10, 15, 20, 30, 50, 100]"
+        :small="small"
+        :disabled="disabled"
+        background="white"
+        layout="total, sizes, prev, pager, next, jumper"
+        :total="total"
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
+      />
     <pay-fee v-if="openpayfee" :openpayfee="openpayfee" :stdid="stdid" @donePayFee="donePayFee" />
     <fee-print v-if="openfeeprint" :feeid="feeid" :openfeeprint="openfeeprint" @doneFeePrint="doneFeePrint" />
   </div>
@@ -116,6 +128,14 @@ export default {
         this.openfeeprint = true;
         this.feeid = data.feeid;
       }
+    },
+    async handleSizeChange (val) {
+      this.query.limit = val
+      await this.getList()
+    },
+    async handleCurrentChange (val) {
+      this.query.page = val
+      await this.getList()
     },
     async getList() {
       this.loading = true;

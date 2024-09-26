@@ -183,18 +183,11 @@
         <el-table-column>
           <template #default="scope">
             <el-button-group>
-              <el-tooltip content="Class Wise" placement="top">
+              <el-tooltip content="Show Result" placement="top">
                 <el-button color="#626aef" :dark="isDark" @click="[getResultClaswise(scope.row.id, scope.row.class.name),showTestStudentList = true]">
                   <el-icon><ScaleToOriginal /></el-icon>
                 </el-button>
               </el-tooltip>
-
-              <el-tooltip content="Student Wise" placement="top">
-                <el-button color="#626aef" :dark="isDark" @click="[getResultStudentwise(scope.row.id),studentexam = true]">
-                  <el-icon><UserFilled /></el-icon>
-                </el-button>
-              </el-tooltip>
-
               <el-tooltip content="Edit Test" placement="top">
                 <el-button type="primary" @click="openPopup(scope.row.id)">
                   <el-icon><Edit /></el-icon>
@@ -245,10 +238,10 @@
           
           <el-row>
             <el-col :span="24">
-              <el-table :data="results.test_results" stripe style="width: 100%" :summary-method="getSummaries"  show-summary>
+              <el-table :data="results.test_results" stripe style="width: 100%" :summary-method="getSummaries"  show-summary :default-sort="{ prop: 'student.name', order: 'descending' }">
                 <el-table-column label="Student Name" prop="student.name"></el-table-column>
                 <el-table-column label="Parent Name" prop="student.parents.name"></el-table-column>
-                <el-table-column label="Obtained Marks" prop="score">
+                <el-table-column label="Obtained Marks" prop="score" sortable >
                   <template #default="scope">
                     <span v-show="!edit">{{scope.row.score}}</span>
                     <el-input v-model="scope.row.score" size="mini" style="width: 50px" v-show="edit"/>
