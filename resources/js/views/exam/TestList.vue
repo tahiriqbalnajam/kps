@@ -9,6 +9,7 @@
   const test_result = new Resource('tests-result');
   const classes = new Resource('classes');
   const subjectsPro = new Resource('subjects');
+  const teachersPro = new Resource('teachers');
   export default {
     name: 'TestList',
     components: {
@@ -40,6 +41,7 @@
         results: [],
         classes: null,
         subjects:null,
+        teachers:null,
         query: {
           page: 1,
           limit: 10,
@@ -60,10 +62,11 @@
     this.get_Exams();
     this.getClasses();
     this.getSubjects();
+    this.getTeachers();
   },
   methods: {
     async get_Exams() {
-      this.query.include = 'class,subject';
+      this.query.include = 'class,subject,teacher';
       this.listloading = true;
       const { data } = await tests.list(this.query);
       this.listloading = false;
@@ -86,6 +89,10 @@
       const{ data } = await subjectsPro.list();
       this.subjects = data.subjects.data;
     },
+    async getTeachers() {
+      const{ data } = await teachersPro.list();
+      this.teachers = data.teachers.data;
+    },
     upperFirst(txt) {
       if (txt) {
         return txt.charAt(0).toUpperCase() + txt.slice(1)
@@ -95,12 +102,11 @@
       this.get_Exams();
     },
     async getResultClaswise(class_id, class_name) {
-      this.listloading = true;
+      //this.listloading = true;
       this.resultquery.filter['id'] = class_id;
       this.resultquery.include = 'class,subject,testResults,testResults.student,testResults.student.parents';
       const { data } = await tests.list(this.resultquery);
       this.results = data.tests.data[0];
-      console.log(this.results);
     },
     openPopup(id = null) {
       this.rdata.editid = id;
@@ -210,6 +216,11 @@
                 <el-option v-for="item in subjects" :key="item.id" :label="upperFirst(item.title)" :value="item.id" />
               </el-select>
             </el-col>
+            <el-col :span="6">
+              <el-select v-model="query.filter.teacher_id" placeholder="Select Teacher" clearable class="filter-item" @change="handleFilter">
+                <el-option v-for="item in teachers" :key="item.id" :label="upperFirst(item.name)" :value="item.id" />
+              </el-select>
+            </el-col>
             <el-col :span="2">
               <el-tooltip content="Add Test" placement="top">
                 <el-button class="filter-item" style="margin-left: 10px;" type="success" @click="openPopup(null)">
@@ -226,6 +237,7 @@
         <el-table-column prop="title" label="Title"  />
         <el-table-column prop="class.name" label="Class"  />
         <el-table-column prop="subject.title" label="Subject"  />
+        <el-table-column prop="teacher.name" label="Teacher"  />
         <el-table-column prop="total_marks" label="Total Marks"  />
         <el-table-column prop="date" label="Date">
           <template #default="scope">

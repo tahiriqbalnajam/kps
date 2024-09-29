@@ -26,6 +26,11 @@ class Test extends Model
         return $this->belongsTo(Subject::class)->select('id', 'title');
     }
 
+    public function teacher()
+    {
+        return $this->belongsTo(Teacher::class)->select('id', 'name');
+    }
+
     public function testResults()
     {
         return $this->hasMany(TestResult::class);
