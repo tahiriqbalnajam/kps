@@ -43,6 +43,7 @@ class TestService
             $testresult[] = [
                 'test_id' => $test->id,
                 'student_id' => $student['id'],
+                'absent' => isset($student['absent']) ? 'yes' : 'no',
                 'score' => ($student['score']) ?? 0,
             ];
         }

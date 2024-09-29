@@ -196,7 +196,7 @@
     </div>
     <el-card class="box-card">
       <testing />
-      <el-table :data="testslist" height="400" style="width: 100%" :loading="loading">
+      <el-table :data="testslist" height="400" style="width: 100%" v-loading="listloading">
         <el-table-column prop="title" label="Title"  />
         <el-table-column prop="class.name" label="Class"  />
         <el-table-column prop="subject.title" label="Subject"  />

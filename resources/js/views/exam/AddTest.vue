@@ -41,16 +41,18 @@
         </el-col>
         <el-col :span="2">
           <el-form-item>
-            <el-button type="primary" @click="addTest('addtestform')" :disabled="!test.students.length">Save</el-button>
+            <el-button type="primary" @click="addTest('addtestform')" :disabled="!test?.students?.length">Save</el-button>
           </el-form-item>
         </el-col>
       </el-row>
-      <el-table :data="filterTableData" height="650" style="width: 100%" size="small" stripe>
-        <el-table-column label="Absent">
+      <el-table :data="filterTableData" height="650" style="width: 100%" size="small" stripe v-loading="listloading" empty-text="select a class first">
+        <el-table-column label="Absent" prop="absent">
           <template #default="scope">
             <el-switch
               v-model="scope.row.absent"
               size="small"
+              active-value="yes"
+              inactive-value="no"
             />
           </template>
         </el-table-column>
@@ -60,7 +62,7 @@
         <el-table-column prop="obtainedmarks" label="Obtained Marks">
           <template #default="scope">
             <el-input :tabindex="scope.row.id" v-model="scope.row.score" required placeholder="Enter Marks" clearable
-              @change="validateMarks(scope.row.score, test.total_marks, scope.row)" size="small" :disabled="scope.row.absent == true"/>
+              @change="validateMarks(scope.row.score, test.total_marks, scope.row)" size="small" :disabled="scope.row.absent == 'yes'"/>
           </template>
         </el-table-column>
         <el-table-column label="Search">
@@ -174,6 +176,7 @@ export default {
         let result = results.find(result => result.student_id === student.id);
         if (result) {
           student.score = result.score;
+          student.absent = result.absent;
           student.test_result_id = result.id;
         }
       });
@@ -182,7 +185,7 @@ export default {
   },
   computed: {
     filterTableData() {
-      if(this.test.students.length)
+      if(this.test?.students?.length)
         return this.test.students.filter(
           (data) =>
             !this.search ||
@@ -203,6 +206,7 @@ export default {
       this.$emit('closePopUp', 'yes')
     },
     async getstudents() {
+      this.listloading = true;
       this.query.filter['stdclass'] = this.test.class_id;
       this.query.filter['status'] = 'enable';
       this.query.fields['students']= 'id,name,parent_id,class_id,parent.id, parent.name, class.id, class.name';
@@ -212,6 +216,7 @@ export default {
       this.class_subject.filter['id'] = this.test.class_id;
       const subjectdata = await subjectRes.list(this.class_subject);
       this.subjects = subjectdata.data.classubj.data[0].subjects;
+      this.listloading = false;
     },
     async getClasses() {
       const { data } = await classes.list();
