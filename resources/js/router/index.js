@@ -58,7 +58,7 @@ export const constantRoutes = [
         path: 'index',
         component: () => import('@/views/students/StudentList.vue'),
         name: 'List',
-        meta: { title: 'List',bootstrapIcon: 'mortarboard', icon: 'people', noCache: true },
+        meta: { title: 'List',bootstrapIcon: 'person-lines-fill', icon: 'person-lines-fill', noCache: true },
       },
       {
         path: 'character-certificate',
@@ -151,7 +151,7 @@ export const constantRoutes = [
         path: 'list',
         component: () => import('@/views/teachers/TeacherList.vue'),
         name: 'Teachers',
-        meta: { title: 'Teachers', bootstrapIcon: 'person-lines-fill', noCache: true },
+        meta: { title: 'Teachers', bootstrapIcon: 'people', noCache: true },
       },
       {
         path: 'teacher-pay',
@@ -240,19 +240,19 @@ export const constantRoutes = [
         path: 'exam',
         component: () => import('@/views/exam/ExamList.vue'),
         name: 'Add Exam',
-        meta: {title: 'Exam', bootstrapIcon: 'journal-text', noCache: true},
+        meta: {title: 'Exam', bootstrapIcon: 'clipboard2-pulse', noCache: true},
       },
       {
         path: 'test',
         component: () => import('@/views/exam/TestList.vue'),
         name: 'Add Test',
-        meta: {title: 'Test', bootstrapIcon: 'journal-text', noCache: true},
+        meta: {title: 'Test', bootstrapIcon: 'clipboard2-data', noCache: true},
       },
       {
         path: 'chapters',
         component: () => import('@/views/exam/Chapters.vue'),
         name: 'Chapters',
-        meta: {title: 'Chapters', bootstrapIcon: 'journal-text', noCache: true},
+        meta: {title: 'Chapters', bootstrapIcon: 'book', noCache: true},
       },
       {
         path: 'chapter_options/:id',
@@ -273,7 +273,7 @@ export const constantRoutes = [
         path: 'generator',
         component: () => import('@/views/timetable/TimeTable.vue'),
         name: 'Generat',
-        meta: {title: 'Generat Timetable', bootstrapIcon: 'journal-text', noCache: true},
+        meta: {title: 'Generat Timetable', bootstrapIcon: 'calendar3', noCache: true},
       },
       {
         path: 'periods',

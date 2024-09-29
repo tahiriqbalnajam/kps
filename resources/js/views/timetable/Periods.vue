@@ -95,25 +95,29 @@
                   <el-input v-model="period.title" autocomplete="off" />
                 </el-form-item>
               </el-col>
-              <el-col :span="8">
+              <el-col :span="5">
                 <el-time-select
                     v-model="period.start"
                     style="width: 240px"
                     :max-time="endTime"
                     class="mr-4"
                     placeholder="Start time"
-                    start="08:30"
-                    step="00:15"
+                    start="06:30"
+                    step="00:05"
                     end="18:30"
+                    editable
                     />
+              </el-col>
+              <el-col :span="8">
                 <el-time-select
                     v-model="period.end"
                     style="width: 240px"
                     :min-time="period.start"
                     placeholder="End time"
-                    start="08:30"
-                    step="00:15"
+                    start="06:30"
+                    step="00:05"
                     end="18:30"
+                    editable
                 />
               </el-col>
             </el-row>

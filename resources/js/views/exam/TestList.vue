@@ -7,6 +7,8 @@
   import moment from 'moment';
   const tests = new Resource('tests');
   const test_result = new Resource('tests-result');
+  const classes = new Resource('classes');
+  const subjectsPro = new Resource('subjects');
   export default {
     name: 'TestList',
     components: {
@@ -36,11 +38,15 @@
         },
         edit: false,
         results: [],
+        classes: null,
+        subjects:null,
         query: {
           page: 1,
           limit: 10,
           keyword: '',
           role: '',
+          class_id: '',
+          subject_id: '',
           filter: {},
           include: '',
         },
@@ -52,6 +58,8 @@
   },
   created() {
     this.get_Exams();
+    this.getClasses();
+    this.getSubjects();
   },
   methods: {
     async get_Exams() {
@@ -69,6 +77,22 @@
     async handleCurrentChange (val) {
       this.query.page = val
       await this.get_Exams()
+    },
+    async getClasses() {
+      const{ data } = await classes.list();
+      this.classes = data.classes.data;
+    },
+    async getSubjects() {
+      const{ data } = await subjectsPro.list();
+      this.subjects = data.subjects.data;
+    },
+    upperFirst(txt) {
+      if (txt) {
+        return txt.charAt(0).toUpperCase() + txt.slice(1)
+      }
+    },
+    handleFilter() {
+      this.get_Exams();
     },
     async getResultClaswise(class_id, class_name) {
       this.listloading = true;
@@ -147,25 +171,27 @@
   <div class="app-container">
     <div class="filter-container">
       <head-controls>
-        <el-form-item>
-          <el-col :span="4">
-            <el-select v-model="formInline.exam" placeholder="Select Test" class="filter-item" clearable>
-              <el-option
-                  v-for="item in formInline.resource"
-                  :key="item.id"
-                  :label="item.examname "
-                  :value="item.id"
-                />
-            </el-select>
-          </el-col>
-          <el-col :span="2">
-            <el-tooltip content="Add Test" placement="top">
-              <el-button class="filter-item" style="margin-left: 10px;" type="success" @click="openPopup(null)">
-                <el-icon><Plus /></el-icon>
-              </el-button>
-            </el-tooltip>
-          </el-col>
-        </el-form-item>
+        <el-row :gutter="20">
+            <el-col :span="6">
+              <el-form-item>
+                <el-select v-model="query.filter.class_id" placeholder="Select class" clearable  class="filter-item" @change="handleFilter">
+                  <el-option v-for="item in classes" :key="item.id" :label="upperFirst(item.name)" :value="item.id" />
+                </el-select>
+              </el-form-item>
+            </el-col>
+            <el-col :span="6">
+              <el-select v-model="query.filter.subject_id" placeholder="Select Subject" clearable class="filter-item" @change="handleFilter">
+                <el-option v-for="item in subjects" :key="item.id" :label="upperFirst(item.title)" :value="item.id" />
+              </el-select>
+            </el-col>
+            <el-col :span="2">
+              <el-tooltip content="Add Test" placement="top">
+                <el-button class="filter-item" style="margin-left: 10px;" type="success" @click="openPopup(null)">
+                  <el-icon><Plus /></el-icon>
+                </el-button>
+              </el-tooltip>
+            </el-col>
+        </el-row>
       </head-controls>
     </div>
     <el-card class="box-card">

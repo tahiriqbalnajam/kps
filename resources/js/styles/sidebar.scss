@@ -71,7 +71,9 @@
         background-color: $menuHover !important;
       }
     }
-
+    .is-active > div {
+      background-color: #e9e3e3;
+    }
     .is-active {
       color: $subMenuActiveText !important;
       background-color: $menuActiveBG !important;
@@ -91,7 +93,10 @@
       }
     }
   }
-
+  
+  li.el-menu-item.is-active i::before {
+    color: white;
+  }
   .hideSidebar {
     .sidebar-container {
       width: 54px !important;
