@@ -63,20 +63,20 @@
   },
   methods: {
     async get_Exams() {
-      this.listloading = true;
       this.query.include = 'class,subject';
+      this.listloading = true;
       const { data } = await tests.list(this.query);
+      this.listloading = false;
       this.testslist = data.tests.data;
       this.total = data.tests.total;
-      this.listloading = false;
     },
-    async handleSizeChange (val) {
+    handleSizeChange (val) {
       this.query.limit = val
-      await this.get_Exams()
+      this.get_Exams()
     },
-    async handleCurrentChange (val) {
+    handleCurrentChange (val) {
       this.query.page = val
-      await this.get_Exams()
+      this.get_Exams()
     },
     async getClasses() {
       const{ data } = await classes.list();
@@ -116,18 +116,44 @@
     },
     getSummaries(param) {
       const { columns, data } = param
-      const sums = []
+      const sums = [];
       columns.forEach((column, index) => {
         if (index === 1) {
-          sums[index] = h('div', { style: { fontSize: '18px' } }, [
-            'Average:',
-          ])
+          
           return
         }
         if (index === 2) {
-            const values = data.reduce((total, item) => total + Number(item[column.property]), 0);
+          const absents = data.reduce((total, item) => {
+                                if (item.absent === 'yes') {
+                                  return total + 1;
+                                } else {
+                                  return total;
+                                }
+                              }, 0);
           sums[index] = h('div', { style: { fontSize: '18px' } }, [
-            values/ data.length,
+            'Absent:' + absents,
+          ])
+          return;
+        } else {
+          sums[index] = ''
+        }
+        if (index === 3) {
+          const abst = data.reduce((total, item) => {
+                                if (item.absent === 'yes') {
+                                  return total + 1;
+                                } else {
+                                  return total;
+                                }
+                              }, 0);
+            const values = data.reduce((total, item) => {
+                                if (item.absent === 'no') {
+                                  return total + Number(item[column.property])
+                                } else {
+                                  return total;
+                                }
+                              }, 0);
+          sums[index] = h('div', { style: { fontSize: '18px' } }, [
+          'Average:'+ (values/ (data.length - abst)).toFixed(2),
           ])
           return;
         } else {
@@ -137,10 +163,10 @@
 
       return sums
     },
-    handlePopupClosed() {
+    async handlePopupClosed() {
       this.rdata.addedittestprop = false;
       this.rdata.editid = null;
-      this.get_Exams();
+      await this.get_Exams();
     },
     deleteTest(testid) {
       ElMessageBox.confirm(
@@ -249,24 +275,27 @@
         <div>
           <el-row :gutter="20" class="headerinfo">
             <el-col :span="6">
-              <h2>Title: {{ results.title }}</h2>
+              <h2>Title: {{ results?.title }}</h2>
             </el-col>
             <el-col :span="6">
-              <h2>Subject: {{ results.subject.title }}</h2>
+              <h2>Subject: {{ results?.subject?.title }}</h2>
             </el-col>
             <el-col :span="6">
-              <h2>Class: {{ results.class.name }}</h2>
+              <h2>Class: {{ results?.class?.name }}</h2>
             </el-col>
             <el-col :span="6">
-              <h2>Total Marks: {{ results.total_marks }}</h2> 
+              <h2>Total Marks: {{ results?.total_marks }}</h2> 
             </el-col>
           </el-row>
           
           <el-row>
             <el-col :span="24">
-              <el-table :data="results.test_results" stripe style="width: 100%" :summary-method="getSummaries"  show-summary :default-sort="{ prop: 'student.name', order: 'descending' }">
+              <el-table :data="results.test_results" stripe style="width: 100%" 
+                        :summary-method="getSummaries"  show-summary 
+                        :default-sort="{prop: 'student.name', order: 'descending' }">
                 <el-table-column label="Student Name" prop="student.name"></el-table-column>
                 <el-table-column label="Parent Name" prop="student.parents.name"></el-table-column>
+                <el-table-column label="Absent" prop="absent" sortable />
                 <el-table-column label="Obtained Marks" prop="score" sortable >
                   <template #default="scope">
                     <span v-show="!edit">{{scope.row.score}}</span>
