@@ -14,6 +14,7 @@ class TestResult extends Model
         'test_id',
         'student_id',
         'score',
+        'absent',
     ];
 
     public function test()

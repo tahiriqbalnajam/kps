@@ -43,7 +43,7 @@ class TestService
             $testresult[] = [
                 'test_id' => $test->id,
                 'student_id' => $student['id'],
-                'absent' => isset($student['absent']) ? 'yes' : 'no',
+                'absent' => $student['absent'],
                 'score' => ($student['score']) ?? 0,
             ];
         }
@@ -71,6 +71,7 @@ class TestService
                         'test_id' => $test->id,
                         'student_id' => $student['id'],
                         'score' => ($student['score']) ?? 0,
+                        'absent' => $student['absent'],
                     ];
                     $test_result_id = $student['test_result_id'] ?? '0';
                     $testResult = TestResult::firstOrNew(array('id' => $test_result_id) );
@@ -106,6 +107,7 @@ class TestService
             'title' => 'required|string|max:255',
             'date' => 'required|date',
             'total_marks' => 'required|numeric',
+            'absent' => 'required',
         ])->validate();
     }
 
@@ -115,7 +117,7 @@ class TestService
         return QueryBuilder::for(TestResult::class)
             ->with('student')
             ->allowedFilters([
-                'id','test_id', 'student_id'
+                'id','test_id', 'student_id','absent'
             ])
             ->paginate($limit)
             ->appends(request()->query());
@@ -155,6 +157,7 @@ class TestService
             'test_id' => 'required|exists:tests,id',
             'student_id' => 'required|exists:students,id',
             'score' => 'required|numeric',
+            'absent' => 'required',
         ])->validate();
     }
 }
