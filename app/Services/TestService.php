@@ -107,7 +107,6 @@ class TestService
             'title' => 'required|string|max:255',
             'date' => 'required|date',
             'total_marks' => 'required|numeric',
-            'absent' => 'required',
         ])->validate();
     }
 

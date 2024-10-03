@@ -224,7 +224,9 @@ class TeacherController extends Controller
                     return $subjectTests->map(function ($test) {
                         return [
                             'test_title' => $test->test_title,
+                            'total_marks' => $test->total_marks,
                             'average_marks' => $test->average_marks,
+                            'percent' => $test->percent,
                         ];
                     });
                 })

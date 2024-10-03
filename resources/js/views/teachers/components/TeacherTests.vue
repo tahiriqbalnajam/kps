@@ -6,8 +6,10 @@
                     <el-card shadow="hover">
                         <h3>{{ subjectName }}</h3>
                         <el-table :data="subjects" border>
-                        <el-table-column prop="test_title" label="Test Title"></el-table-column>
-                        <el-table-column prop="average_marks" label="Average Marks"></el-table-column>
+                        <el-table-column prop="test_title" label="Title"></el-table-column>
+                        <el-table-column prop="average_marks" label="Average"></el-table-column>
+                        <el-table-column prop="total_marks" label="Total"></el-table-column>
+                        <el-table-column prop="percent" label="% Marks"></el-table-column>
                         </el-table>
                     </el-card>
                 </el-col>

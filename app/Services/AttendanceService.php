@@ -104,8 +104,8 @@ class AttendanceService implements AttendanceServiceInterface
                 COUNT(CASE WHEN s.gender = "female" AND (sa.status = "absent" OR sa.status = "leave") THEN 1 END) AS total_female_absent,
                 COUNT(CASE WHEN sa.status = "present" THEN 1 END) AS total_present,
                 COUNT(CASE WHEN (sa.status = "absent" OR sa.status = "leave") THEN 1 END) AS total_absent,
-                (COUNT(CASE WHEN sa.status = "present" THEN 1 END) / COUNT(sa.id)) * 100 AS present_percentage,
-                (COUNT(CASE WHEN (sa.status = "absent" OR sa.status = "leave") THEN 1 END) / COUNT(sa.id)) * 100 AS absent_percentage
+                ROUND((COUNT(CASE WHEN sa.status = "present" THEN 1 END) / COUNT(sa.id)) * 100 , 0) AS present_percentage,
+                ROUND((COUNT(CASE WHEN (sa.status = "absent" OR sa.status = "leave") THEN 1 END) / COUNT(sa.id)) * 100 , 0) AS absent_percentage
             ')
             ->join('student_attendances as sa', function($join) {
                 $join->on('s.id', '=', 'sa.student_id')

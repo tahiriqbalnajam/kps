@@ -65,9 +65,12 @@ class Teacher extends Model {
                 'c.name as class_name',
                 's.title as subject_title',
                 't.title as test_title',
-                DB::raw('AVG(tr.score) as average_marks')
+                't.total_marks as total_marks',
+                DB::raw('ROUND(AVG(tr.score),2) as average_marks'),
+                DB::raw('ROUND(AVG(tr.score)/t.total_marks * 100, 0) as percent')
             )
             ->where('t.teacher_id', $this->id) // Using $this->id to get the current teacher's ID
+            ->where('tr.absent', 'no') // Using $this->id to get the current teacher's ID
             ->groupBy('c.id', 's.id', 't.id')
             ->orderBy('c.name')
             ->orderBy('s.title')
