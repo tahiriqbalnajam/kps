@@ -10,7 +10,7 @@
                       <el-option v-for="filter in filtercol" :key="filter.col" :label="upperFirst(filter.display)" :value="filter.col" />
                     </el-select>
                   </el-col>
-                  <el-col :span="6"  :xs="14" :sm="12" :md="10" :lg="8" :xl="6">
+                  <el-col :span="6"  :xs="14" :sm="12" :md="10" :lg="6" :xl="6">
                     <el-input v-model="query.keyword" placeholder="Student info" style="width: 200px;" class="filter-item" v-on:input="debounceInput" clearable />
                   </el-col>
                   <el-col :span="4"  :xs="14" :sm="12" :md="10" :lg="6" :xl="4">
@@ -18,7 +18,7 @@
                       <el-option v-for="item in classes" :key="item.id" :label="upperFirst(item.name)" :value="item.id" />
                     </el-select>
                   </el-col>
-                  <el-col :span="2"  :xs="14" :sm="12" :md="10" :lg="3" :xl="3">
+                  <el-col :span="2"  :xs="14" :sm="12" :md="10" :lg="6" :xl="3">
                     <el-select
                       v-model="query.morefilters"
                       multiple
@@ -71,12 +71,13 @@
     <el-card class="box-card">
   <el-table
           :data="list"
-          height="500"
+          height="600"
           stripe 
           style="width: 100%"
           v-loading="listloading"
           @selection-change="handleSelectionChange"
           :table-layout="auto"
+          size="small"
         >
         <el-table-column type="selection" width="55" />
        
@@ -123,6 +124,7 @@
                 <el-dropdown-menu>
                   <el-dropdown-item icon="el-icon-money" :command="'feedetail~'+scope.row.id">Fee Detail</el-dropdown-item>
                   <el-dropdown-item icon="el-icon-edit" :command="'edit~'+scope.row.id">Edit Student</el-dropdown-item>
+                  <el-dropdown-item icon="el-icon-user" :command="'admission~'+scope.row.id">Admi. Certificate</el-dropdown-item>
                   <el-dropdown-item icon="el-icon-delete" :command="'certificat~'+scope.row.id">Character Certificat</el-dropdown-item>
                   <el-dropdown-item icon="el-icon-delete" :command="'schoolleaving~'+scope.row.id">School Leaving Certificat</el-dropdown-item>
                   <el-dropdown-item icon="el-icon-delete" :command="'delete~'+scope.row.id">Delete Student</el-dropdown-item>
@@ -168,6 +170,7 @@
       />
     </div>
     <add-student  v-if="addstudentpop" :addeditstudentprop="addstudentpop" :stdid="stdid" @closeAddStudent="closeAddStudent()"/>
+    <admission-certificate  v-if="openadmitcert" :openadmitcert="openadmitcert" :stdid="stdid" @closeAdmitCert="closeAdmitCert()"/>
     <pay-fee v-if="openpayfee" :openpayfee="openpayfee" :stdid="stdid" @donePayFee="donePayFee" />
     <fee-detail v-if="openfeedetail" :openfeedetail="openfeedetail" :stdid="studentid" @doneFeeDetail="doneFeeDetail" />
     <character-certificate  v-if="showcharactercertificate" :showcharactercertificate="showcharactercertificate" :stdid="studentid" @doneFeeDetail="doneFeeDetail" />
@@ -195,13 +198,15 @@ import FeeDetail from '@/views/fee/component/FeeDetail.vue';
 import CharacterCertificate from '@/views/students/StudentCharacterCertificate.vue';
 import SchoolLeavingCertificate from '@/views/students/SchoolLeavingCertificate.vue';
 import AddStudent from '@/views/students/AddStudent.vue';
+import AdmissionCertificate from '@/views/students/components/AdmissionCertificate.vue';
 import { editClass } from '@/api/student.js';
 import HeadControls from '@/components/HeadControls.vue';
 const student = new Resource('students');
 const classes = new Resource('classes');
 export default {
   name: 'StudentList',
-  components: { Pagination, AddStudent,  PayFee, FeePrint, FeeDetail, HeadControls, CharacterCertificate, SchoolLeavingCertificate },
+  components: { Pagination, AddStudent,  PayFee, FeePrint, FeeDetail, HeadControls, CharacterCertificate, 
+                SchoolLeavingCertificate,AdmissionCertificate },
   directives: { },
   filters: {
     
@@ -228,6 +233,7 @@ export default {
       alertRec: false,
       showcharactercertificate: false,
       showschoolleavingcertificate: false,
+      openadmitcert: false,
       multiStudentOption:{
         multiStudent: [],
         changeClass: "",
@@ -285,6 +291,11 @@ export default {
       }
       if (method == 'edit') {
         this.handleEdit(id);
+      }
+      if (method == 'admission') {
+        //this.openAdmissionCert(id);
+        this.openadmitcert = true;
+        this.stdid = id;
       }
 
       if (method == 'delete') {
@@ -347,6 +358,12 @@ export default {
     },
     addStudentFunc() {
       this.addstudentpop = true;
+    },
+    openAdmissionCert() {
+      this.openadmitcert = true;
+    },
+    closeAdmitCert() {
+      this.openadmitcert = false;
     },
     payFee(id, name) {
       this.stdid = id;

@@ -49,10 +49,6 @@
               {{ $t('login.logIn') }}
             </el-button>
           </el-form-item>
-          <div class="tips">
-            <span style="margin-right:20px;">Email: admin@idlschool.com</span>
-            <span>Password: 123456</span>
-          </div>
         </el-form>
       </div>
     </div>
@@ -91,8 +87,8 @@ export default {
     }
     const resData = reactive({
       loginForm: {
-        email: 'admin@idlschool.com',
-        password: '123456',
+        email: '',
+        password: '',
       },
       ruleFormRef: {},
       loginRules: {
@@ -245,7 +241,7 @@ $textColor: #eee;
       justify-content: flex-end;
       overflow: hidden;
       background-color: #303c4b;
-      background-image: url('https://cdn.trumanwl.com/static/images/laravel-vue-admin/background.jpg');
+      background-image: url('../images/main.png');
       background-position: 50%;
       background-size: cover;
       opacity: 1;

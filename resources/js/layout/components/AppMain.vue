@@ -117,10 +117,9 @@ watch(
   padding: $appMainPadding;
   /*50 = navbar  */
   position: relative;
-  overflow: hidden;
 }
 .show-tag-view {
-  height: calc(100vh - #{$navBarHeight} - #{$tagViewHeight}) !important;
+  height: calc(100vh - #{$navBarHeight} - #{$tagViewHeight} - 50px) !important;
 }
 .fixed-header + .app-main {
   padding-top: 50px;
