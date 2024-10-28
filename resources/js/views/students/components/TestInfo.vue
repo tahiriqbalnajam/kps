@@ -10,13 +10,17 @@
               <el-table-column label="Date" prop="test_date"/>
               <el-table-column label="Total Marks" prop="total_marks"/>
               <el-table-column label="Obtained" prop="score"/>
-              <el-table-column label="%" prop="percentage"/> 
+              <el-table-column label="%" prop="percentage"> 
+                <template #default="scope">
+                  {{ Math.round(scope.row.percentage) }}
+                </template>
+                </el-table-column>
             </el-table>          
           </el-col>
           <el-col :span="8">
             <el-progress type="dashboard" :percentage="subject.overall_percentage" :width="90">
               <template #default="{ percentage }">
-                <span class="percentage-value">{{ percentage }}%</span>
+                <span class="percentage-value">{{ Math.round(percentage) }}%</span>
               </template>
             </el-progress>
           </el-col>
