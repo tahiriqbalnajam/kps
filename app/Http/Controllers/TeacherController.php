@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Carbon\Carbon;
 use App\Models\Log;
 use App\Models\Role;
 use App\Models\User;
@@ -12,11 +13,12 @@ use Illuminate\Http\Request;
 use App\Laravue\JsonResponse;
 use App\Models\TeacherSalary;
 use Illuminate\Validation\Rule;
+use App\Traits\TransactionTrait;
+use App\Models\TeacherAttendance;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
-use App\Traits\TransactionTrait;
 
 class TeacherController extends Controller
 {
@@ -234,6 +236,25 @@ class TeacherController extends Controller
         })->values();
         return response()->json(new JsonResponse(['tests' => $groupedTests]));
 
+
+    }
+
+    public function online_attendance(Request $request, $teacherId) {
+        $teacher = Teacher::findOrFail($teacherId);
+        $alreadydone = $teacher->alreadyAttDone();
+        if($alreadydone)
+            return response()->json(new JsonResponse([], 'Today\'s attendance has already been submitted'));
+
+        $currentDateTime = Carbon::now();
+        $attendance = new TeacherAttendance();
+        $attendance->teacher_id = $teacherId;
+        $attendance->status = "present";
+        $attendance->attendance_date = $currentDateTime;
+        $attendance->save();
+        if($attendance)
+            return response()->json(new JsonResponse(['attendance' => $attendance]));
+        else
+            return response()->json(new JsonResponse(['attendance' => $attendance]));
 
     }
 }

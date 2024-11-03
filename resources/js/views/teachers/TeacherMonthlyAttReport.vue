@@ -24,7 +24,7 @@
           </el-row>
          </head-controls>
      </div>
-     <el-scrollbar height="300px">
+     <el-scrollbar height="500px">
        <table class="tblwdborder">
            <tr>
                <th>Teacher Name</th>
@@ -33,7 +33,8 @@
            <tr v-for="teacher in  attendance.teachers" :key="teacher.id">
                <td>{{ teacher.name }}</td>
                <td v-for="att in teacher.attendances" :key="att.id" :class="{'absent': (att == 'absent')}">
-                {{(att == 'absent') ? 'A' : (att == leave) ? 'L' : 'P'}}
+                <p class="status">{{(att.status == 'absent') ? 'A' : (att.status == leave) ? 'L' : (att.status == 'present') ? 'P' : att.status}}</p>
+                <p class="time">{{ att.time? getime(att.time) : '' }}</p>
 
               </td>
            </tr>
@@ -68,6 +69,9 @@
         this.getList();
       },
       methods: {
+        getime(date) {
+          return moment(date).format('h:m A');
+        },  
         async getList(){
             const {data} = await teacherMonthlyAttReport(this.query);
             this.attendance.teachers = data.attendance;
@@ -105,5 +109,12 @@
 .absent {
   background: red;
   color:#fff;
+}
+.time {
+  font-size: 9px;
+  margin: 0
+}
+.status {
+  margin: 0
 }
 </style>

@@ -66,6 +66,7 @@ Route::post('generate_pay', 'TeacherAttendanceController@generate_pay');
 Route::post('teachers_monthly_att_report', 'TeacherAttendanceController@teachers_monthly_att_report');
 Route::apiResource('holidays', 'HolidayController');
 Route::get('/teacher/{id}/test-classwise', 'TeacherController@get_tests');
+Route::get('/teacher/{id}/online', 'TeacherController@online_attendance');
 //Tests
 Route::apiResource('tests', 'TestController');
 Route::apiResource('tests-result', 'TestResultController');

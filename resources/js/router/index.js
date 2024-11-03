@@ -10,6 +10,12 @@ import errorRoutes from './modules/error'
 
 export const constantRoutes = [
   {
+    path: '/teacher-attendance',
+    component: () => import('@/views/teachers/QrcodeAtt.vue'),
+    name: 'Teacher Online Attendance',
+    meta: { title: 'Teacher Online Attendance', bootstrapIcon: 'currency-exchange', noCache: true },
+  },
+  {
     path: '/login',
     component: () => import('@/views/login/index.vue'),
     hidden: true,
@@ -48,6 +54,11 @@ export const constantRoutes = [
       },
     ],
   },
+
+]
+
+export const asyncRoutes = [
+  { path: '/:pathMatch(.*)*', name: 'NotFound', redirect: '/404', hidden: true },
   {
     path: '/students',
     component: Layout,
@@ -79,7 +90,7 @@ export const constantRoutes = [
     path: '/classes',
     component: Layout,
     redirect: '/classes/list',
-    meta: { title: 'Class/Subject', bootstrapIcon: 'person-workspace', noCache: true },
+    meta: { title: 'Class/Subject', bootstrapIcon: 'person-workspace', noCache: true, permissions: ['view menu classes'] },
     children: [
       {
         path: 'list',
@@ -110,7 +121,7 @@ export const constantRoutes = [
         path: 'list',
         component: () => import('@/views/parents/parentlist.vue'),
         name: 'Parents',
-        meta: { title: 'Parents', bootstrapIcon: 'person-vcard-fill', noCache: true },
+        meta: { title: 'Parents', bootstrapIcon: 'person-vcard-fill', noCache: true, permissions: ['view menu parents'] },
       },
     ],
   },
@@ -118,7 +129,7 @@ export const constantRoutes = [
     path: '/fee',
     component: Layout,
     redirect: '/fee/paidlist',
-    meta: { title: 'Fee', bootstrapIcon: 'currency-dollar', noCache: true },
+    meta: { title: 'Fee', bootstrapIcon: 'currency-dollar', noCache: true, permissions: ['view menu fee'] },
     children: [
       {
         path: 'paidlist',
@@ -145,7 +156,7 @@ export const constantRoutes = [
     path: '/teacher',
     component: Layout,
     redirect: '/teacher/list',
-    meta: { title: 'Teachers', bootstrapIcon: 'person-gear', noCache: true },
+    meta: { title: 'Teachers', bootstrapIcon: 'person-gear', noCache: true, permissions: ['view menu teachers'] },
     children: [
       {
         path: 'list',
@@ -160,12 +171,6 @@ export const constantRoutes = [
         meta: { title: 'Pay', bootstrapIcon: 'currency-exchange', noCache: true },
       },
       {
-        path: 'teacher-attendance',
-        component: () => import('@/views/teachers/QrcodeAtt.vue'),
-        name: 'Teacher Attendance',
-        meta: { title: 'Attendance', bootstrapIcon: 'currency-exchange', noCache: true },
-      },
-      {
         path: 'profile/:id' ,
         hidden: true,
         component: () => import('@/views/teachers/TeacherProfile.vue'),
@@ -178,7 +183,7 @@ export const constantRoutes = [
     path: '/attendance',
     component: Layout,
     redirect: '/attendance/add',
-    meta: { title: 'Attendance', bootstrapIcon: 'calendar-check-fill', noCache: true },
+    meta: { title: 'Attendance', bootstrapIcon: 'calendar-check-fill', noCache: true,permissions: ['view menu attendance'] },
     children: [
       {
         path: 'add',
@@ -234,7 +239,7 @@ export const constantRoutes = [
     path: '/exam',
     component: Layout,
     redirect: '/exam/test',
-    meta: {title: 'Assessments', bootstrapIcon: 'journal-text', noCache: true},
+    meta: {title: 'Assessments', bootstrapIcon: 'journal-text', noCache: true,  permissions: ['view menu exam'],},
     children: [
       {
         path: 'exam',
@@ -267,7 +272,7 @@ export const constantRoutes = [
     path: '/timetable',
     component: Layout,
     redirect: '/timetable/create',
-    meta: {title: 'TimeTable', bootstrapIcon: 'calendar', noCache: true},
+    meta: {title: 'TimeTable', bootstrapIcon: 'calendar', noCache: true, permissions: ['view menu timetabel']},
     children: [
       {
         path: 'generator',
@@ -335,12 +340,8 @@ export const constantRoutes = [
       },
     ],
   },
-]
-
-export const asyncRoutes = [
   adminRoutes,
   errorRoutes,
-  { path: '/:pathMatch(.*)*', name: 'NotFound', redirect: '/404', hidden: true }
 ]
 
 const router = createRouter({

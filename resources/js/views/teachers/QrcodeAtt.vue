@@ -1,18 +1,25 @@
 <template>
-    <div>
+    <el-row>
         <qrcode-stream
+            :paused="paused"
             :constraints="selectedConstraints"
             :track="trackFunctionSelected.value"
             :formats="selectedBarcodeFormats"
             @error="onError"
             @detect="onDetect"
             @camera-on="onCameraReady"
-        />
-    </div>
+        >
+        <div
+            class="loading-indicator"
+            v-if="loading"
+        ></div>
+        </qrcode-stream>
+    </el-row>
 </template>
 
 <script>
-import { QrcodeStream, QrcodeDropZone, QrcodeCapture } from 'vue-qrcode-reader'
+import { QrcodeStream, QrcodeDropZone, QrcodeCapture } from 'vue-qrcode-reader';
+import { onlineAtt } from '@/api/teacher';
 export default {
     name: 'QrcodeAtt',
     components: {
@@ -22,6 +29,8 @@ export default {
     },
     data() {
         return {
+            paused: false,
+            loading: true,
             result: '',
             selectedConstraints: { facingMode: 'environment' },
             defaultConstraintOptions: [
@@ -69,9 +78,34 @@ export default {
         }
     },
     methods: {
-        onDetect(detectedCodes) {
+        onCameraOn() {
+        this.loading = false
+        },
+        async onDetect(detectedCodes) {
             console.log(detectedCodes);
-            this.result = JSON.stringify(detectedCodes.map((code) => code.rawValue));
+            this.result = JSON.stringify(detectedCodes.map((code) => code.rawValue)).replace(/\["|"\]/g, '');
+            console.log(this.result);
+            const res = await onlineAtt(this.result);
+            if(res.success){
+                this.$message({
+                    type: 'success',
+                    message: "Attendance marked successfully",
+                });
+            } else {
+                this.$message({
+                    type: 'error',
+                    message: res.error,
+                });
+            }
+
+            this.paused = true
+            await this.timeout(500)
+            this.paused = false
+        },
+        timeout(ms) {
+            return new Promise((resolve) => {
+                window.setTimeout(resolve, ms)
+            })
         },
         async onCameraReady() {
             try {
@@ -145,6 +179,10 @@ export default {
             } else {
                 this.error += err.message;
             }
+            this.$message({
+                type: 'error',
+                message: this.error,
+            });
         }
     },
     mounted() {

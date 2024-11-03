@@ -145,7 +145,7 @@ export default {
     getTeacherNameById(id) {
       const teacher = this.teachers.find(teacher => teacher.id === id);
       if (teacher)
-       return  teacher.name;
+       return  teacher?.name;
       
       return '';
     },
@@ -158,7 +158,8 @@ export default {
     },
     getSlotData(rowIndex, columnIndex) {
       const slot = this.timetable[rowIndex][columnIndex];
-      return slot.teacher && slot.subject
+      return slot?.teacher && slot?.subject && slot?.teacher !== '' && slot?.subject !== ''
+
         ? '<b>'+this.getSubjectNameById(slot.subject)+
           '</b><br><span style="font-size:10px">'+
             this.getTeacherNameById(slot.teacher)+

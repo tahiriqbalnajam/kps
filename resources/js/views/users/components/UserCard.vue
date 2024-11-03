@@ -24,7 +24,10 @@
           <el-descriptions-item :label="t('user.age')">{{ user.age }}</el-descriptions-item>
           <el-descriptions-item :label="t('user.description')">
             {{user.description}}
-            </el-descriptions-item>
+          </el-descriptions-item>
+          <el-descriptions-item label="Roles">
+            {{getRole()}}
+          </el-descriptions-item>
         </el-descriptions>
       </div>
     </div>

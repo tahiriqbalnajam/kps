@@ -78,4 +78,26 @@ class Teacher extends Model {
             ->get();
     }
 
+    public function alreadyAttDone() {
+        $currentDateTime = Carbon::now();
+        $alreadydone = $this->attendances()
+                             ->whereDate('attendance_date', $currentDateTime)
+                             ->get()
+                             ->count();
+        if($alreadydone > 0)
+            return true;
+        else
+            return false;
+    }
+
+    public function setOnlineAttendance() {
+        $currentDateTime = Carbon::now();
+
+        // Assuming you have a column named 'attendance_time' in the teachers table
+        $this->teacher_id = $this->id;
+        $this->status = "present";
+        $this->attendance_date = $currentDateTime;
+        $this->save();
+    }
+
 }
