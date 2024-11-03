@@ -52,3 +52,9 @@ export function getTests(id) {
     method: 'get',
   });
 }
+export function onlineAtt(url) {
+  return request({
+    url: url,
+    method: 'get',
+  });
+}
