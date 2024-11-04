@@ -32,7 +32,7 @@ export default {
             paused: false,
             loading: true,
             result: '',
-            selectedConstraints: { facingMode: 'environment' },
+            selectedConstraints: { facingMode: 'user' },
             defaultConstraintOptions: [
                 { label: 'rear camera', constraints: { facingMode: 'environment' } },
                 { label: 'front camera', constraints: { facingMode: 'user' } }
