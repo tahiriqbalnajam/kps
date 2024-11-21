@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use App\Laravue\JsonResponse;
 use Spatie\QueryBuilder\QueryBuilder;
 use Spatie\QueryBuilder\AllowedFilter;
+use Illuminate\Database\Eloquent\Collection;
 
 class HolidayController extends Controller
 {
@@ -16,9 +17,11 @@ class HolidayController extends Controller
     {
         $searchParams = $request->all();
         $limit = Arr::get($searchParams, 'limit', static::ITEM_PER_PAGE);
+
         $holidays =  QueryBuilder::for(Holiday::class)
             ->allowedFilters([
-                'holiday_date', 'description'
+                'description',
+                'holiday_date',
             ])
             ->paginate($limit)
             ->appends(request()->query());
@@ -28,6 +31,7 @@ class HolidayController extends Controller
 
     public function store(Request $request)
     {
+
         $holiday = Holiday::create($request->all());
         return response()->json($holiday, 201);
     }

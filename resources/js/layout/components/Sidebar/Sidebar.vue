@@ -75,6 +75,7 @@ const activeMenu = computed(() => {
 }
 .el-sub-menu .el-menu-item {
   height: 33px !important;
+  font-size: 12px;
 }
 .el-sub-menu .el-menu-item:hover {
   color:white;

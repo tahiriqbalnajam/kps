@@ -1,73 +1,73 @@
 <template>
   <el-row :gutter="40" class="panel-group">
-    <el-col :xs="12" :sm="12" :md="3" :lg="3" class="card-panel-col">
+    <el-col :xs="12" :sm="12" :lg="6" class="card-panel-col">
       <div class="card-panel">
+        <div class="card-panel-icon-wrapper person-badge">
+          <icon class-name="person-badge card-panel-icon"/>
+        </div>
         <div class="card-panel-description">
           <div class="card-panel-text">Total Students</div>
           <span class="card-panel-num">{{ data.total_students }}</span>
-          <!--<count-to :start-val="0" :end-val="102400" :duration="2600" class="card-panel-num" />-->
+          <CountTo :start-val="0" :end-val="data.total_students" class="card-panel-num" />
         </div>
       </div>
     </el-col>
-    <el-col :xs="12" :sm="12" :md="3" :lg="3" class="card-panel-col">
+    <el-col :xs="12" :sm="12" :lg="6" class="card-panel-col">
       <div class="card-panel">
-        <div class="card-panel-description">
-          <div class="card-panel-text">Total Absent</div>
-          <span class="card-panel-num">{{ data.total_absent_students }}</span>
-          <!--<count-to :start-val="0" :end-val="81212" :duration="3000" class="card-panel-num" />-->
+        <div class="card-panel-icon-wrapper person-bounding-box">
+          <icon class-name="person-bounding-box card-panel-icon"/>
         </div>
-      </div>
-    </el-col>
-    <el-col :xs="12" :sm="12" :md="3" :lg="3" class="card-panel-col">
-      <div class="card-panel">
         <div class="card-panel-description">
           <div class="card-panel-text">Total Teachers</div>
           <span class="card-panel-num">{{ data.total_teachers }}</span>
-          <!--<count-to :start-val="0" :end-val="81212" :duration="3000" class="card-panel-num" />-->
+          <CountTo :start-val="0" :end-val="data.total_teachers" class="card-panel-num" />
         </div>
       </div>
     </el-col>
-    <el-col :xs="12" :sm="12" :md="3" :lg="3" class="card-panel-col">
+    <el-col :xs="12" :sm="12" :lg="6" class="card-panel-col">
       <div class="card-panel">
+        <div class="card-panel-icon-wrapper person-dash-fill">
+          <icon class-name="person-dash-fill card-panel-icon"/>
+        </div>
+        <div class="card-panel-description">
+          <div class="card-panel-text">Absent Students</div>
+          <span class="card-panel-num">{{ data.total_absent_students }}</span>
+          <CountTo :start-val="0" :end-val="data.total_absent_students" class="card-panel-num" />
+        </div>
+      </div>
+    </el-col>
+    <el-col :xs="12" :sm="12" :lg="6" class="card-panel-col">
+      <div class="card-panel">
+        <div class="card-panel-icon-wrapper person-fill-dash">
+          <icon class-name="person-fill-dash card-panel-icon"/>
+        </div>
         <div class="card-panel-description">
           <div class="card-panel-text">Absent Teachers</div>
-          <el-row :gutter="20" justify="center">
-            <el-col :span="6">
-              <span class="card-panel-num">{{ data.total_absent_teachers }}</span>
-            </el-col>
-            <el-col :span="18">
-              <el-scrollbar height="30px">
-                <span v-for="teacher in data.absent_teachers" :key="teacher">{{ teacher }}</span>
-              </el-scrollbar>
-            </el-col>
-          </el-row>
-          
-          
-          <!--<count-to :start-val="0" :end-val="81212" :duration="3000" class="card-panel-num" />-->
+          <span class="card-panel-num">
+            <el-tooltip placement="top">
+              <template #content>
+                <div v-for="teacher in data.absent_teachers" :key="teacher">
+                  {{ teacher }}
+                </div>
+              </template>
+              {{ data.total_absent_teachers }}
+            </el-tooltip>       
+          </span>
+          <CountTo :start-val="0" :end-val="data.total_absent_teachers" class="card-panel-num" />
         </div>
       </div>
     </el-col>
-    <el-col :xs="12" :sm="12" :lg="6" class="card-panel-col">
-      <div class="card-panel" @click="handleSetLineChartData('purchases')">
-        <div class="card-panel-icon-wrapper icon-money">
-          <icon class-name="currency-dollar card-panel-icon"/>
+    <el-col :xs="24" :sm="24" :lg="12" class="card-panel-col">
+      <div class="card-panel">
+        <div class="card-panel-icon-wrapper calendar">
+          <icon class-name="calendar card-panel-icon"/>
         </div>
         <div class="card-panel-description">
-          <div class="card-panel-text">Purchases</div>
-          <span class="card-panel-num">9280</span>
-          <!--<count-to :start-val="0" :end-val="9280" :duration="3200" class="card-panel-num" />-->
-        </div>
-      </div>
-    </el-col>
-    <el-col :xs="12" :sm="12" :lg="6" class="card-panel-col">
-      <div class="card-panel" @click="handleSetLineChartData('shoppings')">
-        <div class="card-panel-icon-wrapper icon-shopping">
-          <icon class-name="shop card-panel-icon"/>
-        </div>
-        <div class="card-panel-description">
-          <div class="card-panel-text">Shoppings</div>
-          <span class="card-panel-num">13600</span>
-          <!-- <CountTo :start-val="0" :end-val="13600" class="card-panel-num" />-->
+          <div class="card-panel-text">Student Birthdays</div>
+          <el-table :data="data.student_birthdays" style="width: 100%">
+            <el-table-column prop="name" label="Name" width="150"></el-table-column>
+            <el-table-column prop="dob" label="Birthday" width="150"></el-table-column>
+          </el-table>
         </div>
       </div>
     </el-col>
@@ -89,7 +89,7 @@ const getData = async () => {
   }
 };
 
-const data = ref({total_students: 0, total_absent_students: 0, total_teachers: 0, total_absent_teachers: 0, absent_teachers: []});
+const data = ref({total_students: 0, total_absent_students: 0, total_teachers: 0, total_absent_teachers: 0, absent_teachers: [], student_birthdays: []});
 
 
 getData().then((result) => {
@@ -108,6 +108,26 @@ const handleSetLineChartData = (type) => {
 .panel-group {
   margin-top: 18px;
 
+  .flex-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  .flex-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .full-height {
+    flex: 1;
+  }
+
+  .half-height {
+    flex: 0.5;
+  }
+
   .card-panel-col {
     margin-bottom: 32px;
   }
@@ -122,42 +142,44 @@ const handleSetLineChartData = (type) => {
     background: #fff;
     box-shadow: 4px 4px 40px rgba(0, 0, 0, 0.05);
     border-color: rgba(0, 0, 0, 0.05);
+    border-radius: 5px;
 
     &:hover {
+      box-shadow: 0 5px 5px 0px #ccc;
       .card-panel-icon-wrapper {
         color: #fff;
       }
 
-      .icon-people {
+      .person-fill-dash {
         background: #40c9c6;
       }
 
-      .icon-message {
+      .person-dash-fill {
         background: #36a3f7;
       }
 
-      .icon-money {
+      .person-bounding-box {
         background: #f4516c;
       }
 
-      .icon-shopping {
+      .person-badge {
         background: #34bfa3;
       }
     }
 
-    .icon-people {
+    .person-fill-dash {
       color: #40c9c6;
     }
 
-    .icon-message {
+    .person-dash-fill {
       color: #36a3f7;
     }
 
-    .icon-money {
+    .person-bounding-box {
       color: #f4516c;
     }
 
-    .icon-shopping {
+    .person-badge {
       color: #34bfa3;
     }
 

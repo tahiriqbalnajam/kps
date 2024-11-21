@@ -1,20 +1,25 @@
 <template>
-    <el-row>
-        <qrcode-stream
-            :paused="paused"
-            :constraints="selectedConstraints"
-            :track="trackFunctionSelected.value"
-            :formats="selectedBarcodeFormats"
-            @error="onError"
-            @detect="onDetect"
-            @camera-on="onCameraReady"
-        >
-        <div
-            class="loading-indicator"
-            v-if="loading"
-        ></div>
-        </qrcode-stream>
-    </el-row>
+  <el-row>
+    <el-col :span="24" class="camera-selection">
+      <el-select v-model="selectedCamera" placeholder="Select Camera" @change="onCameraChange">
+        <el-option label="Front Camera" value="user"></el-option>
+        <el-option label="Rear Camera" value="environment"></el-option>
+      </el-select>
+    </el-col>
+    <el-col :span="24" class="qrcode-container">
+      <qrcode-stream
+        :paused="paused"
+        :constraints="selectedConstraints"
+        :track="trackFunctionSelected.value"
+        :formats="selectedBarcodeFormats"
+        @error="onError"
+        @detect="onDetect"
+        @camera-on="onCameraReady"
+      >
+        <div class="loading-indicator" v-if="loading"></div>
+      </qrcode-stream>
+    </el-col>
+  </el-row>
 </template>
 
 <script>
@@ -32,11 +37,11 @@ export default {
             paused: false,
             loading: true,
             result: '',
+            selectedCamera: 'user', // Default to front camera
             selectedConstraints: { facingMode: 'user' },
-            defaultConstraintOptions: [
-                { label: 'rear camera', constraints: { facingMode: 'environment' } },
-                { label: 'front camera', constraints: { facingMode: 'user' } }
-            ],
+            defaultConstraintOptions: {
+                facingMode: 'user',
+            },
             constraintOptions: [],
             trackFunctionOptions: [
                 { text: 'nothing (default)', value: undefined },
@@ -78,8 +83,11 @@ export default {
         }
     },
     methods: {
-        onCameraOn() {
-        this.loading = false
+        onCameraChange(value) {
+            this.selectedConstraints = { facingMode: value };
+        },
+        onError(error) {
+            console.error(error);
         },
         async onDetect(detectedCodes) {
             console.log(detectedCodes);
@@ -192,5 +200,26 @@ export default {
 </script>
 
 <style scoped>
-/* Your component's CSS styles go here */
+.camera-selection {
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.qrcode-container {
+  position: relative;
+}
+
+.circle-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 200px;
+  height: 200px;
+  margin-top: -100px; /* Half of the height */
+  margin-left: -100px; /* Half of the width */
+  border: 2px solid red;
+  border-radius: 50%;
+  pointer-events: none; /* Allow clicks to pass through */
+  background-color: rgba(128, 128, 128, 0.297)
+}
 </style>

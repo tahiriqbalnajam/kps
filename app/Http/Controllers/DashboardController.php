@@ -25,11 +25,13 @@ class DashboardController extends Controller
         $total_absent_students = $this->getTotalAbsentStudents($date);
         $total_teachers = Teacher::where('status', 'active')->count();
         $absent_teachers = $this->getTotalAbsentTeachers($date);
+        $student_birthday = $this->getTodaysBirthdayStudents();
         return response()->json(new JsonResponse(['total_students' => $total_students, 
                                                    'total_absent_students' => $total_absent_students,
                                                    'total_teachers' => $total_teachers,
                                                    'total_absent_teachers' => $absent_teachers['total_absent_teachers'],
-                                                   'absent_teachers' => $absent_teachers['absent_teachers']
+                                                   'absent_teachers' => $absent_teachers['absent_teachers'],
+                                                   'student_birthdays' => $student_birthday,
                                                 ]));
 
 
@@ -78,6 +80,14 @@ class DashboardController extends Controller
         $totalAbsent = $absentTeachers->count();
 
         return ['absent_teachers' => $absentTeachers,'total_absent_teachers' => $totalAbsent];
+    }
+
+
+    public function getTodaysBirthdayStudents()
+    {
+        $today = Carbon::now()->format('m-d');
+        $students = Student::whereRaw('DATE_FORMAT(dob, "%m-%d") = ?', [$today])->get();
+        return $students;
     }
 
     /**

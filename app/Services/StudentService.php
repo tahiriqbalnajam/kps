@@ -36,8 +36,8 @@ class StudentService implements StudentServiceInterface
 
     public function storeStudent(array $data)
     {
-        DB::beginTransaction();
         try {
+            DB::beginTransaction();
             $user['name'] = $data['name'];
             $user['email'] = $data['name'].rand(10,100).'@idlschool.com';
             $user['password'] = bcrypt('idl123');
