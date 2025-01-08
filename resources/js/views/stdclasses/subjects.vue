@@ -28,7 +28,19 @@
         </template>
       </el-table-column>
     </el-table>
-    <pagination v-show="total>0" :total="total" :page.sync="query.page" :limit.sync="query.limit" @pagination="getList" />
+    <el-pagination
+      v-show="total>0"
+      v-model:current-page="query.page"
+      v-model:page-size="query.limit"
+      :page-sizes="[10, 15, 20, 30, 50, 100]"
+      :small="small"
+      :disabled="disabled"
+      background="white"
+      layout="total, sizes, prev, pager, next, jumper"
+      :total="total"
+      @size-change="handleSizeChange"
+      @current-change="handleCurrentChange"
+    />
     <el-drawer
       title="Edit Subject"
       :modelValue="editnow"
@@ -93,6 +105,14 @@ export default {
     debounceInput: debounce(function (e) {
       this.getList();
     }, 500),
+    async handleSizeChange (val) {
+      this.query.limit = val
+      await this.getList()
+    },
+    async handleCurrentChange (val) {
+      this.query.page = val
+      await this.getList()
+    },
     async getList() {
       const { data } = await subjectsPro.list(this.query);
       this.list = data.subjects.data;
@@ -133,6 +153,7 @@ export default {
         this.getList();
       }
       this.loading = false;
+      this.editnow = false;
     },
   },
 };
