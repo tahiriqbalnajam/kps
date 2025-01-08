@@ -89,13 +89,7 @@ export default {
       },
       query: {
         page: 1,
-        limit: 50,
-        keyword: '',
-        role: '',
-      },
-      subj_query: {
-        page: 1,
-        limit: 50,
+        limit: 15,
         keyword: '',
         role: '',
       },
@@ -116,8 +110,7 @@ export default {
       const { data } = await classesPro.list(this.query);
       this.classes = data.classes.data;
 
-      
-      const sdata = await subjectsPro.list(this.subj_query);
+      const sdata = await subjectsPro.list(this.query);
       this.subjects = sdata.data.subjects.data;
     },
     async getClasses() {
