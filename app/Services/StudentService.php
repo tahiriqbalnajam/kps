@@ -19,18 +19,30 @@ class StudentService implements StudentServiceInterface
     public function listStudents(array $searchParams)
     {
         $limit = Arr::get($searchParams, 'limit', static::ITEM_PER_PAGE);
-        return QueryBuilder::for(Student::class)
-            ->allowedFields(['id','user_id','roll_no','name','adminssion_number','parent_id','class_id','session_id','dob','doa','b_form','gender',
-                                'is_orphan','cast','previous_school','monthly_fee','sibling','religion','pef_admission','nadra_pending',
-                                'action_required','action_details','status','parents.id','parents.name','parent.phone','stdclasses.id','stdclasses.name'])
+        
+        $query = QueryBuilder::for(Student::class)
+            ->allowedFields(['id','user_id','roll_no','name','adminssion_number','parent_id',
+                'class_id','session_id','dob','doa','b_form','gender',
+                'is_orphan','cast','previous_school','monthly_fee','sibling','religion',
+                'pef_admission','nadra_pending','action_required','action_details','status',
+                'parents.id','parents.name','parent.phone','stdclasses.id','stdclasses.name'])
             ->with('parents', 'stdclasses', 'class_session')
             ->allowedFilters([
-                'id', 'name', 'roll_no', 'adminssion_number', 'is_orphan', 'pef_admission', 'nadra_pending', 'gender', 'status',
+                'id', 'name', 'roll_no', 'adminssion_number', 'is_orphan', 
+                'pef_admission', 'nadra_pending', 'gender', 'status',
                 AllowedFilter::partial('parent_phone', 'parents.phone'),
                 AllowedFilter::partial('parent_name', 'parents.name'),
                 AllowedFilter::exact('stdclass', 'stdclasses.id'),
-            ])
-            ->paginate($limit)
+                // Add custom age filter
+                AllowedFilter::callback('age_less_than', function ($query, $value) {
+                    $query->whereRaw('TIMESTAMPDIFF(YEAR, dob, CURDATE()) < ?', [$value]);
+                }),
+                AllowedFilter::callback('age_greater_than', function ($query, $value) {
+                    $query->whereRaw('TIMESTAMPDIFF(YEAR, dob, CURDATE()) > ?', [$value]);
+                })
+            ]);
+
+        return $query->paginate($limit)
             ->appends(request()->query());
     }
 

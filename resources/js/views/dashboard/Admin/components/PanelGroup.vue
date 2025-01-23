@@ -57,18 +57,22 @@
         </div>
       </div>
     </el-col>
-    <el-col :xs="24" :sm="24" :lg="12" class="card-panel-col">
-      <div class="card-panel">
-        <div class="card-panel-icon-wrapper calendar">
-          <icon class-name="calendar card-panel-icon"/>
-        </div>
-        <div class="card-panel-description">
-          <div class="card-panel-text">Student Birthdays</div>
-          <el-table :data="data.student_birthdays" style="width: 100%">
-            <el-table-column prop="name" label="Name" width="150"></el-table-column>
-            <el-table-column prop="dob" label="Birthday" width="150"></el-table-column>
-          </el-table>
-        </div>
+    <el-col :xs="12" :sm="12" :lg="6" class="card-panel-col">
+      <div class="card-panel" style="height: 400px;">
+          <div class="panel-heading">Student Birthdays</div>
+            <el-table :data="data.student_birthdays" max-height="250">
+              <el-table-column prop="name" label="Name"></el-table-column>
+                <el-table-column prop="dob" label="Birthday">
+                  <template #default="scope">
+                    {{ new Date(scope.row.dob).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) }}
+                  </template>
+                </el-table-column>
+                <el-table-column label="Age">
+                  <template #default="scope">
+                    {{ new Date().getFullYear() - new Date(scope.row.dob).getFullYear() }} years
+                  </template>
+                </el-table-column>
+            </el-table>
       </div>
     </el-col>
   </el-row>
@@ -233,5 +237,11 @@ const handleSetLineChartData = (type) => {
       float: none !important;
     }
   }
+}
+.panel-heading {
+  font-size: 18px;
+  font-weight: bold;
+  text-align: center;
+  padding: 10px 0;
 }
 </style>

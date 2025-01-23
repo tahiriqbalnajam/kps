@@ -265,7 +265,7 @@ class AttendanceService implements AttendanceServiceInterface
             LEFT JOIN 
                 holidays h ON c.date = h.holiday_date
             WHERE
-                c.date BETWEEN ? AND ?
+                c.date BETWEEN ? AND ? AND t.status = 'active'
             ORDER BY 
                 t.name, c.date;
         ", [$start_month, $end_month]);

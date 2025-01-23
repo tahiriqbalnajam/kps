@@ -22,7 +22,7 @@
 import Logo from './Logo.vue'
 import SidebarItem from './SidebarItem.vue'
 //get scss variable
-import scssExportJson from '@/styles/variables-to-js.scss'
+//import scssExportJson from '@/styles/variables-to-js.module.scss'
 import { appStore } from '@/store/app'
 import { permissionStore } from '@/store/permission'
 
@@ -41,19 +41,19 @@ const isCollapse = computed(() => {
 })
 
 //change  scss variable to js
-const dillScssExportToJson = (scssExportJson) => {
-  const jsonString = scssExportJson.replace(/:export\s*/, '').replace(/[\s+\r\n]/g, '')
-  const scssJson = {}
-  jsonString
-    .slice(1, jsonString.length - 2)
-    .split(';')
-    .forEach((fItem) => {
-      const arr = fItem.split(':')
-      scssJson[arr[0]] = arr[1]
-    })
-  return scssJson
-}
-const scssJson = dillScssExportToJson(scssExportJson)
+// const dillScssExportToJson = (scssExportJson) => {
+//   const jsonString = scssExportJson.replace(/:export\s*/, '').replace(/[\s+\r\n]/g, '')
+//   const scssJson = {}
+//   jsonString
+//     .slice(1, jsonString.length - 2)
+//     .split(';')
+//     .forEach((fItem) => {
+//       const arr = fItem.split(':')
+//       scssJson[arr[0]] = arr[1]
+//     })
+//   return scssJson
+// }
+// const scssJson = dillScssExportToJson(scssExportJson)
 const activeMenu = computed(() => {
   const { meta, fullPath } = route
   // if set path, the sidebar will highlight the path you set

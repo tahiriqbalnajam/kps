@@ -151,7 +151,20 @@ export const asyncRoutes = [
       },
     ],
   },
-  
+  {
+    path: '/sms',
+    component: Layout,
+    redirect: '/sms/queue',
+    meta: { title: 'SMS', bootstrapIcon: 'envelope-fill', noCache: true },
+    children: [
+      {
+        path: 'queue',
+        component: () => import('@/views/sms/Queue.vue'),
+        name: 'SMS Queue',
+        meta: { title: 'SMS Queue', bootstrapIcon: 'envelope', noCache: true },
+      },
+    ],
+  },
   {
     path: '/teacher',
     component: Layout,

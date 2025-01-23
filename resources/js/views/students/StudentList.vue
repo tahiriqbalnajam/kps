@@ -32,6 +32,7 @@
                       <el-option label="PEF Adm Pedning" value="pef_admission_pending"/>
                       <el-option label="PEF Adm Done" value="pef_admission_done"/>
                       <el-option label="Nadra Pending" value="nadra_pending"/>
+                      <el-option label="Age < 5year" value="under_five"/>
                     </el-select>
                     <!-- <el-button  class="filter-item" type="primary" :icon="Search"  @click="handleFilter">
                       {{ $t('table.search') }}
@@ -329,6 +330,8 @@ export default {
             this.query.filter['pef_admission'] = 'Yes';
           else if(filter == 'pef_admission_pending')
             this.query.filter['pef_admission'] = 'No';
+          else if(filter == 'under_five')
+            this.query.filter['age_less_than'] = '5';
           else 
             this.query.filter[filter] = 'Yes';
         });
