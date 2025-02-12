@@ -32,20 +32,41 @@ class SettingController extends Controller
      */
     public function store(Request $request)
     {
-        // print_r($request->all());
-        $input = $request->all();
-        $settings = Settings::find('1');
-        $settings->fill($input)->save();
-        // $parm = $request->all();
-        // $data = $parm['allowed_holiday'];
-        // // Settings::update([
-        // //    'teacher_leaves_allowed' => $data
-        // // ]);
-        // Settings::query()->update([
-        //     'teacher_leaves_allowed' => $data
-        // ]);
-        //dd('yes');
-        return response()->json(new JsonResponse(['settings' => $settings]));
+        try {
+            $data = $request->all();
+            
+            // Handle logo upload if present
+            if ($request->hasFile('logo')) {
+                $file = $request->file('logo');
+                $fileName = 'school-logo-' . time() . '.' . $file->getClientOriginalExtension();
+                $file->move(public_path('uploads/school'), $fileName);
+                $data['logo'] = 'uploads/school/' . $fileName;
+                
+                // Delete old logo if exists
+                $oldLogo = Settings::where('id', '1')->first();
+                if ($oldLogo && file_exists(public_path($oldLogo->logo))) {
+                    unlink(public_path($oldLogo->logo));
+                }
+            }
+            // Save each setting
+            Settings::where('id', '1')->update($data);
+            // foreach ($data as $key => $value) {
+            //     Settings::updateOrCreate(
+            //         ['key' => $key],
+            //         ['value' => $value]
+            //     );
+            // }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Settings saved successfully'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error saving settings: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /**

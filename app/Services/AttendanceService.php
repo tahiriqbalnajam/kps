@@ -287,5 +287,45 @@ class AttendanceService implements AttendanceServiceInterface
         return $attendancesWithComments;
     }
 
+    public function get_attendance_summry($month = null)
+    {
+        $month = $month ?? Carbon::now()->format('Y-m');
+        
+        // Most absent students by class
+        $absentees = StudentAttendance::where('created_at', 'like', $month . '%')
+            ->where('status', 'absent')
+            ->select('class_id', 'student_id', DB::raw('count(*) as absent_count'))
+            ->groupBy('class_id', 'student_id')
+            ->with(['students:id,name,roll_no', 'classes:id,name'])
+            ->orderBy('absent_count', 'desc')
+            ->get()
+            ->groupBy('class_id');
+
+        // Most present students by class
+        $punctual = StudentAttendance::where('created_at', 'like', $month . '%')
+            ->where('status', 'present')
+            ->select('class_id', 'student_id', DB::raw('count(*) as present_count'))
+            ->groupBy('class_id', 'student_id')
+            ->with(['students:id,name,roll_no', 'classes:id,name'])
+            ->orderBy('present_count', 'desc')
+            ->get()
+            ->groupBy('class_id');
+
+        // Top 3 most punctual students overall
+        $topPunctual = StudentAttendance::where('created_at', 'like', $month . '%')
+            ->where('status', 'present')
+            ->select('student_id', DB::raw('count(*) as present_count'))
+            ->groupBy('student_id')
+            ->with(['students:id,name,roll_no,class_id', 'students.stdclasses:id,name'])
+            ->orderBy('present_count', 'desc')
+            ->limit(3)
+            ->get();
+
+        return [
+            'absentees' => $absentees,
+            'punctual' => $punctual,
+            'top_punctual' => $topPunctual
+        ];
+    }
    
 }

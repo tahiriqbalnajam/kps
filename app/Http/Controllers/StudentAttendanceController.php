@@ -284,4 +284,10 @@ class StudentAttendanceController extends Controller
     {
         //
     }
+
+    public function get_attendance_summry(Request $request) {
+        $month = $request->month;
+        $summary = $this->attendanceService->get_attendance_summry($month);
+        return response()->json(new JsonResponse(['summary' => $summary]));
+    }
 }

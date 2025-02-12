@@ -38,10 +38,22 @@
         </template>
       </el-table-column>
     </el-table>
-    <pagination v-show="total>0" :total="total" :page.sync="query.page" :limit.sync="query.limit" @pagination="getList" />
+    <el-pagination
+        v-show="total>0"
+        v-model:current-page="query.page"
+        v-model:page-size="query.limit"
+        :page-sizes="[10, 15, 20, 30, 50, 100]"
+        :small="small"
+        :disabled="disabled"
+        background="white"
+        layout="total, sizes, prev, pager, next, jumper"
+        :total="total"
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
+      />
     <el-drawer
       title="Edit Record"
-      :visible.sync="editnow"
+      v-model="editnow"
       direction="rtl"
       custom-class="demo-drawer"
       size="50%"
@@ -74,7 +86,8 @@
   </div>
 </template>
 <script>
-import Pagination from '@/components/Pagination';
+import Pagination from '@/components/Pagination/index.vue';
+import { debounce } from 'lodash';
 import Resource from '@/api/resource';
 import { processSMS } from '@/api/general';
 const smsqueuePro = new Resource('smsqueue');
@@ -117,7 +130,16 @@ export default {
     this.getClasses();
   },
   methods: {
-    debounceInput: _.debounce(function(e) {
+    async handleSizeChange (val) {
+      console.log(`每页 ${val} 条`);
+      this.query.limit = val
+      await this.getList()
+    },
+    async handleCurrentChange (val) {
+      this.query.page = val
+      await this.getList()
+    },
+    debounceInput: debounce(function(e) {
       this.getList();
     }, 500),
     async getList() {
@@ -182,6 +204,7 @@ export default {
     },
     async sendSMS() {
       this.sendsmsloading = true;
+      this.sendWhatsapp();
       await processSMS().then(result => {
         this.sendsmsloading = false;
         this.getList();
@@ -197,6 +220,22 @@ export default {
         this.sendsmsloading = false;
         return false;
       });
+    },
+    sendWhatsapp(phoneNumber, message) {
+      window.whatsappWebSuite.sendTextMessage(
+            phoneNumber, 
+            message
+        );
+
+        document.addEventListener('whatsappSendResponse', function(e, data) {
+            if(e.detail.success) {
+                alert('Message sent successfully!');
+            }
+            else {
+                // handle fail
+                alert('Failed to send message.');
+            }
+        })
     },
     clearQueue(){
       this.$confirm('Are you sure?', 'Warning', {

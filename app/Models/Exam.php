@@ -8,11 +8,17 @@ use App\Models\ExamResult;
 class Exam extends Model
 {
     protected $table = 'exams';
-    protected $fillable = ['examname','class_id', 'subject_id', 'total_marks'];
+    
+    protected $fillable = ['title', 'class_id'];
 
-    public function results()
+    public function examSubjects()
     {
-        return $this->hasMany(ExamResult::class);
+        return $this->hasMany(ExamSubject::class, 'exam_id');
+    }
+
+    public function examResults()
+    {
+        return $this->hasMany(ExamResult::class, 'exam_id');
     }
 
     public function classes() {

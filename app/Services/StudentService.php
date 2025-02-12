@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 use Spatie\QueryBuilder\QueryBuilder;
 use Spatie\QueryBuilder\AllowedFilter;
 use App\Services\Contracts\StudentServiceInterface;
+use Carbon\Carbon;
 
 class StudentService implements StudentServiceInterface
 {
@@ -41,6 +42,11 @@ class StudentService implements StudentServiceInterface
                     $query->whereRaw('TIMESTAMPDIFF(YEAR, dob, CURDATE()) > ?', [$value]);
                 })
             ]);
+
+        // Add default status filter if no status filter is provided
+        if (!request()->has('filter.status')) {
+            $query->where('status', 'enable');
+        }
 
         return $query->paginate($limit)
             ->appends(request()->query());

@@ -76,3 +76,11 @@ export function teacherMonthlyAttReport(data) {
     data,
   });
 }
+
+export function attendanceSummary(data) {
+  return request({
+    url: '/attendance/summary',
+    method: 'post',
+    data,
+  });
+}

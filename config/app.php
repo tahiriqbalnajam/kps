@@ -176,6 +176,7 @@ return [
         App\Providers\RouteServiceProvider::class,
         App\Providers\StudentServiceProvider::class,
         App\Providers\AttendanceServiceProvider::class,
+        App\Providers\ExamServiceProvider::class,
 
     ],
 

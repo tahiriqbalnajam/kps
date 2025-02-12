@@ -45,6 +45,7 @@
     "vuedraggable": "^2.24.3"
   },
   "dependencies": {
+    "element-tiptap": "^2.2.1",
     "file-saver": "^2.0.5",
     "jspdf": "^2.5.2",
     "jspdf-autotable": "^3.8.4",

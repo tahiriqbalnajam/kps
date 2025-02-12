@@ -246,6 +246,16 @@ export const asyncRoutes = [
         name: 'Manage Holidays',
         meta: { title: 'Manage Holidays', bootstrapIcon: 'calendar3-range', noCache: true },
       },
+      {
+        path: 'report',
+        component: () => import('@/views/attendance/AttendanceReport.vue'),
+        name: 'AttendanceReport',
+        meta: {
+          title: 'Attendance Report',
+          icon: 'chart',
+          permissions: ['view menu attendance']
+        }
+      }
     ],
   },
   {
@@ -291,7 +301,7 @@ export const asyncRoutes = [
         path: 'generator',
         component: () => import('@/views/timetable/TimeTable.vue'),
         name: 'Generat',
-        meta: {title: 'Generat Timetable', bootstrapIcon: 'calendar3', noCache: true},
+        meta: {title: 'Generate Timetable', bootstrapIcon: 'calendar3', noCache: true},
       },
       {
         path: 'periods',

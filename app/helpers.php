@@ -132,7 +132,7 @@ if (!function_exists('vite_assets')) {
     function vite_assets(): HtmlString
     {
         $manifest = json_decode(file_get_contents(
-            public_path('build/manifest.json')
+            public_path('build/.vite/manifest.json')
         ), true);
 
         return new HtmlString(<<<HTML

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\SubjectToClass;
 use App\Models\Classes;
+use App\Models\ClassSubject;
 use Illuminate\Support\Arr;
 use Illuminate\Http\Request;
 use App\Laravue\JsonResponse;
@@ -39,6 +40,23 @@ class SubjectToClassController extends Controller
         // ->paginate($limit);
         //dd(DB::getQueryLog()); // Show results of log
         return response()->json(new JsonResponse(['classubj' => $subjects]));
+    }
+
+    /**
+     * Get subjects against a class.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function getSubjectsByClass(Request $request)
+    {
+        $classId = $request->get('class_id');
+        $subjects = QueryBuilder::for(ClassSubject::class)
+            ->allowedFilters([AllowedFilter::exact('class_id')])
+            ->where('class_id', $classId)
+            ->with('subject')
+            ->paginate($request->get('limit', 15));
+        return response()->json(new JsonResponse(['subjects' => $subjects]));
     }
 
     /**

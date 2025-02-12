@@ -20,6 +20,7 @@ Route::get('students/{id}/subject-wise-scores', 'StudentController@getSubjectWis
 //classes
 Route::apiResource('classes', 'ClassesController');
 //teachers
+//teachers
 Route::apiResource('teachers', 'TeacherController');
 Route::post('/teacher/all-teaches-pay', 'TeacherController@calculateAllTeachersPay');
 Route::post('/teacher/find_save_salary', 'TeacherController@find_already_saved_salary');
@@ -57,6 +58,8 @@ Route::get('absent_student_each_class', 'StudentAttendanceController@absent_stud
 Route::get('student_attendance_total/{id}', 'StudentAttendanceController@student_attendance_total');
 Route::post('absent_comment', 'StudentAttendanceController@absent_comment');
 Route::get('get_att_comments/{id}', 'StudentAttendanceController@get_att_comment');
+Route::post('getdailyclasswise', 'StudentAttendanceController@dailyclasswise');
+Route::post('attendance/summary', 'StudentAttendanceController@get_attendance_summry');
 
 //teacher attendance
 Route::apiResource('teacher_attendance', 'TeacherAttendanceController');
@@ -72,16 +75,23 @@ Route::apiResource('tests', 'TestController');
 Route::apiResource('tests-result', 'TestResultController');
 Route::put('tests/{test_id}/results', 'TestController@updateTestResults');
 //exam
-//Route::apiResource('exam_result', 'ExamController');
-Route::apiResource('examtest_result', 'ExamTestController');
+//Route::apiResource('exam_result', 'ExamController');pe
 //subjects
 Route::apiResource('subjects', 'SubjectController');
 Route::apiResource('subject_class', 'SubjectToClassController');
+Route::get('subject_class', 'SubjectToClassController@getSubjectsByClass');
 
+//exams
+Route::apiResource('examtest_result', 'ExamTestController');
 Route::apiResource('exams', 'ExamController');
+Route::get('exams/{id}/subjects', 'ExamController@getExamSubjects');
+Route::get('/exams/{id}/subjects/marks', 'ExamController@getExamById');
+Route::post('/exams/marks', 'ExamController@addExamMarks');
+Route::get('exams/{id}/reports', 'ExamController@getExamReports');
+
+//test
 Route::apiResource('examstest', 'ExamTestController');
 Route::get('examstest/{examstest}/test_results', 'ExamTestController@test_results');
-Route::post('getdailyclasswise', 'StudentAttendanceController@dailyclasswise');
 Route::post('edit_class', 'StudentController@edit_class');
 Route::apiResource('transaction', 'TransactionsController');
 Route::apiResource('balances', 'BalanceController');
