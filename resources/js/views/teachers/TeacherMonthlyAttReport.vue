@@ -32,11 +32,19 @@
            </tr>
            <tr v-for="teacher in  attendance.teachers" :key="teacher.id">
                <td>{{ teacher.name }}</td>
-               <td v-for="att in teacher.attendances" :key="att.id" :class="{'absent': (att == 'absent')}">
-                <p class="status">{{(att.status == 'absent') ? 'A' : (att.status == leave) ? 'L' : (att.status == 'present') ? 'P' : att.status}}</p>
-                <p class="time">{{ att.time? getime(att.time) : '' }}</p>
-
-              </td>
+               <td v-for="att in teacher.attendances" 
+                   :key="att.id" 
+                   :class="{
+                     'absent': (att.status == 'absent'),
+                     'late': isLate(att.time, att.opening_time)
+                   }"
+               >
+                 <p class="status">
+                   {{(att.status == 'absent') ? 'A' : (att.status == leave) ? 'L' : (att.status == 'present') ? 'P' : att.status}}
+                   <span v-if="isLate(att.time, att.opening_time)" class="late-indicator">*</span>
+                 </p>
+                 <p class="time">{{ att.time? getime(att.time) : '' }}</p>
+               </td>
            </tr>
        </table>
    </el-scrollbar>
@@ -70,12 +78,26 @@
       },
       methods: {
         getime(date) {
-          return moment(date).format('h:m A');
+          return moment(date).format('h:mm A');
         },  
         async getList(){
             const {data} = await teacherMonthlyAttReport(this.query);
             this.attendance.teachers = data.attendance;
-          }
+          },
+        isLate(arrivalTime, openingTime) {
+          if (!arrivalTime || !openingTime) return false;
+          
+          // Convert times to comparable format (minutes since midnight)
+          const getMinutes = (timeStr) => {
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            return hours * 60 + minutes;
+          };
+
+          const arrivalMinutes = getMinutes(moment(arrivalTime).format('HH:mm'));
+          const openingMinutes = getMinutes(openingTime);
+
+          return arrivalMinutes > openingMinutes;
+        }
       },
     };
 </script>
@@ -116,5 +138,23 @@
 }
 .status {
   margin: 0
+}
+.late {
+  background-color: #ff4545;
+  color: white;
+}
+
+.late .time {
+  color: #ffffff;
+}
+
+.late .status {
+  color: #ffffff;
+}
+
+.late-indicator {
+  color: #ff9800;
+  font-weight: bold;
+  margin-left: 2px;
 }
 </style>

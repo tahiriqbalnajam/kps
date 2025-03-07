@@ -15,6 +15,7 @@ class SubdomainDatabaseSwitcher
         $host = $request->getHost();
         $subdomain = explode('.', $host)[0];
 
+        //Cache::forget('db_details_{$subdomain}'); 
         // Cache the database details for 10 minutes
         $details = Cache::remember("db_details_{$subdomain}", 600, function () use ($subdomain) {
             return DB::table('databases')->where('subdomain', $subdomain)->first();

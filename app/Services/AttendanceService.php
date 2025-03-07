@@ -248,6 +248,7 @@ class AttendanceService implements AttendanceServiceInterface
                 c.date,
                 t.id AS teacher_id,
                 t.name AS teacher_name,
+                ta.opening_time,
                 ta.created_at,
                 COALESCE(ta.status, CASE 
                     WHEN h.holiday_date IS NOT NULL THEN h.description
@@ -273,7 +274,7 @@ class AttendanceService implements AttendanceServiceInterface
         //print_r($attendance);
         foreach($attendance as $attend) {
             $teachers[$attend->teacher_id]['name'] = $attend->teacher_name;
-            $teachers[$attend->teacher_id]['attendances'][] = array('status' => $attend->attendance_status, 'time' => $attend->created_at);
+            $teachers[$attend->teacher_id]['attendances'][] = array('status' => $attend->attendance_status, 'time' => $attend->created_at, 'opening_time' => $attend->opening_time );
         }
 
         return $teachers;

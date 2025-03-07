@@ -68,6 +68,17 @@
           <el-input ref="search" v-model="query.keyword" size="mini" placeholder="Type to search" v-on:input="debounceInput" />
         </template>
         <template #default="scope">
+          <!-- Add new ID Card button -->
+          <el-button
+            circle
+            size="mini"
+            type="primary"
+            @click="openIDCard(scope.row)"
+            title="Print ID Card"
+          >
+            <el-icon :size="15"><Printer /></el-icon>
+          </el-button>
+          
           <el-button
             circle
             size="mini"
@@ -233,6 +244,12 @@
         <canvas id="canvas"></canvas>
       </div>
     </el-drawer>
+    <!-- Add the TeacherIDCard component at the end of template -->
+    <teacher-id-card
+      :modelValue="showIDCard"
+      @update:modelValue="showIDCard = $event"
+      :teacher="selectedTeacher"
+    />
   </div>
 </template>
 <script>
@@ -249,10 +266,16 @@ import {
     Message,
     Search,
     Star,
+    Printer,
 } from '@element-plus/icons-vue'
+import TeacherIDCard from '@/components/TeacherIDCard.vue';
+
 export default {
   name: '',
-  components: { Pagination},
+  components: { 
+    Pagination,
+    TeacherIDCard,
+  },
   directives: { },
   filters: {
     dateformat: (date) => {
@@ -330,6 +353,8 @@ export default {
         filtercol: 'name',
         role: '',
       },
+      showIDCard: false,
+      selectedTeacher: {},
     };
   },
   computed: {
@@ -474,6 +499,17 @@ export default {
           return v[j];
         }
       }));
+    },
+    openIDCard(teacher) {
+      this.selectedTeacher = teacher;
+      // Ensure we have the needed data before opening the dialog
+      if (teacher && teacher.id) {
+        console.log('Opening ID card for teacher:', teacher);
+        this.showIDCard = true;
+      } else {
+        console.error('Missing teacher data:', teacher);
+        this.$message.error('Could not open ID card: Missing teacher data');
+      }
     },
   },
 };

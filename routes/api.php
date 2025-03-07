@@ -40,7 +40,8 @@ Route::apiResource('feetypes', 'FeeTypeController');
 Route::apiResource('fee', 'FeeController');
 Route::apiResource('pendingfee', 'PendingFeeController');
 
-Route::apiResource('settings', 'SettingController');
+//Route::apiResource('settings', 'SettingController');
+Route::apiResource('settings', 'SettingsController');
 Route::apiResource('smsqueue', 'SmsQueueController');
 Route::get('sendsms', 'SmsQueueController@sendsms');
 Route::post('change_status', 'SmsQueueController@change_status');
@@ -95,6 +96,8 @@ Route::get('examstest/{examstest}/test_results', 'ExamTestController@test_result
 Route::post('edit_class', 'StudentController@edit_class');
 Route::apiResource('transaction', 'TransactionsController');
 Route::apiResource('balances', 'BalanceController');
+Route::apiResource('teacher-observations', 'TeacherObservationController');
+Route::get('teacher-observations/progress/{teacherId}', 'TeacherObservationController@getTeacherProgress');
 Route::namespace('Api')->group(function() {
     Route::post('auth/login', 'AuthController@login');
     Route::apiResource('getusers', 'UserController');

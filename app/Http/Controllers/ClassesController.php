@@ -16,25 +16,21 @@ class ClassesController extends Controller
     public function index(Request $request)
     {
         $keyword = $request->keyword;
-        $classes = Classes::withCount(['students', 
-                    'students as males_count' => function ($query) {
-                        $query->where('gender', 'male');
-                    },
-                    'students as females_count' => function ($query) {
-                        $query->where('gender', 'female');
-                    }])
-                    ->when($keyword, function ($query) use ($keyword) {
-                        return $query->where('classes.name', 'like', '%' . $keyword . '%');
-                    })
-                    //->withCount('getMaleCountAttribute','getFemaleCountAttribute')
-                    ->select('classes.id','classes.name',
-                                DB::raw('COUNT(students.class_id) AS total_students'))
-                    ->leftJoin('students','students.class_id','=','classes.id')
-                    ->groupBy('students.class_id')
-                    ->groupBy('classes.id')
-                    ->groupBy('classes.name')
-                    ->paginate(30);
-                   // dd($classes);
+        $classes = Classes::select('classes.*')
+            ->withCount([
+                'students',
+                'students as males_count' => function ($query) {
+                    $query->where('gender', 'male');
+                },
+                'students as females_count' => function ($query) {
+                    $query->where('gender', 'female');
+                }
+            ])
+            ->when($keyword, function ($query) use ($keyword) {
+                return $query->where('classes.name', 'like', '%' . $keyword . '%');
+            })
+            ->paginate($request->input('limit', 30));
+
         return response()->json(new JsonResponse(['classes' => $classes]));
     }
 

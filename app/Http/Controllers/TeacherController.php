@@ -245,16 +245,18 @@ class TeacherController extends Controller
         if($alreadydone)
             return response()->json(new JsonResponse([], 'Today\'s attendance has already been submitted'));
 
-        $currentDateTime = Carbon::now();
+        // Get school opening time from settings
+        $settings = \App\Models\Settings::where('setting_key', 'opening_time')->first();
+        $openingTime = $settings ? $settings->setting_value : '09:00';
+        
+        $currentDateTime = Carbon::now();        
         $attendance = new TeacherAttendance();
         $attendance->teacher_id = $teacherId;
         $attendance->status = "present";
         $attendance->attendance_date = $currentDateTime;
+        $attendance->opening_time = $openingTime; // Compare with opening time
         $attendance->save();
-        if($attendance)
-            return response()->json(new JsonResponse(['attendance' => $attendance]));
-        else
-            return response()->json(new JsonResponse(['attendance' => $attendance]));
 
+        return response()->json(new JsonResponse(['attendance' => $attendance]));
     }
 }

@@ -184,6 +184,12 @@ export const asyncRoutes = [
         meta: { title: 'Pay', bootstrapIcon: 'currency-exchange', noCache: true },
       },
       {
+        path: 'class-observation' ,
+        component: () => import('@/views/teachers/TeacherObservation.vue'),
+        name: 'Teacher Observation',
+        meta: { title: 'Obsercation', bootstrapIcon: 'file-spreadsheet', noCache: true },
+      },
+      {
         path: 'profile/:id' ,
         hidden: true,
         component: () => import('@/views/teachers/TeacherProfile.vue'),
@@ -252,7 +258,7 @@ export const asyncRoutes = [
         name: 'AttendanceReport',
         meta: {
           title: 'Attendance Report',
-          icon: 'chart',
+          bootstrapIcon: 'graph-up',
           permissions: ['view menu attendance']
         }
       }

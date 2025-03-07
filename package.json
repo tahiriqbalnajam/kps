@@ -45,12 +45,14 @@
     "vuedraggable": "^2.24.3"
   },
   "dependencies": {
+    "chart.js": "^4.4.8",
     "element-tiptap": "^2.2.1",
     "file-saver": "^2.0.5",
     "jspdf": "^2.5.2",
     "jspdf-autotable": "^3.8.4",
     "lodash": "^4.17.21",
     "moment": "^2.30.1",
+    "qrcode.vue": "^3.6.0",
     "vue-json-excel3": "^1.0.30",
     "vue-lodash": "^2.1.2",
     "vue-qrcode-reader": "^5.7.0",

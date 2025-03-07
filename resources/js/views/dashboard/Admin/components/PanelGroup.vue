@@ -62,16 +62,21 @@
           <div class="panel-heading">Student Birthdays</div>
             <el-table :data="data.student_birthdays" max-height="250">
               <el-table-column prop="name" label="Name"></el-table-column>
-                <el-table-column prop="dob" label="Birthday">
-                  <template #default="scope">
-                    {{ new Date(scope.row.dob).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) }}
-                  </template>
-                </el-table-column>
-                <el-table-column label="Age">
-                  <template #default="scope">
-                    {{ new Date().getFullYear() - new Date(scope.row.dob).getFullYear() }} years
-                  </template>
-                </el-table-column>
+              <el-table-column prop="class" label="Class"></el-table-column>
+              <el-table-column label="Age">
+                <template #default="scope">
+                  {{ new Date().getFullYear() - new Date(scope.row.dob).getFullYear() }} years
+                </template>
+              </el-table-column>
+            </el-table>
+      </div>
+    </el-col>
+    <el-col :xs="12" :sm="12" :lg="6" class="card-panel-col">
+      <div class="card-panel" style="height: 400px;">
+          <div class="panel-heading">New Admissions ({{ data.newAdmissions }})</div>
+            <el-table :data="data.newAdmissionsPerClass[0]" max-height="250">
+              <el-table-column prop="class_name" label="Class"></el-table-column>
+              <el-table-column prop="count" label="Total"></el-table-column>
             </el-table>
       </div>
     </el-col>
@@ -93,7 +98,8 @@ const getData = async () => {
   }
 };
 
-const data = ref({total_students: 0, total_absent_students: 0, total_teachers: 0, total_absent_teachers: 0, absent_teachers: [], student_birthdays: []});
+const data = ref({total_students: 0, total_absent_students: 0, total_teachers: 0, total_absent_teachers: 0, 
+                  absent_teachers: [], student_birthdays: [], newAdmissionsPerClass: [], newAdmissions: 0});
 
 
 getData().then((result) => {

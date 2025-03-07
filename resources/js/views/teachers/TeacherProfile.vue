@@ -7,16 +7,21 @@
             <teacher-tests />
         </el-col>
     </el-row>
-    
-    
+    <el-row>
+        <el-col :xs="24" :sm="24" :md="24" :lg="24" :xl ="24">
+            <teacher-progress :teacher-id="teacherId" />
+        </el-col>
+    </el-row>
 </template>
 
 <script>
 import TeacherTests from './components/TeacherTests.vue';
 import TeacherInfo from './components/TeacherInfo.vue';
+import TeacherProgress from '@/components/TeacherProgress.vue';
+
 export default {
     name: 'TeacherProfile',
-    components: { TeacherTests, TeacherInfo },
+    components: { TeacherTests, TeacherInfo, TeacherProgress },
     data() {
         return {
             // Your component's data goes here

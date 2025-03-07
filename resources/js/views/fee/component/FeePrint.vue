@@ -6,7 +6,7 @@
         <el-col :span="8">
           <el-image
             style="height:220px"
-            :src="`/${settings.logo}`"
+            :src="`/${settings.school_logo}`"
             fit="fill"
           />
           <el-divider />
@@ -53,7 +53,7 @@
         <el-col :span="8">
           <el-image
             style="height:220px"
-            :src="`/${settings.logo}`"
+            :src="`/${settings.school_logo}`"
             fit="fill"
           />
           <el-divider />
@@ -103,7 +103,7 @@
         <el-col :span="8">
           <el-image
             style="height:220px"
-            :src="`/${settings.logo}`"
+            :src="`/${settings.school_logo}`"
             fit="fill"
           />
           <el-divider />

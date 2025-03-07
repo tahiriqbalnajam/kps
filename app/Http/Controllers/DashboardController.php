@@ -26,12 +26,31 @@ class DashboardController extends Controller
         $total_teachers = Teacher::where('status', 'active')->count();
         $absent_teachers = $this->getTotalAbsentTeachers($date);
         $student_birthday = $this->getTodaysBirthdayStudents();
+        $newAdmissions = Student::whereMonth('created_at', $date->month)
+            ->whereYear('created_at', $date->year)
+            ->where('status', 'enable')
+            ->count();
+
+        $newAdmissionsPerClass = Student::with('stdclasses')
+            ->whereMonth('created_at', $date->month)
+            ->whereYear('created_at', $date->year)
+            ->where('status', 'enable')
+            ->get()
+            ->groupBy('class')
+            ->map(function ($students) {
+            return [
+                'count' => $students->count(),
+                'class_name' => $students->first()->stdclasses->name ?? 'Unassigned'
+            ];
+            });
         return response()->json(new JsonResponse(['total_students' => $total_students, 
                                                    'total_absent_students' => $total_absent_students,
                                                    'total_teachers' => $total_teachers,
                                                    'total_absent_teachers' => $absent_teachers['total_absent_teachers'],
                                                    'absent_teachers' => $absent_teachers['absent_teachers'],
                                                    'student_birthdays' => $student_birthday,
+                                                   'newAdmissions' => $newAdmissions,
+                                                   'newAdmissionsPerClass' => $newAdmissionsPerClass,
                                                 ]));
 
 
@@ -86,7 +105,16 @@ class DashboardController extends Controller
     public function getTodaysBirthdayStudents()
     {
         $today = Carbon::now()->format('m-d');
-        $students = Student::whereRaw('DATE_FORMAT(dob, "%m-%d") = ?', [$today])->get();
+        $students = Student::with('stdclasses')
+            ->whereRaw('DATE_FORMAT(dob, "%m-%d") = ?', [$today])
+            ->get()
+            ->map(function ($student) {
+            return [
+                'name' => $student->name,
+                'dob' => $student->dob,
+                'class' => $student->stdclasses->name ?? 'No Class'
+            ];
+            });
         return $students;
     }
 

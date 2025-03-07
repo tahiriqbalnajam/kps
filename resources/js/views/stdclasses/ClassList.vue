@@ -12,7 +12,13 @@
     >
       <el-table-column label="ID" prop="id" />
       <el-table-column label="Name" prop="name" />
-      <el-table-column label="Total Students" prop="total_students" />
+      <el-table-column label="Total Students">
+        <template #default="scope">
+          {{ getTotalStudents(scope.row) }}
+        </template>
+      </el-table-column>
+      <el-table-column label="Boys" prop="males_count" />
+      <el-table-column label="Girls" prop="females_count" />
       <el-table-column align="right">
         <template #header="scope">
           <el-input ref="search" v-model="query.keyword" size="mini" placeholder="Type to search" v-on:input="debounceInput" />
@@ -106,6 +112,9 @@ export default {
       this.addstdclasspop = false;
       this.classid = null;
       this.getList();
+    },
+    getTotalStudents(row) {
+      return (row.males_count || 0) + (row.females_count || 0);
     },
   },
 };
