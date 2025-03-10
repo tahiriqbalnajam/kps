@@ -16,7 +16,9 @@ class ClassesController extends Controller
     public function index(Request $request)
     {
         $keyword = $request->keyword;
-        $classes = Classes::select('classes.*')
+        $include = $request->include;
+        
+        $query = Classes::select('classes.*')
             ->withCount([
                 'students',
                 'students as males_count' => function ($query) {
@@ -28,8 +30,24 @@ class ClassesController extends Controller
             ])
             ->when($keyword, function ($query) use ($keyword) {
                 return $query->where('classes.name', 'like', '%' . $keyword . '%');
-            })
-            ->paginate($request->input('limit', 30));
+            });
+        
+        // Include sections relationship when requested
+        if ($include === 'sections') {
+            $query->with(['sections' => function($query) {
+                $query->withCount([
+                    'students',
+                    'students as males_count' => function ($query) {
+                        $query->where('gender', 'male');
+                    },
+                    'students as females_count' => function ($query) {
+                        $query->where('gender', 'female');
+                    }
+                ]);
+            }]);
+        }
+        
+        $classes = $query->paginate($request->input('limit', 30));
 
         return response()->json(new JsonResponse(['classes' => $classes]));
     }

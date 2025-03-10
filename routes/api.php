@@ -98,6 +98,7 @@ Route::apiResource('transaction', 'TransactionsController');
 Route::apiResource('balances', 'BalanceController');
 Route::apiResource('teacher-observations', 'TeacherObservationController');
 Route::get('teacher-observations/progress/{teacherId}', 'TeacherObservationController@getTeacherProgress');
+Route::apiResource('sections', 'App\Http\Controllers\SectionController');
 Route::namespace('Api')->group(function() {
     Route::post('auth/login', 'AuthController@login');
     Route::apiResource('getusers', 'UserController');

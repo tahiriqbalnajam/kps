@@ -72,12 +72,6 @@ export const asyncRoutes = [
         meta: { title: 'List',bootstrapIcon: 'person-lines-fill', icon: 'person-lines-fill', noCache: true },
       },
       {
-        path: 'character-certificate',
-        component: () => import('@/views/students/StudentCharacterCertificate.vue'),
-        name: 'Character Certificate',
-        meta: { title: 'Character Certificate',bootstrapIcon: 'mortarboard', icon: 'people', noCache: true },
-      },
-      {
         path: 'report/:id',
         hidden: true,
         component: () => import('@/views/students/StudentReport.vue'),

@@ -29,4 +29,20 @@ class Classes extends Model
     {
         return $this->students()->where('gender', 'female')->count();
     }
+
+    /**
+     * Get the sections for the class
+     */
+    public function sections()
+    {
+        return $this->hasMany(Section::class, 'class_id')->withCount([
+            'students',
+            'students as males_count' => function ($query) {
+                $query->where('gender', 'male');
+            },
+            'students as females_count' => function ($query) {
+                $query->where('gender', 'female');
+            }
+        ]);
+    }
 }
