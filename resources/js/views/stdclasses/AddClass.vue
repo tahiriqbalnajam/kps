@@ -53,8 +53,28 @@ export default {
     this.closepopup = this.addeditclassprop;
   },
   created() {
-    if(this.classid !== null)
+    //console.log('Created hook - classid:', this.classid, 'Type:', typeof this.classid);
+    // Using explicit conversion to number for stronger type checking
+    if (this.classid !== null && this.classid !== undefined && Number(this.classid) > 0) {
+      //console.log('Calling handleEdit from created hook');
       this.handleEdit();
+    }
+  },
+  watch: {
+    // Add watcher for classid to handle when it changes after component creation
+    classid(newVal) {
+      //console.log('Watcher - classid changed to:', newVal);
+      if (newVal !== null && newVal !== undefined && Number(newVal) > 0) {
+       // console.log('Calling handleEdit from watcher');
+        this.handleEdit();
+      } else {
+        // Reset form when classid is cleared
+        this.stdclass = {
+          id: '',
+          name: '',
+        };
+      }
+    }
   },
   methods: {
     cancelAddClass() {
@@ -62,8 +82,18 @@ export default {
       this.$emit("closeAddClass", "yes") //callback function
     },
     async handleEdit() {
-      const { data } = await classesPro.get(this.classid);
-      this.stdclass = data.class;
+      //console.log('handleEdit called with classid:', this.classid);
+      try {
+        const { data } = await classesPro.get(this.classid);
+        //console.log('API response:', data);
+        if (data && data.class) {
+          this.stdclass = data.class;
+        } else {
+          console.error('Class data not found in API response');
+        }
+      } catch (error) {
+        console.error('Error fetching class data:', error);
+      }
     },
     async onSubmit(formName) {
       this.loading = true;

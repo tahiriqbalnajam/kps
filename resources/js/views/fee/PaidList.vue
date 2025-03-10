@@ -2,17 +2,29 @@
   <div class="app-container">
     <div class="filter-container">
       <head-controls>
-        <el-row :gutter="10">
-          <el-col :xs="18" :sm="18" :md="18" :lg="18" :xl="18">
-            <el-row :gutter="20">
-              <el-col :xs="4" :sm="4" :md="4" :lg="4" :xl ="4">
-                <el-form-item label="">
-                  <el-select v-model="query.stdclass" placeholder="Class" clearable style="width: 130px" class="filter-item" @change="handleFilter">
-                      <el-option v-for="item in classes" :key="item.id" :label="upperFirst(item.name)" :value="item.id" />
+        <el-row :gutter="16" type="flex" align="middle">
+          <el-col :xs="24" :sm="24" :md="18" :lg="18" :xl="18">
+            <el-row :gutter="16" type="flex" align="middle">
+              <!-- Class Filter -->
+              <el-col :xs="24" :sm="12" :md="6" :lg="5" :xl="5">
+                <el-form-item label="" class="mb-0">
+                  <el-select 
+                    v-model="query.stdclass" 
+                    placeholder="Class" 
+                    clearable 
+                    class="filter-item full-width"
+                    @change="handleFilter">
+                    <el-option 
+                      v-for="item in classes" 
+                      :key="item.id" 
+                      :label="upperFirst(item.name)" 
+                      :value="item.id" />
                   </el-select>
                 </el-form-item>
               </el-col>
-              <el-col :xs="8" :sm="8" :md="8" :lg="8" :xl ="8">
+              
+              <!-- Date Range Picker -->
+              <el-col :xs="24" :sm="12" :md="10" :lg="9" :xl="9">
                 <el-date-picker
                   v-model="query.date"
                   type="daterange"
@@ -21,36 +33,46 @@
                   range-separator="To"
                   start-placeholder="Start month"
                   end-placeholder="End month"
-                  :picker-options="pickerOptions" 
+                  :picker-options="pickerOptions"
                   value-format="YYYY-MM-DD"
+                  class="full-width"
                 />
               </el-col>
-              <el-col :xs="2" :sm="2" :md="2" :lg="2" :xl ="2">
-                <el-button class="filter-item" type="primary" icon="el-icon-search" @click="getList()">
-                  {{ $t('table.search') }}
-                </el-button>
-              </el-col>
-              <el-col :xs="2" :sm="2" :md="2" :lg="2" :xl ="2">
-                <el-button class="filter-item" type="success" icon="el-icon-plus" @click="openpayfee = true">
-                  Pay Fee
-                </el-button>
-              </el-col>
-              <el-col :xs="2" :sm="2" :md="2" :lg="2" :xl ="2">
-                <el-button class="filter-item"type="success" icon="el-icon-plus" @click="downloadPDF()">
-                  Download Report
-                </el-button>
+              
+              <!-- Action Buttons -->
+              <el-col :xs="24" :sm="24" :md="8" :lg="10" :xl="10">
+                <div class="action-buttons">
+                  <el-button 
+                    class="filter-item" 
+                    type="primary" 
+                    :icon="Search" 
+                    @click="getList()">
+                    <el-icon><Search /></el-icon>{{ $t('table.search') }}
+                  </el-button>
+                  <el-button 
+                    class="filter-item" 
+                    type="success" 
+                    :loading="downloading"
+                    @click="downloadPDF()">
+                    <el-icon><Download /></el-icon> Download Report
+                  </el-button>
+                </div>
               </el-col>
             </el-row>
           </el-col>
-          <el-col :xs="6" :sm="6" :md="8" :lg="6" :xl="6" style="text-align:right">
-            <span style="font-weight:bold; font-size:17px;">Total: </span>
-            <el-tag
-              type="danger"
-              effect="dark"
-              style="font-weight:bold; font-size:17px"
-            >
-              {{ totalfee }}
-            </el-tag>
+          
+          <!-- Total Display -->
+          <el-col :xs="24" :sm="24" :md="6" :lg="6" :xl="6" class="total-container">
+            <div class="total-display">
+              <span class="total-label">Total: </span>
+              <el-tag
+                type="danger"
+                effect="dark"
+                class="total-value"
+              >
+                {{ totalfee }}
+              </el-tag>
+            </div>
           </el-col>
         </el-row>
       </head-controls>
@@ -141,6 +163,8 @@
 import {
   Printer,
   Delete,
+  Download,
+  Search,
 } from '@element-plus/icons-vue'
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -254,22 +278,72 @@ export default {
     },
     downloadPDF() {
       this.downloading = true;
-      const doc = new jsPDF();
+      
+      // Get all records without pagination
+      this.getAllFeeRecords().then(allRecords => {
+        const doc = new jsPDF();
 
-      doc.text("Fee Paid Details", 10, 10);
+        doc.text("Fee Paid Details", 10, 10);
 
-      autoTable(doc, {
-        head: [['Student', 'Class', 'Amount', 'For Month', 'Paid at']],
+        autoTable(doc, {
+          head: [['Student', 'Class', 'Amount', 'Fee Type', 'For Month', 'Paid at']],
 
-        body: this.fee.map(fee => [fee.student.name, fee.student.stdclasses.name, 
-                                    fee.amount,
-                                    this.dateformat(fee.payment_from_date), 
-                                    this.dateformat(fee.created_at)]),
+          body: allRecords.map(fee => [
+            fee.student.name, 
+            fee.student.stdclasses.name, 
+            fee.amount, 
+            this.formatFeeTypes(fee.fee_meta),
+            this.showduration(fee.payment_from_date, fee.payment_to_date), 
+            this.dateformat(fee.created_at)
+          ]),
+        });
+
+        // Add total at the bottom
+        const totalRow = [['', 'Total:', this.totalfeeAll, '', '', '']];
+        autoTable(doc, {
+          startY: doc.lastAutoTable.finalY + 10,
+          body: totalRow,
+          theme: 'plain',
+          styles: { fontStyle: 'bold' }
+        });
+
+        doc.save('fee-payment-report.pdf');
+        this.downloading = false;
+      }).catch(error => {
+        console.error('Error fetching data for PDF:', error);
+        this.$message.error('Failed to generate PDF');
+        this.downloading = false;
       });
-
-      doc.save('filtered-data.pdf');
-
     },
+    
+    // Helper method to format fee types from fee_meta array
+    formatFeeTypes(feeMetaArray) {
+      if (!feeMetaArray || !feeMetaArray.length) return '';
+      
+      // For PDF, we need to use '\n' for new lines
+      // jsPDF-AutoTable will handle the line breaks properly
+      return feeMetaArray
+        .map(meta => `${meta.meta_key}: ${meta.meta_value}`)
+        .join('\n');
+    },
+    
+    // New method to get all fee records without pagination
+    async getAllFeeRecords() {
+      // Create a copy of the current query without pagination parameters
+      const pdfQuery = { ...this.query };
+      delete pdfQuery.page;
+      delete pdfQuery.limit;
+      
+      try {
+        const { data } = await feePro.list(pdfQuery);
+        this.totalfeeAll = data.totalFeeCollected;
+        return data.fee.data;
+      } catch (error) {
+        console.error('Error fetching all records:', error);
+        throw error;
+      }
+    },
+    
     todayDate() {
       var today = new Date();
       var dd = String(today.getDate()).padStart(2, '0');
@@ -278,13 +352,16 @@ export default {
       today = yyyy + '-' + mm + '-' + dd;
       return today;
     },
+    async handleFilter() {
+      await this.getList();
+    },
     async getList() {
       this.tblloading = true;
       const { data } = await feePro.list(this.query);
       this.fee = data.fee.data;
       this.total = data.fee.total;
       this.tblloading = false;
-      this.totalfee = this.totalFee();
+      this.totalfee = data.totalFeeCollected;
     },
     totalFee() {
       return  this.fee.reduce((sum, fee) => sum + parseFloat(fee.amount), 0);
@@ -407,5 +484,67 @@ export default {
   .fee-details {
     list-style: none;
     padding: 0;
+  }
+  
+  /* New styles for improved layout */
+  .full-width {
+    width: 100% !important;
+  }
+  
+  .mb-0 {
+    margin-bottom: 0;
+  }
+  
+  .action-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .total-container {
+    display: flex;
+    justify-content: flex-end;
+  }
+  
+  .total-display {
+    display: flex;
+    align-items: center;
+  }
+  
+  .total-label {
+    font-weight: bold;
+    font-size: 17px;
+    margin-right: 8px;
+  }
+  
+  .total-value {
+    font-weight: bold;
+    font-size: 17px;
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    .action-buttons {
+      margin-top: 16px;
+      justify-content: space-between;
+    }
+    
+    .total-container {
+      justify-content: flex-start;
+      margin-top: 16px;
+    }
+  }
+  
+  @media (max-width: 576px) {
+    .action-buttons {
+      flex-direction: column;
+      width: 100%;
+    }
+    
+    .action-buttons .el-button {
+      width: 100%;
+      margin-left: 0 !important;
+      margin-bottom: 8px;
+    }
   }
 </style>

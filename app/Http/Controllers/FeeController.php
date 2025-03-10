@@ -28,7 +28,9 @@ class FeeController extends Controller
         $student_id = $request->get('id');
         $date = $request->get('date');
         $pending = $request->get('pending');
-        $fee = Fee::with(['feetype','fee_meta','student.stdclasses']) 
+
+        // Build the base query that will be reused
+        $baseQuery = Fee::with(['feetype','fee_meta','student.stdclasses']) 
                     ->when($student_id,  function($q) use ($student_id) {
                         return $q->where('student_id', $student_id);
                     })
@@ -44,17 +46,21 @@ class FeeController extends Controller
                         $start_date = Carbon::parse($date[0])->startOfDay();
                         $end_date = Carbon::parse($date[1])->endOfDay();
                         return $q->whereBetween('created_at', [$start_date, $end_date]);
-                    }) 
+                    });
+        
+        // Clone the base query for pagination
+        $fee = (clone $baseQuery)
                     ->orderBy('created_at', 'desc')
-                    //->toSql();
-                    ->paginate($limit); 
-        // $total_fee = Fee::select(DB::raw('sum(amount) as fee'))->when($date, function($q) use($date) {
-        //     $start_date = Carbon::parse($date[0])->startOfDay();
-        //     $end_date = Carbon::parse($date[1])->endOfDay();
-        //     return $q->whereBetween('created_at', [$start_date, $end_date]);
-        // })->first();
-        //dd(DB::getQueryLog());
-        return response()->json(new JsonResponse(['fee' => $fee]));
+                    ->paginate($limit);
+
+        // Calculate total fee amount using the same filters but without pagination
+        $totalFeeCollected = (clone $baseQuery)
+                    ->sum('amount');
+
+        return response()->json(new JsonResponse([
+            'fee' => $fee, 
+            'totalFeeCollected' => $totalFeeCollected
+        ]));
     }
 
     /**
