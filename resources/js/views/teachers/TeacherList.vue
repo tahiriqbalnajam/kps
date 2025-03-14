@@ -58,6 +58,8 @@
           </el-link>
         </template>
       </el-table-column>
+      <el-table-column label="ID" prop="teacher_special_id" />
+      <el-table-column label="Designation" prop="designation" />
       <el-table-column label="CNIC" prop="cnic" />
       <el-table-column label="Phone" prop="phone" />
       <el-table-column label="Gender" prop="gender" />
@@ -71,24 +73,24 @@
           <!-- Add new ID Card button -->
           <el-button
             circle
-            size="mini"
+            size="small"
             type="primary"
             @click="openIDCard(scope.row)"
             title="Print ID Card"
           >
-            <el-icon :size="15"><Printer /></el-icon>
+            <el-icon :size="15"><Postcard /></el-icon>
           </el-button>
           
           <el-button
             circle
-            size="mini"
+            size="small"
             @click="handleEdit(scope.row.id, scope.row.name)"
           >
             <el-icon :size="15"><Edit /></el-icon>
           </el-button>
           <el-button
             circle
-            size="mini"
+            size="small"
             type="danger"
             @click="handleDelete(scope.row.id, scope.row.name)"
           ><el-icon :size="15"><Delete /></el-icon></el-button>
@@ -171,17 +173,29 @@
             </el-col>
 
           </el-row>
+          <el-row :gutter="20">
+            <el-col :span="8">
+              <el-form-item label="School Id" :label-width="formLabelWidth">
+                <el-input v-model="teacher.teacher_special_id" autocomplete="off" />
+              </el-form-item>
+            </el-col>
+            <el-col :span="8">
+              <el-form-item label="Designation" :label-width="formLabelWidth" prop="cnic">
+                <el-input v-model="teacher.designation" autocomplete="off" />
+              </el-form-item>
+            </el-col>
+          </el-row>
           <el-divider content-position="left" style="margin-bottom: 30px;">
             <el-tag type="primary" effect="plain" round><b>2</b> Other Info</el-tag>
           </el-divider>
           <el-row :gutter="20">
             <el-col :span="8">
-              <el-form-item label="Father Name" :label-width="formLabelWidth">
+              <el-form-item label="Father/Hus. Name" :label-width="formLabelWidth">
                 <el-input v-model="teacher.father_name" autocomplete="off" />
               </el-form-item>
             </el-col>
             <el-col :span="8">
-              <el-form-item label="Father CNIC" :label-width="formLabelWidth">
+              <el-form-item label="F/H CNIC" :label-width="formLabelWidth">
                 <el-input v-model="teacher.father_cnic" autocomplete="off" />
               </el-form-item>
             </el-col>
@@ -245,14 +259,16 @@
       </div>
     </el-drawer>
     <!-- Add the TeacherIDCard component at the end of template -->
-    <teacher-id-card
-      :modelValue="showIDCard"
-      @update:modelValue="showIDCard = $event"
+    <teacher-idcard
+      v-if="showIDCard"
+      :showcardprop="showIDCard"
+      @closeAddSection="closeAddSection"  
       :teacher="selectedTeacher"
     />
   </div>
 </template>
 <script>
+import TeacherIdcard from '@/views/teachers/components/TeacherIdcard.vue';
 import Pagination from '@/components/Pagination/index.vue';
 //import AddStudent from '@/views/students/AddStudent.vue';
 import Resource from '@/api/resource';
@@ -268,13 +284,12 @@ import {
     Star,
     Printer,
 } from '@element-plus/icons-vue'
-import TeacherIDCard from '@/components/TeacherIDCard.vue';
 
 export default {
-  name: '',
+  name: 'TeacherList',
   components: { 
     Pagination,
-    TeacherIDCard,
+    TeacherIdcard,
   },
   directives: { },
   filters: {
@@ -321,6 +336,8 @@ export default {
       teacher: {
         id: '',
         name: '',
+        teacher_special_id: '',
+        designation: '',
         cnic: '',
         father_name: '',
         father_cnic: '',
@@ -335,6 +352,8 @@ export default {
       resetteacher: {
         id: '',
         name: '',
+        teacher_special_id: '',
+        designation: '',
         cnic: '',
         father_name: '',
         father_cnic: '',
@@ -436,19 +455,6 @@ export default {
         }
       });
     },
-    async generateCard() {
-      let text = "Tahir iqbal";
-
-      await QRCode.toCanvas(document.getElementById('canvas'),
-        'sample text', { toSJISFunc: QRCode.toSJIS }, function (error) {
-          if (error) {
-            console.error(error);
-          } else {
-            console.log('success!');
-          }
-        });
-      this.showcard = true;
-    },
     closeAddStudent() {
       this.addstudentpop = !this.addstudentpop;
       this.stdid = null;
@@ -510,6 +516,9 @@ export default {
         console.error('Missing teacher data:', teacher);
         this.$message.error('Could not open ID card: Missing teacher data');
       }
+    },
+    closeAddSection() {
+      this.showIDCard = false;
     },
   },
 };

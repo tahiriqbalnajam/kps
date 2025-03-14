@@ -25,7 +25,7 @@ class TeacherController extends Controller
     use TransactionTrait;
     const ITEM_PER_PAGE = 1000;
 
-    private $column_select = array('id','class_id', 'name', 'father_name','father_cnic',
+    private $column_select = array('id','class_id', 'name', 'designation','teacher_special_id', 'father_name','father_cnic',
                                     'doj','education', 'experience', 'gender',
                                     'pay', 'cnic', 'address', 'phone','status');
 

@@ -80,7 +80,7 @@ Route::put('tests/{test_id}/results', 'TestController@updateTestResults');
 //subjects
 Route::apiResource('subjects', 'SubjectController');
 Route::apiResource('subject_class', 'SubjectToClassController');
-Route::get('subject_class', 'SubjectToClassController@getSubjectsByClass');
+//Route::get('subject_class', 'SubjectToClassController@getSubjectsByClass');
 
 //exams
 Route::apiResource('examtest_result', 'ExamTestController');

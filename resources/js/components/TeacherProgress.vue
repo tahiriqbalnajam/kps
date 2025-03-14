@@ -72,6 +72,7 @@ export default {
   },
   data() {
     return {
+      teacher_id: null,
       loading: false,
       chart: null,
       chartType: 'bar',
@@ -89,16 +90,16 @@ export default {
   mounted() {
     // Add some delay to ensure DOM is ready
     setTimeout(() => {
-      const teacherId = this.$route.params.id;
-      this.fetchData(teacherId);
+      this.teacher_id = this.$route.params.id;
+      this.fetchData();
     }, 100);
   },
   methods: {
-    async fetchData(teacherId) {
+    async fetchData() {
       this.loading = true;
       try {
         const resource = new Resource('teacher-observations');
-        const response = await resource.get(`progress/${teacherId}?year=${this.selectedYear}`);
+        const response = await resource.get(`progress/${this.teacher_id}?year=${this.selectedYear}`);
         
         if (response && response.data && response.data.progress) {
           this.progressData = response.data.progress;
