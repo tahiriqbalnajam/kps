@@ -44,6 +44,9 @@ Route::apiResource('pendingfee', 'PendingFeeController');
 Route::apiResource('settings', 'SettingsController');
 Route::apiResource('smsqueue', 'SmsQueueController');
 Route::get('sendsms', 'SmsQueueController@sendsms');
+Route::get('default/message/channel', 'SettingsController@defaultMessageChannel');
+Route::get('send/whatsapp', 'SmsQueueController@sendWhatsapp');
+Route::post('update/whatsapp/status', 'SmsQueueController@changeWhatsAppStatus');
 Route::post('change_status', 'SmsQueueController@change_status');
 Route::apiResource('dashboard', 'DashboardController');
 //student attendance

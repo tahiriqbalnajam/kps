@@ -124,9 +124,9 @@
                         />
                         <div class="mt-2 text-gray-500 text-sm">
                           Use HTML tags for formatting:
-                          &lt;br&gt; - new line, 
-                          &lt;strong&gt;text&lt;/strong&gt; - bold text, 
-                          &lt;h3&gt;text&lt;/h3&gt; - heading, 
+                          &lt;br&gt; - new line,
+                          &lt;strong&gt;text&lt;/strong&gt; - bold text,
+                          &lt;h3&gt;text&lt;/h3&gt; - heading,
                           &lt;ul&gt;&lt;li&gt;item&lt;/li&gt;&lt;/ul&gt; - list
                         </div>
                         <el-form-item class="mt-4">
@@ -137,7 +137,7 @@
                       </el-form-item>
                     </el-form>
                   </el-col>
-                  
+
                   <!-- Right Column - Preview -->
                   <el-col :span="12">
                     <div class="rules-preview-container">
@@ -155,6 +155,26 @@
                   </el-form-item>
                   <el-form-item>
                     <el-button type="primary" @click="saveExamSettings()" :loading="form_element.updating">Save</el-button>
+                  </el-form-item>
+                </el-form>
+              </el-tab-pane>
+              <el-tab-pane label="Message Settings" name="message">
+                <el-form :model="form" label-width="250px">
+                  <el-form-item label="Message Channel">
+
+                      <el-select v-model="message.message_channel" filterable placeholder="Select Message Channel">
+                          <el-option
+                              label="SMS"
+                              value="sms"
+                          />
+                          <el-option
+                              label="WhatsApp"
+                              value="whatsapp"
+                          />
+                      </el-select>
+                  </el-form-item>
+                  <el-form-item>
+                    <el-button type="primary" @click="saveMessageSettings()" :loading="form_element.updating">Save</el-button>
                   </el-form-item>
                 </el-form>
               </el-tab-pane>
@@ -189,6 +209,9 @@ export default {
       exam_form: {
         result_header: '',
       },
+      message: {
+          message_channel: '',
+      },
       school_form: {
         school_name: '',
         address: '',
@@ -208,8 +231,8 @@ export default {
   },
   computed: {
     sanitizedRules() {
-      return this.student_form.admission_rules ? 
-        DOMPurify.sanitize(this.student_form.admission_rules) : 
+      return this.student_form.admission_rules ?
+        DOMPurify.sanitize(this.student_form.admission_rules) :
         'Rules preview will appear here...';
     }
   },
@@ -247,6 +270,7 @@ export default {
       this.teacher_form.teacher_leaves_allowed = settings.teacher_leaves_allowed || 0;
       this.exam_form.result_header = settings.result_header || '';
       this.student_form.admission_rules = settings.admission_rules || '';
+      this.message.message_channel = settings.message_channel || '';
     },
     handleLogoUpload(file) {
       if (file && file.raw) {
@@ -259,7 +283,7 @@ export default {
       this.form_element.updating = true;
       try {
         const formData = new FormData();
-        
+
         // Add all form fields
         Object.keys(this.school_form).forEach(key => {
           if (key === 'school_logo' && this.school_form[key] instanceof File) {
@@ -267,6 +291,27 @@ export default {
           } else if (key !== 'school_logo') {
             formData.append(key, this.school_form[key] || '');
           }
+        });
+
+        await this.settingResource.store(formData);
+        await this.getList();
+        this.$message.success('Settings updated successfully');
+      } catch (error) {
+        console.error('Error saving settings:', error);
+        this.$message.error('Failed to save settings');
+      } finally {
+        this.form_element.updating = false;
+      }
+    },
+    async saveMessageSettings() {
+      this.form_element.updating = true;
+      try {
+        const formData = new FormData();
+
+        // Add all form fields
+        Object.keys(this.message).forEach(key => {
+            localStorage.setItem(key, this.message[key])
+            formData.append(key, this.message[key] || '');
         });
 
         await this.settingResource.store(formData);
