@@ -17,6 +17,7 @@
       empty-text="No SMS to send"
     >
       <el-table-column label="Phone" prop="phone" />
+      <el-table-column label="Channel" prop="channel" />
       <el-table-column label="Student" prop="student.name" />
       <el-table-column label="Message" prop="message" />
       <el-table-column label="Status" prop="status" />
@@ -65,6 +66,10 @@
             <el-radio v-model="sms.smstype" label="Single" border>Single</el-radio>
             <el-radio v-model="sms.smstype" label="Multiple" border>Multiple</el-radio>
           </el-form-item>
+          <el-form-item label="Message Channel" :label-width="formLabelWidth">
+            <el-radio v-model="sms.channel" label="sms" border>SMS</el-radio>
+            <el-radio v-model="sms.channel" label="whatsapp" border>WhatsApp</el-radio>
+          </el-form-item>
           <el-form-item v-show="sms.smstype == 'Multiple'" label="Select Classes" :label-width="formLabelWidth">
             <el-select v-model="sms.classes" multiple placeholder="Select">
               <el-option v-for="item in classes" :key="item.id" :label="item.name | uppercaseFirst" :value="item.id" />
@@ -87,11 +92,17 @@
 </template>
 <script>
 import Pagination from '@/components/Pagination/index.vue';
-import { debounce } from 'lodash';
+import {debounce} from 'lodash';
 import Resource from '@/api/resource';
-import { processSMS } from '@/api/general';
+import {
+    completeSMS,
+    getDefaultMessageChannel,
+    processSMS,
+    processWhatsApp,
+    updateSendStatusWhatsApp
+} from '@/api/general';
+
 const smsqueuePro = new Resource('smsqueue');
-import { completeSMS } from '@/api/general';
 const classes = new Resource('classes');
 export default {
   name: '',
@@ -114,7 +125,9 @@ export default {
         classes: null,
         message: '',
         phone: '',
+        channel: '',
       },
+        message_ids: [],
       query: {
         page: 1,
         limit: 15,
@@ -128,6 +141,8 @@ export default {
   created() {
     this.getList();
     this.getClasses();
+      this.setDefaultMessageChannel()
+      this.defaultMessageChannel()
   },
   methods: {
     async handleSizeChange (val) {
@@ -150,6 +165,16 @@ export default {
     async getClasses() {
       const{ data } = await classes.list();
       this.classes = data.classes.data;
+    },
+    async setDefaultMessageChannel() {
+      let record = await getDefaultMessageChannel();
+      if (record.success) {
+          this.sms.channel = record.data.message_channel.setting_value;
+          localStorage.setItem('message_channel', record.data.message_channel.setting_value);
+      }
+      else {
+          localStorage.setItem('message_channel', 'whatsapp');
+      }
     },
     async search_data() {
       await this.getList();
@@ -181,13 +206,15 @@ export default {
         this.loading = false;
         this.resetSMS();
         this.getList();
+          this.defaultMessageChannel();
       } else {
         await smsqueuePro.store(this.sms).then(result => {
           this.editnow = false;
           this.loading = false;
           this.resetSMS();
           this.getList();
-          this.$message({
+            this.defaultMessageChannel();
+            this.$message({
             message: 'Fee added successfully.',
             type: 'success',
           });
@@ -197,6 +224,7 @@ export default {
             message: 'Enter phone and message.',
             type: 'error',
           });
+            this.defaultMessageChannel();
           this.loading = false;
           return false;
         });
@@ -204,7 +232,6 @@ export default {
     },
     async sendSMS() {
       this.sendsmsloading = true;
-      this.sendWhatsapp();
       await processSMS().then(result => {
         this.sendsmsloading = false;
         this.getList();
@@ -218,24 +245,47 @@ export default {
           type: 'error',
         });
         this.sendsmsloading = false;
-        return false;
+        // return false;
       });
-    },
-    sendWhatsapp(phoneNumber, message) {
-      window.whatsappWebSuite.sendTextMessage(
-            phoneNumber, 
-            message
-        );
+        this.sendsmsloading = true;
 
-        document.addEventListener('whatsappSendResponse', function(e, data) {
-            if(e.detail.success) {
-                alert('Message sent successfully!');
+        let whatsapp_records = [];
+        let records = await processWhatsApp();
+        console.log(records.original.records)
+        for (const record of records.original.records) {
+            await this.sendWhatsapp(record.id, record.phone, record.message);
+            await new Promise(resolve => setTimeout(resolve, 2000)); // ⏳ Wait 2s before next message
+        }
+        if (this.message_ids.length)
+            this.updateSendStatus(this.message_ids, 'sent');
+        this.sendsmsloading = false;
+    },
+      defaultMessageChannel() {
+          this.sms.channel = localStorage.getItem('message_channel') ? localStorage.getItem('message_channel') : 'SMS';
+
+      },
+      async updateSendStatus(message_ids, status) {
+          await updateSendStatusWhatsApp(message_ids, status);
+          await this.getList();
+      },
+    sendWhatsapp(message_id, phoneNumber, message) {
+      window.whatsappWebSuite.sendTextMessage(
+        phoneNumber,
+        message
+      );
+
+        document.addEventListener('whatsappSendResponse', (e) => {
+            if (e.detail.success) {
+                this.message_ids.push(message_id)
+                // this.updateSendStatus(message_id, 'sent');
+            } else {
+                console.log('Failed to send message.');
+                this.$message({
+                    message: 'Unable to Send message. Please login Web WhatsApp same browser and WA Web Bridge Extension properly installed.',
+                    type: 'error',
+                });
             }
-            else {
-                // handle fail
-                alert('Failed to send message.');
-            }
-        })
+        });
     },
     clearQueue(){
       this.$confirm('Are you sure?', 'Warning', {

@@ -47,18 +47,19 @@ class SmsQueueController extends Controller
             if($request->get('smstype') == 'Single'){
                 $sms = new SMS();
                 $sms->message = $request->message;
+                $sms->channel = $request->channel;
                 $sms->phone = $this->format_phone($request->phone);
                 $sms->save();
                 return response()->json(new JsonResponse(['sms' => $sms]));
              } elseif($request->get('smstype') == 'Multiple') {
                  $classes = $request->classes;
-                 $message = $request->message; 
+                 $message = $request->message;
                  $data = array();
                  foreach($classes as $sclass) {
                      $students = Student::with('parents')->where('class_id', $sclass)->get();
                      foreach($students as $student) {
                          $phone = $student->parents->phone;
-                         $data[] = array('student_id' => $student->id, 'message' => $message, 'phone' => $phone);
+                         $data[] = array('student_id' => $student->id, 'message' => $message, 'phone' => $phone, 'channel' => $request->channel);
                      }
                  }
                  print_r($data);
@@ -71,13 +72,13 @@ class SmsQueueController extends Controller
                  foreach($smsz as $sms){
                      if(!$sms['phone'])
                          continue;
-                         
+
                      $replace = array($sms['parent'], $sms['name']);
                      $text = str_replace($find, $replace, $smstext);
                      $phone = $this->format_phone($sms['phone']);
-                     $data[] = array('student_id' => $sms['id'], 'message' => $text, 'phone' => $phone);
+                     $data[] = array('student_id' => $sms['id'], 'message' => $text, 'phone' => $phone, 'channel' => $request->channel);
                  }
-     
+
                  SMS::insert($data); // Eloquent approach
                  return response()->json(new JsonResponse(['sms' => true]));
              }
@@ -85,7 +86,7 @@ class SmsQueueController extends Controller
         catch(Exception $e) {
             return response()->json(new JsonResponse(['error' => $e->getMessage()]));
         }
-        
+
 
     }
 
@@ -139,10 +140,15 @@ class SmsQueueController extends Controller
         return response()->json(new JsonResponse(['msg' => 'Deleted successfully.']));
     }
 
+    public function sendWhatsapp()
+    {
+        $records = SMS::select(['id', 'message', 'phone'])->where('status', 'pending')->where('channel', 'whatsapp')->get()->take(50);
+        return response()->json(new JsonResponse(['records' => $records]));
+    }
     public function sendsms() {
         if($this->check_internet_connection())
 		{
-            SMS::where('status', 'pending')
+            SMS::where('status', 'pending')->where('channel', 'sms')
             ->chunkById(50, function ($smsz) {
                 foreach ($smsz as $sms) {
                     $username = "QayadatSch";
@@ -188,5 +194,12 @@ class SmsQueueController extends Controller
        // print_r($request->all());
         SMS::where('status','pending')->update(['status' => 'Sent']);
         return response()->json(new JsonResponse(['sms' => 'Status Changed successfully.']));
+    }
+    function changeWhatsAppStatus(Request $request) {
+        if ($request->has('message_ids')) {
+            if ($request->status == 'sent')
+                SMS::whereIn('id', $request->message_ids)->where('status','pending')->update(['status' => 'Sent']);
+            return response()->json(new JsonResponse(['sms' => 'Status Changed successfully.']));
+        }
     }
 }

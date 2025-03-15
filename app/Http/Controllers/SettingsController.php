@@ -19,21 +19,21 @@ class SettingsController extends Controller
     {
         if ($request->hasFile('school_logo')) {
             $file = $request->file('school_logo');
-            
+
             // Validate the file
             $this->validate($request, [
                 'school_logo' => 'image|mimes:jpeg,png,jpg,gif|max:2048'
             ]);
-            
+
             // Create directory if it doesn't exist
             $uploadPath = public_path('uploads/school');
             if (!file_exists($uploadPath)) {
                 mkdir($uploadPath, 0777, true);
             }
-            
+
             // Generate unique filename
             $fileName = 'school_logo_' . time() . '.' . $file->getClientOriginalExtension();
-            
+
             // Move the file to permanent location
             if ($file->move($uploadPath, $fileName)) {
                 // Save the relative path (not full server path) to the database
@@ -75,5 +75,11 @@ class SettingsController extends Controller
         }
 
         return response()->json(new JsonResponse(['message' => 'Setting updated successfully']));
+    }
+
+    public function defaultMessageChannel()
+    {
+        $message_channel = Settings::where('setting_key', 'message_channel')->select(['setting_key', 'setting_value'])->first();
+        return response()->json(new JsonResponse(['message_channel' => $message_channel]));
     }
 }
