@@ -82,6 +82,7 @@
               <el-icon><Edit /></el-icon> Edit
             </el-button>
             <el-button type="primary" size="small" @click="openAddMarks(scope.row)">Add Marks</el-button>
+            <el-button type="info" size="small" @click="openViewMarksList(scope.row)">View Marks</el-button>
             <el-button type="success" size="small" @click="openPrintReports(scope.row)">Print Reports</el-button>
           </template>
         </el-table-column>
@@ -109,6 +110,7 @@
       @update:visible="addExamVisible = $event" 
     />
     <add-marks v-if="addMarksVisible" :addMarksVisible="addMarksVisible" :exam="selectedExam" :class_id="selectedExam.class_id" @close="addMarksVisible = false" />
+    <view-marks-list v-if="viewMarksListVisible" :viewMarksListVisible="viewMarksListVisible" :exam="selectedExam" @close="viewMarksListVisible = false" />
     <print-reports v-if="printReportsVisible" :printReportsVisible="printReportsVisible" :exam="selectedExam" @close="printReportsVisible = false" />
   </div>
 </template>
@@ -120,6 +122,7 @@ import HeadControls from '@/components/HeadControls.vue';
 import Resource from '@/api/resource';
 import AddExam from './components/AddExam.vue';
 import AddMarks from './components/AddMarks.vue';
+import ViewMarksList from './components/ViewMarksList.vue';
 import PrintReports from './components/PrintReports.vue';
 import moment from 'moment';
 const examRes = new Resource('exams');
@@ -132,6 +135,7 @@ export default {
         HeadControls,
         AddExam,
         AddMarks,
+        ViewMarksList,
         PrintReports,
     },
     data() {
@@ -141,6 +145,7 @@ export default {
           examdata: [],
           addExamVisible: false,
           addMarksVisible: false,
+          viewMarksListVisible: false,
           printReportsVisible: false,
           selectedExam: null,
           examToEdit: null,
@@ -208,6 +213,10 @@ export default {
       openAddMarks(exam) {
         this.selectedExam = exam;
         this.addMarksVisible = true;
+      },
+      openViewMarksList(exam) {
+        this.selectedExam = exam;
+        this.viewMarksListVisible = true;
       },
       openPrintReports(exam) {
         this.selectedExam = exam;
