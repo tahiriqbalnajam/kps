@@ -29,8 +29,6 @@ class ExamService implements ExamServiceInterface
 
         return $query->paginate($limit)
             ->appends(request()->query());
-        // ...existing code...
-        return Exam::with('classes')->limit($limit)->get();
     }
 
     public function storeExam(array $data)
@@ -135,7 +133,7 @@ class ExamService implements ExamServiceInterface
     public function getExamReports(int $examId)
     {
         $exam = Exam::with(['classes', 'examSubjects.subject'])->findOrFail($examId);
-        $students = Student::where('class_id', $exam->class_id)->get();
+        $students = Student::with('parents')->where('class_id', $exam->class_id)->get();
         $results = ExamResult::where('exam_id', $examId)->get();
         
         return [
