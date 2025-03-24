@@ -81,8 +81,8 @@
             <el-button type="warning" size="small" @click="editExam(scope.row)">
               <el-icon><Edit /></el-icon> Edit
             </el-button>
-            <el-button type="primary" @click="openAddMarks(scope.row)">Add Marks</el-button>
-            <el-button type="success" @click="openPrintReports(scope.row)">Print Reports</el-button>
+            <el-button type="primary" size="small" @click="openAddMarks(scope.row)">Add Marks</el-button>
+            <el-button type="success" size="small" @click="openPrintReports(scope.row)">Print Reports</el-button>
           </template>
         </el-table-column>
       </el-table>

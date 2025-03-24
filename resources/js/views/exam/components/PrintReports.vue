@@ -25,7 +25,7 @@
             <div v-for="student in students" :key="student.id" class="report-card">
               <div class="report-header">
                 <div class="logo-section">
-                  <img v-if="schoolInfo.logo" :src="`/${schoolInfo.logo}`" alt="School Logo" />
+                  <img v-if="schoolInfo.school_logo" :src="`/${schoolInfo.school_logo}`" alt="School Logo" />
                 </div>
                 <div class="school-info">
                   <h1 class="school-name">{{ schoolInfo.school_name }}</h1>
@@ -38,21 +38,21 @@
                 <div class="info-row">
                   <div class="info-item">
                     <span class="label">Student Name:</span>
-                    <span class="value">{{ student.name }}</span>
+                    <span class="value"><b>{{ student.name }}</b></span>
                   </div>
                   <div class="info-item">
                     <span class="label">Father's Name:</span>
-                    <span class="value">{{ student.father_name }}</span>
+                    <span class="value"><b>{{ student.parents.name }}</b></span>
                   </div>
                 </div>
                 <div class="info-row">
                   <div class="info-item">
                     <span class="label">Class:</span>
-                    <span class="value">{{ exam.classes.name }}</span>
+                    <span class="value"><b>{{ exam.classes.name }}</b></span>
                   </div>
                   <div class="info-item">
                     <span class="label">Roll Number:</span>
-                    <span class="value">{{ student.roll_no }}</span>
+                    <span class="value"><b>{{ student.roll_no }}</b></span>
                   </div>
                 </div>
               </div>
@@ -89,19 +89,19 @@
                   <h3>Performance Assessment</h3>
                   <div class="assessment-item">
                     <span class="label">Grade:</span>
-                    <span class="value">{{ calculateGrade(calculateOverallPercentage(student.id)) }}</span>
+                    <span class="line value asses">{{ calculateGrade(calculateOverallPercentage(student.id)) }}</span>
                   </div>
                   <div class="assessment-item">
                     <span class="label">Attendance:</span>
-                    <span class="value">___________</span>
+                    <span class="line value asses"></span>
                   </div>
                   <div class="assessment-item">
                     <span class="label">Uniform:</span>
-                    <span class="value">___________</span>
+                    <span class="line value asses"></span>
                   </div>
                   <div class="assessment-item">
                     <span class="label">Behavior:</span>
-                    <span class="value">___________</span>
+                    <span class="line value asses"></span>
                   </div>
                 </div>
               </div>
@@ -109,15 +109,15 @@
               <div class="footer-section">
                 <div class="remarks">
                   <span class="label">Remarks:</span>
-                  <span class="value">_________________________________</span>
+                  <span class="line remarks"></span>
                 </div>
                 <div class="signatures">
                   <div class="signature-item">
-                    <span class="line">_________________</span>
-                    <span class="label">Class Teacher</span>
+                    <span class="line w60 "></span>
+                    <span class="bborder label">Class Teacher</span>
                   </div>
                   <div class="signature-item">
-                    <span class="line">_________________</span>
+                    <span class="line w60"></span>
                     <span class="label">Principal</span>
                   </div>
                 </div>
@@ -191,7 +191,7 @@ export default {
       return result ? result.obtained_marks : 0;
     },
     calculatePercentage(obtained, total) {
-      return ((obtained / total) * 100).toFixed(2);
+      return Math.ceil((obtained / total) * 100);
     },
     calculateTotal(field, studentId) {
       return this.getStudentMarks(studentId).reduce((sum, mark) => sum + mark[field], 0);
@@ -199,7 +199,7 @@ export default {
     calculateOverallPercentage(studentId) {
       const total = this.calculateTotal('total_marks', studentId);
       const obtained = this.calculateTotal('obtained_marks', studentId);
-      return ((obtained / total) * 100).toFixed(2);
+      return Math.ceil((obtained / total) * 100);
     },
     calculateGrade(percentage) {
       if (percentage >= 90) return 'A+';
@@ -443,5 +443,29 @@ export default {
     box-shadow: 0 0 10px rgba(0,0,0,0.1);
     margin-bottom: 30px;
   }
+}
+.label {
+  margin-right: 5px;
+}
+.value {
+
+}
+.line {
+  border-bottom: 1px solid #ccc;
+}
+.school-address{
+  margin: 0;
+}
+.school-contact {
+  margin: 0;
+}
+.remarks {
+  width: 90%;
+}
+.asses {
+  width: 50%;
+}
+.assessment-item {
+    margin-bottom: 10px;
 }
 </style>
