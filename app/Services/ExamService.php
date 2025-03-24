@@ -46,6 +46,7 @@ class ExamService implements ExamServiceInterface
                     'exam_id' => $exam->id,
                     'subject_id' => $subject['subject_id'],
                     'total_marks' => $subject['total_marks'],
+                    'skip' => $subject['skip_in_report'],
                 ]);
             }
     
@@ -59,7 +60,10 @@ class ExamService implements ExamServiceInterface
 
     public function getExamSubjects($examId)
     {
-        return ExamSubject::where('exam_id', $examId)->with('subject')->get();
+        return ExamSubject::where('exam_id', $examId)
+            ->where('skip', false)
+            ->with('subject')
+            ->get();
     }
 
     public function addExamMarks(array $data)
@@ -132,7 +136,10 @@ class ExamService implements ExamServiceInterface
 
     public function getExamReports(int $examId)
     {
-        $exam = Exam::with(['classes', 'examSubjects.subject'])->findOrFail($examId);
+        $exam = Exam::with(['classes', 'examSubjects' => function ($query) {
+    $query->where('skip', false);
+}, 'examSubjects.subject'])->findOrFail($examId);
+        
         $students = Student::with('parents')->where('class_id', $exam->class_id)->get();
         $results = ExamResult::where('exam_id', $examId)->get();
         
