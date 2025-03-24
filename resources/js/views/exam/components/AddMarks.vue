@@ -7,13 +7,18 @@
     @close="handleClose">
     <span slot="title">Add Marks</span>
       <el-table v-loading="loading" :data="students" style="width: 100%">
-        <el-table-column prop="name" label="Student Name" />
-        <el-table-column v-for="subject in subjects" :key="subject.id" :label="subject.subject.title">
+        <el-table-column prop="name" label="Student Name" width="180"/>
+        <el-table-column v-for="subject in subjects" :key="subject.id" :label="subject.subject.title" width="120">
           <template #default="scope">
             <el-input 
               :model-value="getMarkValue(scope.row.id, subject.id)"
               @update:model-value="updateMark(scope.row.id, subject.id, $event)"
             ></el-input>
+          </template>
+        </el-table-column>
+        <el-table-column label="Total Marks" width="120" align="center">
+          <template #default="scope">
+            <span>{{ getTotalMarks(scope.row.id) }}/{{ totalPossibleMarks }}</span>
           </template>
         </el-table-column>
       </el-table>
@@ -49,6 +54,11 @@ export default {
         filter: { stdclass: this.class_id },
       },
     };
+  },
+  computed: {
+    totalPossibleMarks() {
+      return this.subjects.reduce((sum, subject) => sum + Number(subject.total_marks), 0);
+    },
   },
   watch: {
     addMarksVisible(val) {
@@ -119,6 +129,10 @@ export default {
         this.marks[studentId][subjectId] = 0;
       }
     },
+    getTotalMarks(studentId) {
+      if (!this.marks[studentId]) return 0;
+      return Object.values(this.marks[studentId]).reduce((sum, mark) => sum + Number(mark || 0), 0);
+    },
     async submitMarks() {
       this.submitLoading = true;
       const data = {
@@ -138,5 +152,7 @@ export default {
 </script>
 
 <style scoped>
-/* Add any styles if necessary */
+.el-table :deep(.el-input) {
+  width: 80px;
+}
 </style>
