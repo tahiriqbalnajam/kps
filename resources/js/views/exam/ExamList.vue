@@ -78,6 +78,9 @@
         </el-table-column>
         <el-table-column label="Actions">
           <template #default="scope">
+            <el-button type="warning" size="small" @click="editExam(scope.row)">
+              <el-icon><Edit /></el-icon> Edit
+            </el-button>
             <el-button type="primary" @click="openAddMarks(scope.row)">Add Marks</el-button>
             <el-button type="success" @click="openPrintReports(scope.row)">Print Reports</el-button>
           </template>
@@ -97,7 +100,14 @@
         @current-change="handleCurrentChange"
       />
     </el-card>
-    <add-exam v-if="addExamVisible" :addExamVisible="addExamVisible" @examAdded="handleExamAdded" @update:visible="addExamVisible = $event" />
+    <add-exam 
+      v-if="addExamVisible" 
+      :addExamVisible="addExamVisible" 
+      :examToEdit="examToEdit"
+      @examAdded="handleExamAdded" 
+      @examUpdated="handleExamUpdated"
+      @update:visible="addExamVisible = $event" 
+    />
     <add-marks v-if="addMarksVisible" :addMarksVisible="addMarksVisible" :exam="selectedExam" :class_id="selectedExam.class_id" @close="addMarksVisible = false" />
     <print-reports v-if="printReportsVisible" :printReportsVisible="printReportsVisible" :exam="selectedExam" @close="printReportsVisible = false" />
   </div>
@@ -133,6 +143,7 @@ export default {
           addMarksVisible: false,
           printReportsVisible: false,
           selectedExam: null,
+          examToEdit: null,
           classes: [],
           query: {
             page: 1,
@@ -178,11 +189,21 @@ export default {
         this.get_Exams();
       }, 300),
       addExamFunc() {
+        this.examToEdit = null;
+        this.addExamVisible = true;
+      },
+      editExam(exam) {
+        this.examToEdit = exam;
         this.addExamVisible = true;
       },
       handleExamAdded() {
         this.get_Exams();
         this.addExamVisible = false;
+      },
+      handleExamUpdated() {
+        this.get_Exams();
+        this.addExamVisible = false;
+        this.examToEdit = null;
       },
       openAddMarks(exam) {
         this.selectedExam = exam;

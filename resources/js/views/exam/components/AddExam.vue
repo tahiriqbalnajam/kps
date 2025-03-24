@@ -6,6 +6,7 @@
     :with-header="false"
   >
     <div class="drawer-header">
+      <h3>{{ isEditMode ? 'Edit Exam' : 'Add New Exam' }}</h3>
       <el-form :model="examForm" ref="examForm" label-width="120px" inline>
         <el-form-item label="Class" prop="class_id">
           <el-select v-model="selectedClass" placeholder="Select Class" @change="fetchSubjects" style="width: 200px">
@@ -31,7 +32,7 @@
       </el-table-column>
     </el-table>
     <div class="drawer-footer">
-      <el-button type="primary" @click="submitExam">Submit</el-button>
+      <el-button type="primary" @click="submitExam">{{ isEditMode ? 'Update' : 'Submit' }}</el-button>
       <el-button @click="closeDrawer">Cancel</el-button>
     </div>
   </el-drawer>
@@ -42,6 +43,7 @@ import { ElMessage } from 'element-plus';
 import { fetchClasses, fetchSubjectsByClass, createExam } from '@/api/exam';
 import Resource from '@/api/resource';
 const subjRes = new Resource('subjects');
+const examRes = new Resource('exams');
 
 export default {
   name: 'AddExam',
@@ -49,6 +51,10 @@ export default {
     addExamVisible: {
       type: Boolean,
       required: true,
+    },
+    examToEdit: {
+      type: Object,
+      default: null,
     },
   },
   data() {
@@ -69,6 +75,11 @@ export default {
         },
       },
     };
+  },
+  computed: {
+    isEditMode() {
+      return !!this.examToEdit;
+    },
   },
   methods: {
     async fetchClasses() {
@@ -94,16 +105,60 @@ export default {
     async submitExam() {
       try {
         this.examForm.class_id = this.selectedClass;
-        await createExam(this.examForm);
-        ElMessage.success('Exam created successfully');
+        
+        if (this.isEditMode) {
+          await examRes.update(this.examToEdit.id, this.examForm);
+          ElMessage.success('Exam updated successfully');
+          this.$emit('examUpdated');
+        } else {
+          await examRes.store(this.examForm);
+          ElMessage.success('Exam created successfully');
+          this.$emit('examAdded');
+        }
+        
         this.closeDrawer();
-        this.$emit('examAdded');
       } catch (error) {
-        ElMessage.error('Failed to create exam');
+        ElMessage.error(this.isEditMode ? 'Failed to update exam' : 'Failed to create exam');
+      }
+    },
+    populateEditForm() {
+      if (this.examToEdit) {
+        this.examForm.title = this.examToEdit.title;
+        this.selectedClass = this.examToEdit.class_id;
+        this.fetchSubjects(this.examToEdit.class_id);
+        
+        // Populate subject marks after subjects are fetched
+        if (this.examToEdit.subjects) {
+          this.$nextTick(() => {
+            this.examForm.subjects = this.examToEdit.subjects.map(subject => ({
+              subject_id: subject.id,
+              total_marks: subject.pivot.total_marks,
+            }));
+          });
+        }
       }
     },
     closeDrawer() {
       this.$emit('update:visible', false);
+    },
+  },
+  watch: {
+    examToEdit: {
+      immediate: true,
+      handler(newVal) {
+        if (newVal) {
+          this.populateEditForm();
+        } else {
+          // Reset form for new exam
+          this.examForm = {
+            title: '',
+            class_id: null,
+            subjects: [],
+          };
+          this.selectedClass = null;
+          this.subjects = [];
+        }
+      },
     },
   },
   created() {
