@@ -166,7 +166,7 @@ export default {
           classes: [],
           query: {
             page: 1,
-            limit: 10,
+            limit: 15,
             filter: {
               title: '',
               class_id: '',
