@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Laravue\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use App\Services\Contracts\ExamServiceInterface;
+use Spatie\QueryBuilder\QueryBuilder;
 
 class ExamController extends Controller
 {
@@ -60,8 +61,11 @@ class ExamController extends Controller
      */
     public function show($id)
     {
-        $exam = Exam::with(['examSubjects.subject', 'examResults.student'])
-        ->findOrFail($id);
+        $exam = QueryBuilder::for(Exam::class)
+            ->with('examSubjects.subject')
+            ->allowedIncludes(['examResults.student'])
+            ->findOrFail($id);
+        
         return response()->json(new JsonResponse(['exam' => $exam]));
     }
 
@@ -73,20 +77,33 @@ class ExamController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function update(Request $request, $id){
-        $keyword = $request->get('filtercol');
-        $obtained_marks[] = array('obtained_marks' => $request->get('obtained_marks'));
-        $obtained_marks = array_values($obtained_marks)[0];
-        $examname[] = array('examname' => $request->get('examname'));
-        $examname = array_values($examname)[0];
-        if($keyword == 'update_exams'){
-            $examresult = Exam::where('id', $id)->update($examname);
-            return response()->json(new JsonResponse(['examresult' => $examresult]));
-        }
-        if($keyword == 'update_result'){
-            $examresult = ExamResult::where('id', $id)->update($obtained_marks);
-            return response()->json(new JsonResponse(['examresult' => $examresult]));
-        }
+        $request->validate([
+            'title' => 'required|string',
+            'class_id' => 'required|exists:classes,id',
+            'subjects' => 'required|array',
+            'subjects.*.subject_id' => 'required|exists:subjects,id',
+            'subjects.*.total_marks' => 'required|integer',
+        ]);
+
+        $params = $request->all();
+        $exam = $this->examService->updateExam($id, $params);
+        return response()->json(new JsonResponse(['exam' => $exam]));
     }
+    // public function update(Request $request, $id){
+    //     $keyword = $request->get('filtercol');
+    //     $obtained_marks[] = array('obtained_marks' => $request->get('obtained_marks'));
+    //     $obtained_marks = array_values($obtained_marks)[0];
+    //     $examname[] = array('examname' => $request->get('examname'));
+    //     $examname = array_values($examname)[0];
+    //     if($keyword == 'update_exams'){
+    //         $examresult = Exam::where('id', $id)->update($examname);
+    //         return response()->json(new JsonResponse(['examresult' => $examresult]));
+    //     }
+    //     if($keyword == 'update_result'){
+    //         $examresult = ExamResult::where('id', $id)->update($obtained_marks);
+    //         return response()->json(new JsonResponse(['examresult' => $examresult]));
+    //     }
+    // }
 
     public function addExamMarks(Request $request)
     {

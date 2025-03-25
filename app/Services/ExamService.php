@@ -118,19 +118,36 @@ class ExamService implements ExamServiceInterface
 
     public function updateExam(int $id, array $data)
     {
-        // ...existing code...
-        return Exam::where('id', $id)->update($data);
+        $exam = Exam::findOrFail($id);
+        $exam->update([
+            'title' => $data['title'],
+            'class_id' => $data['class_id'],
+        ]);
+
+        // Update or create subjects
+        foreach ($data['subjects'] as $subject) {
+            ExamSubject::updateOrCreate(
+                [
+                    'exam_id' => $id,
+                    'subject_id' => $subject['subject_id']
+                ],
+                [
+                    'total_marks' => $subject['total_marks'],
+                    'skip' => $subject['skip_in_report'],
+                ]
+            );
+        }
+
+        return $exam;
     }
 
     public function deleteExam(int $id)
     {
-        // ...existing code...
         return Exam::destroy($id);
     }
 
     public function getExamById(int $id)
     {
-        // ...existing code...
         return ExamResult::where('exam_id', $id)->get();
     }
 
@@ -149,5 +166,14 @@ class ExamService implements ExamServiceInterface
             'results' => $results,
             'exam' => $exam
         ];
+    }
+
+    public function getExamWithSubjects($examId)
+    {
+        $exam = Exam::with(['subjects' => function($query) {
+            $query->select('exam_subjects.*', 'subjects.title');
+        }])->findOrFail($examId);
+        
+        return $exam;
     }
 }
