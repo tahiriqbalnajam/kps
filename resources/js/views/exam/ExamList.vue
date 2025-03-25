@@ -68,7 +68,7 @@
     </div>
     <el-card class="box-card">
       <testing />
-      <el-table :data="examdata" height="600" style="width: 100%">
+      <el-table :data="examdata" height="600" style="width: 100%" size="small" stripe>
         <el-table-column prop="title" label="Exam"  />
         <el-table-column prop="classes.name" label="Class"  />
         <el-table-column prop="created_at" label="Date">
@@ -78,12 +78,26 @@
         </el-table-column>
         <el-table-column label="Actions">
           <template #default="scope">
-            <el-button type="warning" size="small" @click="editExam(scope.row)">
-              <el-icon><Edit /></el-icon> Edit
-            </el-button>
-            <el-button type="primary" size="small" @click="openAddMarks(scope.row)">Add Marks</el-button>
-            <el-button type="info" size="small" @click="openViewMarksList(scope.row)">View Marks</el-button>
-            <el-button type="success" size="small" @click="openPrintReports(scope.row)">Print Reports</el-button>
+            <el-tooltip content="Edit Subjects" placement="top">
+              <el-button type="warning" size="small" @click="editExam(scope.row)">
+                <el-icon><Edit /></el-icon>
+              </el-button>
+            </el-tooltip>
+            <el-tooltip content="Add Marks" placement="top">
+              <el-button type="primary" size="small" @click="openAddMarks(scope.row)">
+                <el-icon><DocumentAdd /></el-icon>
+              </el-button>
+            </el-tooltip>
+            <el-tooltip content="View Marks" placement="top">
+              <el-button type="info" size="small" @click="openViewMarksList(scope.row)">
+                <el-icon><List /></el-icon>
+              </el-button>
+            </el-tooltip>
+            <el-tooltip content="Print Reports" placement="top">
+              <el-button type="success" size="small" @click="openPrintReports(scope.row)">
+                <el-icon><GoldMedal /></el-icon>
+              </el-button>
+            </el-tooltip>
           </template>
         </el-table-column>
       </el-table>
@@ -115,7 +129,7 @@
   </div>
 </template>
 <script>
-import { Edit, Plus, Download } from '@element-plus/icons-vue';
+import { Edit, Plus, Download, DocumentAdd, List, GoldMedal } from '@element-plus/icons-vue';
 import { debounce } from 'lodash';  // Add this import
 import Pagination from '@/components/Pagination/index.vue';
 import HeadControls from '@/components/HeadControls.vue';
