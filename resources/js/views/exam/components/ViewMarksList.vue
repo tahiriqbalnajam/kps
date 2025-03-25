@@ -22,7 +22,7 @@
       <div class="exam-info">
         <el-row :gutter="20">
           <el-col :span="16">
-            <h2>{{ exam.title }} - {{ exam.classes.name }}</h2>
+            <h2><span style="font-size: 21px; font-weight: normal;">{{ exam.title }}</span> - {{ exam.classes.name }}</h2>
           </el-col>
           <el-col :span="8" class="text-right">
             <h3>Date: {{ formatDate(exam.created_at) }}</h3>
@@ -140,7 +140,7 @@ export default {
         this.schoolName = settings.school_name;
         this.schoolAddress = settings.address;
         this.schoolContact = settings.contact;
-        this.schoolLogo = settings.logo_path || '/images/logo.png';
+        this.schoolLogo = settings.school_logo || '/images/logo.png';
       } catch (error) {
         console.error('Error fetching settings:', error);
       }
