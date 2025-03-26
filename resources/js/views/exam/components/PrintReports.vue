@@ -219,80 +219,162 @@ export default {
             <style>
               @page {
                 size: A4;
-                margin: 1cm;
+                margin: 0.5cm;  /* Reduced margins */
               }
               @media print {
-                .report-card {
-                  page-break-after: always;
-                  margin: 0;
-                  padding: 20px;
-                  min-height: calc(100vh - 2cm);
-                  display: flex;
-                  flex-direction: column;
-                }
-                .controls { display: none; }
-                body { margin: 0; }
-                
-                /* Header Styles */
-                .report-header {
-                  padding: 10px 0;
-                  border-bottom: 2px solid #000;
-                }
-                .logo-section img {
-                  height: 80px;
-                  max-width: 80px;
-                  object-fit: contain;
-                }
-                .school-name {
-                  font-size: 24px;
-                  margin: 5px 0;
-                }
-                
-                /* Table Styles */
-                .marks-table {
-                  width: 100%;
-                  border-collapse: collapse;
-                  margin: 15px 0;
-                }
-                .marks-table th, .marks-table td {
-                  border: 1px solid #000;
-                  padding: 5px;
-                  text-align: center;
-                }
-                
-                /* Layout */
-                .results-section {
-                  display: flex;
-                  gap: 20px;
-                  flex: 1;
-                }
-                .marks-section { flex: 2; }
-                .assessment-section {
-                  flex: 1;
-                  padding: 10px;
-                  border: 1px solid #000;
-                }
-                
-                /* Footer */
-                .footer-section {
-                  margin-top: auto;
-                  padding-top: 20px;
-                }
-                .signatures {
-                  display: flex;
-                  justify-content: space-between;
-                  margin-top: 30px;
-                }
-                .signature-item {
-                  text-align: center;
-                }
-                .signature-item .line {
-                  display: block;
-                  width: 150px;
-                  border-top: 1px solid #000;
-                  margin: 40px auto 5px;
-                }
-              }
+.report-container {
+  padding: 20px;
+}
+.controls {
+  margin-bottom: 20px;
+}
+.report-card {
+  padding: 15px;
+  margin-bottom: 20px;
+  page-break-inside: avoid;
+  min-height: auto;
+  max-height: 297mm;
+  display: flex;
+  flex-direction: column;
+}
+.report-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #333;
+}
+.logo-section img {
+  height: 60px;
+  margin-right: 15px;
+}
+.school-info {
+  flex-grow: 1;
+  text-align: center;
+}
+.school-name {
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+.student-info-section {
+  margin-bottom: 15px;
+}
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.results-section {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 15px;
+}
+.marks-section {
+  flex: 2;
+}
+.assessment-section {
+  flex: 1;
+  padding: 15px;
+  background: #f9f9f9;
+  max-height: 200px;
+}
+.marks-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.marks-table th,
+.marks-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: center;
+}
+.total-row {
+  font-weight: bold;
+  background: #f5f5f5;
+}
+.footer-section {
+  margin-top: 15px;
+}
+.remarks {
+  margin-bottom: 30px;
+}
+.signatures {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+.signature-item {
+  text-align: center;
+}
+.signature-item .line {
+  display: block;
+  margin-bottom: 5px;
+}
+@media print {
+  .controls {
+    display: none;
+  }
+  
+  .report-card {
+    page-break-after: always;
+  }
+}
+
+/* Additional styles for better print preview */
+.report-card {
+  border: 1px solid #eee;
+  margin-bottom: 30px;
+  min-height: calc(100vh - 40px);
+  display: flex;
+  flex-direction: column;
+}
+
+.results-section {
+  flex: 1;
+}
+
+.footer-section {
+  margin-top: auto;
+  padding-top: 20px;
+}
+
+@media screen {
+  .reports {
+    max-width: 21cm;
+    margin: 0 auto;
+    background: white;
+  }
+  
+  .report-card {
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    margin-bottom: 30px;
+  }
+}
+.label {
+  margin-right: 5px;
+}
+.value {
+
+}
+.line {
+  border-bottom: 1px solid #ccc;
+}
+.school-address{
+  margin: 0;
+}
+.school-contact {
+  margin: 0;
+}
+.remarks {
+  width: 90%;
+}
+.asses {
+  width: 50%;
+}
+.assessment-item {
+    margin-bottom: 10px;
+}
             </style>
           </head>
           <body>${printContent}</body>
@@ -327,20 +409,25 @@ export default {
   margin-bottom: 20px;
 }
 .report-card {
-  padding: 20px;
-  margin-bottom: 30px;
-  page-break-after: always;
+  padding: 15px;
+  margin-bottom: 20px;
+  page-break-inside: avoid;
+  min-height: auto;  /* Changed from calc(100vh - 40px) */
+  display: flex;
+  flex-direction: column;
+  max-height: 297mm; /* A4 height */
+  border: 1px solid #eee;
 }
 .report-header {
   display: flex;
   align-items: center;
-  margin-bottom: 20px;
-  padding-bottom: 20px;
+  margin-bottom: 15px;  /* Reduced from 20px */
+  padding-bottom: 15px;
   border-bottom: 2px solid #333;
 }
 .logo-section img {
-  height: 80px;
-  margin-right: 20px;
+  height: 60px;  /* Reduced from 80px */
+  margin-right: 15px;
 }
 .school-info {
   flex-grow: 1;
@@ -352,7 +439,7 @@ export default {
   margin-bottom: 5px;
 }
 .student-info-section {
-  margin-bottom: 20px;
+  margin-bottom: 15px;  /* Reduced from 20px */
 }
 .info-row {
   display: flex;
@@ -361,16 +448,17 @@ export default {
 }
 .results-section {
   display: flex;
-  gap: 20px;
-  margin-bottom: 20px;
+  gap: 15px;  /* Reduced from 20px */
+  margin-bottom: 15px;  /* Reduced from 20px */
 }
 .marks-section {
   flex: 2;
 }
 .assessment-section {
   flex: 1;
-  padding: 20px;
+  padding: 15px;
   background: #f9f9f9;
+  max-height: 200px;  /* Reduced from 250px */
 }
 .marks-table {
   width: 100%;
@@ -387,7 +475,7 @@ export default {
   background: #f5f5f5;
 }
 .footer-section {
-  margin-top: 40px;
+  margin-top: 15px;  /* Reduced from 40px */
 }
 .remarks {
   margin-bottom: 30px;
@@ -395,7 +483,7 @@ export default {
 .signatures {
   display: flex;
   justify-content: space-between;
-  margin-top: 40px;
+  margin-top: 20px;  /* Reduced from 40px */
 }
 .signature-item {
   text-align: center;
