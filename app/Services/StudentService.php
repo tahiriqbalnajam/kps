@@ -30,7 +30,7 @@ class StudentService implements StudentServiceInterface
             ->with('parents', 'stdclasses', 'class_session')
             ->allowedFilters([
                 'id', 'name', 'roll_no', 'adminssion_number', 'is_orphan', 
-                'pef_admission', 'nadra_pending', 'gender', 'status',
+                'pef_admission', 'nadra_pending', 'gender', 'status', 'section_id',
                 AllowedFilter::partial('parent_phone', 'parents.phone'),
                 AllowedFilter::partial('parent_name', 'parents.name'),
                 AllowedFilter::exact('stdclass', 'stdclasses.id'),

@@ -35,7 +35,24 @@ class StudentController extends Controller
 
     public function index(Request $request)
     {
-        $searchParams = $request->all();       
+        $searchParams = $request->all();
+        
+        // Check if filter[stdclass] exists and convert to filter[section_id]
+        if (isset($searchParams['filter']['stdclass'])) {
+            $stdClassValue = $searchParams['filter']['stdclass'];
+            
+            // Extract numeric value from class_X or section_X format
+            if (preg_match('/class_(\d+)/', $stdClassValue, $matches)) {
+                $classId = $matches[1];
+                $searchParams['filter']['stdclass'] = $classId;
+            }
+            if(preg_match('/section_(\d+)/', $stdClassValue, $matches)) {
+                $sectionId = $matches[1];
+                unset($searchParams['filter']['stdclass']);
+                $searchParams['filter']['section_id'] = $sectionId;
+            }
+        }
+        
         $students = $this->studentService->listStudents($searchParams);
         return response()->json(new JsonResponse(['students' => $students]));
     }

@@ -55,6 +55,7 @@ class SubjectToClassController extends Controller
             ->allowedFilters([AllowedFilter::exact('class_id')])
             ->where('class_id', $classId)
             ->with('subject')
+            //->get();
             ->paginate($request->get('limit', 15));
         return response()->json(new JsonResponse(['subjects' => $subjects]));
     }
