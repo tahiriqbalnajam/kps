@@ -29,6 +29,7 @@
     :subjects="subjects"
     :disabledTeachers="disabledTeachers"
     :disabledSubjects="disabledSubjects"
+    :selectedSlotData="selectedSlotData"
     @close="closePopup"
     @save="saveSlot"
   />
@@ -55,6 +56,7 @@ export default {
       subjects: [],
       showPopup: false,
       selectedSlot: null,
+      selectedSlotData: null,
       disabledTeachers: [],
       disabledSubjects: [],
       timetable: [], // Create a matrix for the timetable
@@ -101,7 +103,10 @@ export default {
       this.periods = data.periods.data;
     },
     setTimeTable() {
-      this.timetable = this.classes.map(() => this.periods.map(() => ({})));
+      // Initialize with empty objects to prevent undefined errors
+      if (this.classes.length > 0 && this.periods.length > 0) {
+        this.timetable = this.classes.map(() => this.periods.map(() => ({})));
+      }
     },
     getSummaries(param) {
       const { columns, data } = param
@@ -113,18 +118,17 @@ export default {
       return sums;
     },
     openPopup(rowIndex, columnIndex) {
-      
-      if (this.timetable[rowIndex][columnIndex].subject > 0) {
-        this.timetable[rowIndex][columnIndex].subject = '';
-        this.timetable[rowIndex][columnIndex].teacher = '';
-      } 
       this.selectedSlot = { rowIndex, columnIndex };
+      // Store current slot data to pass to popup for editing
+      this.selectedSlotData = this.timetable[rowIndex][columnIndex] || {};
+      
       this.updateDisabledOptions(rowIndex, columnIndex);
       this.showPopup = true;
     },
     closePopup() {
       this.showPopup = false;
       this.selectedSlot = null;
+      this.selectedSlotData = null;
     },
     saveSlot(data) {
       const { rowIndex, columnIndex } = this.selectedSlot;
@@ -133,11 +137,32 @@ export default {
       this.saveTimetable();
     },
     async getTimeTable() {
-
-      const data = await ttRes.list();
-      await new Promise(resolve => setTimeout(resolve, 500)); // Add a half-second pause
-      this.timetable = JSON.parse(data.timetable.timetable);
-
+      try {
+        const data = await ttRes.list();
+        await new Promise(resolve => setTimeout(resolve, 500)); // Add a half-second pause
+        
+        if (data && data.timetable && data.timetable.timetable) {
+          const parsedData = JSON.parse(data.timetable.timetable);
+          
+          // Ensure timetable structure matches current classes and periods
+          if (Array.isArray(parsedData) && parsedData.length > 0) {
+            // If timetable structure doesn't match current classes/periods, reinitialize
+            if (parsedData.length !== this.classes.length || 
+                (parsedData[0] && parsedData[0].length !== this.periods.length)) {
+              this.setTimeTable();
+            } else {
+              this.timetable = parsedData;
+            }
+          } else {
+            this.setTimeTable();
+          }
+        } else {
+          this.setTimeTable();
+        }
+      } catch (error) {
+        console.error("Error loading timetable:", error);
+        this.setTimeTable();
+      }
     },
     saveTimetable() {
       ttRes.update('1',{timetable: this.timetable});
@@ -157,9 +182,15 @@ export default {
       return '';
     },
     getSlotData(rowIndex, columnIndex) {
+      // Add safety checks
+      if (!this.timetable || !this.timetable[rowIndex] || !this.timetable[rowIndex][columnIndex]) {
+        return '';
+      }
+      
       const slot = this.timetable[rowIndex][columnIndex];
-      return slot?.teacher && slot?.subject && slot?.teacher !== '' && slot?.subject !== ''
-
+      if (!slot) return '';
+      
+      return slot.teacher && slot.subject && slot.teacher !== '' && slot.subject !== ''
         ? '<b>'+this.getSubjectNameById(slot.subject)+
           '</b><br><span style="font-size:10px">'+
             this.getTeacherNameById(slot.teacher)+
@@ -167,17 +198,31 @@ export default {
         : '';
     },
     updateDisabledOptions(rowIndex, columnIndex) {
+      // Add safety checks
+      if (!this.timetable || !this.timetable[rowIndex]) {
+        this.disabledTeachers = [];
+        this.disabledSubjects = [];
+        return;
+      }
+      
       const selectedTeachers = [];
       const selectedSubjects = [];
 
       // Check the current day (columnIndex) only
       for (let i = 0; i < this.classes.length; i++) {
-        const period = this.timetable[i][columnIndex];
-        if (period.teacher) selectedTeachers.push(period.teacher);
+        // Don't disable the currently selected teacher
+        if (i !== rowIndex && this.timetable[i] && this.timetable[i][columnIndex]) {
+          const period = this.timetable[i][columnIndex];
+          if (period && period.teacher) selectedTeachers.push(period.teacher);
+        }
       }
+      
       for (let i = 0; i < this.periods.length; i++) {
-        const clas = this.timetable[rowIndex][i];
-        if (clas.subject) selectedSubjects.push(clas.subject);
+        // Don't disable the currently selected subject
+        if (i !== columnIndex && this.timetable[rowIndex] && this.timetable[rowIndex][i]) {
+          const clas = this.timetable[rowIndex][i];
+          if (clas && clas.subject) selectedSubjects.push(clas.subject);
+        }
       }
 
       this.disabledTeachers = selectedTeachers;

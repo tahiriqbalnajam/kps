@@ -96,28 +96,21 @@
                 </el-form-item>
               </el-col>
               <el-col :span="5">
-                <el-time-select
-                    v-model="period.start"
-                    style="width: 240px"
-                    :max-time="endTime"
-                    class="mr-4"
-                    placeholder="Start time"
-                    start="06:30"
-                    step="00:05"
-                    end="18:30"
-                    editable
+                    <el-time-picker
+                      v-model="period.start"
+                      placeholder="Start time"
+                      :disabled-seconds="disabledSeconds"
+                      clearable
+                      value-format="HH:mm"
                     />
               </el-col>
               <el-col :span="8">
-                <el-time-select
+                <el-time-picker
                     v-model="period.end"
-                    style="width: 240px"
-                    :min-time="period.start"
                     placeholder="End time"
-                    start="06:30"
-                    step="00:05"
-                    end="18:30"
-                    editable
+                    clearable
+                    :disabled-seconds="disabledSeconds"
+                    value-format="HH:mm"
                 />
               </el-col>
             </el-row>
@@ -310,6 +303,9 @@
       },
       addStudentFunc() {
         this.addstudentpop = true;
+      },
+      disabledSeconds() {
+        return Array.from({ length: 60 }, (_, i) => i); // Returns array [0, 1, 2, ..., 59]
       },
     },
   };

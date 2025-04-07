@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Student extends Model
 {
-    protected $fillable = ['roll_no','name','user_id', 'adminssion_number', 'parent_id','class_id','session_id','dob', 
+    protected $fillable = ['roll_no','name','user_id', 'adminssion_number', 'parent_id','class_id','section_id','session_id','dob', 
                             'doa','is_orphan','pef_admission','cast','previous_school','b_form','gender','monthly_fee',
                             'sibling','religion','status','action_required','action_details','nadra_pending'];
 
@@ -24,6 +24,10 @@ class Student extends Model
         return $this->belongsTo(Classes::class, 'class_id');
     }
 
+    public function section(){
+
+        return $this->belongsTo(Section::class, 'section_id');
+    }
     public function class_session(){
 
         return $this->belongsTo(ClassSession::class, 'session_id');
