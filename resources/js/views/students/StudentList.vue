@@ -14,9 +14,14 @@
                     <el-input v-model="query.keyword" placeholder="Student info" style="width: 200px;" class="filter-item" v-on:input="debounceInput" clearable />
                   </el-col>
                   <el-col :span="4"  :xs="14" :sm="12" :md="10" :lg="6" :xl="4">
-                    <el-select v-model="query.stdclass" placeholder="Class" clearable style="width: 130px" class="filter-item" @change="handleFilter">
-                      <el-option v-for="item in classes" :key="item.id" :label="upperFirst(item.name)" :value="item.id" />
-                    </el-select>
+                    <el-tree-select 
+                      check-strictly
+                      v-model="query.stdclass" 
+                      :data="classes"
+                      placeholder="Class" clearable 
+                      style="width: 130px" class="filter-item" 
+                      @change="handleFilter"
+                    />
                   </el-col>
                   <el-col :span="2"  :xs="14" :sm="12" :md="10" :lg="6" :xl="3">
                     <el-select
@@ -33,6 +38,7 @@
                       <el-option label="PEF Adm Done" value="pef_admission_done"/>
                       <el-option label="Nadra Pending" value="nadra_pending"/>
                       <el-option label="Age < 5year" value="under_five"/>
+                      <el-option label="View Disabled" value="view_inactive"/>
                     </el-select>
                     <!-- <el-button  class="filter-item" type="primary" :icon="Search"  @click="handleFilter">
                       {{ $t('table.search') }}
@@ -316,10 +322,28 @@ export default {
       this.listloading = true;
       const filterKey = this.query.filtercol;
       const filterValue = this.query.keyword;
+      
+      // Initialize filter object
       this.query.filter = {
         [filterKey]: filterValue,
-        ['stdclass']: this.query.stdclass,
       };
+      
+      // Process stdclass value to extract class_id or section_id
+      if (this.query.stdclass) {
+        const selectedValue = this.query.stdclass.toString();
+        
+        if (selectedValue.startsWith('class_')) {
+          // Extract class ID from class_X format
+          const classId = selectedValue.split('_')[1];
+          this.query.filter['stdclass'] = classId;
+        } else if (selectedValue.startsWith('section_')) {
+          // Extract section ID from section_X format
+          const sectionId = selectedValue.split('_')[1];
+          this.query.filter['section_id'] = sectionId;
+        }
+      }
+      
+      // Process additional filters
       if(this.query.morefilters.length > 0) {
         this.query.morefilters.forEach(filter => {
           if(filter == 'gender_male')
@@ -332,20 +356,55 @@ export default {
             this.query.filter['pef_admission'] = 'No';
           else if(filter == 'under_five')
             this.query.filter['age_less_than'] = '5';
+          else if(filter == 'view_inactive')
+            this.query.filter['status'] = 'disable';
           else 
             this.query.filter[filter] = 'Yes';
         });
       }
+      
       const { data } = await student.list(this.query);
       this.listloading = false;
       this.list = data.students.data;
       this.total = data.students.total;
-      // alert(this.total);
     },
 
     async getClasses() {
-      const{ data } = await classes.list();
-      this.classes = data.classes.data;
+      let query = {
+        include: 'sections'
+      };
+      const{ data } = await classes.list(query);
+      // Transform the classes data to include class and section hierarchy for tree select
+      this.classes = data.classes.data.map(classItem => {
+        // Create the parent class node
+        const classNode = {
+          value: `class_${classItem.id}`,
+          label: `${classItem.name}`,
+          id: classItem.id,
+          type: 'class',
+          name: classItem.name,
+          students_count: classItem.students_count,
+          males_count: classItem.males_count,
+          females_count: classItem.females_count
+        };
+        
+        // Add children if there are sections
+        if (classItem.sections && classItem.sections.length > 0) {
+          classNode.children = classItem.sections.map(section => ({
+            value: `section_${section.id}`,
+            label: `${section.name}`,
+            id: section.id,
+            type: 'section',
+            class_id: classItem.id,
+            name: section.name,
+            students_count: section.students_count,
+            males_count: section.males_count,
+            females_count: section.females_count
+          }));
+        }
+        
+        return classNode;
+      });
     },
     closeAddStudent() {
       this.addstudentpop = !this.addstudentpop;

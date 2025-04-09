@@ -124,7 +124,7 @@
       <p class="text-center">Streamline your school operations with our all-in-one school management software.</p>
     </div>
     <div class="th-hero-img" style="text-align: center;">
-      <img src="{{ asset('front/images/mockup.jpg') }}" alt="" />
+      <img src="{{ asset('front/images/mockup.jpg') }}"style="align-items:center;  alt="img" />
       <div class="about-client-box style2 mb-sm-0 mb-3">
       </div>
     </div>
@@ -143,21 +143,21 @@
             <div class="swiper-slide">
               <img
                 class="brand-box"
-                src="{{ asset('front/images/brand_3_1.svg') }}"
+                src="{{ asset('front/images/kphs.png') }}"
                 alt="Brand Logo 1" />
             </div>
 
             <div class="swiper-slide">
               <img
                 class="brand-box"
-                src="{{ asset('front/images/brand_3_2.svg') }}"
+                src="{{ asset('front/images/goldan-gate-high-school.png') }}"
                 alt="Brand Logo 2" />
             </div>
 
             <div class="swiper-slide">
               <img
                 class="brand-box"
-                src="{{ asset('front/images/brand_3_3.svg') }}"
+                src="{{ asset('front/images/qayadat.jpg') }}"
                 alt="Brand Logo 3" />
             </div>
 
@@ -218,7 +218,7 @@
           </div>
           <div class="col-xl-7">
             <div class="feature-box me-xl-5 pe-xl-5">
-              <div class="img1"><img src="{{ asset('front/img/normal/feature_8_1.png') }}" alt="About" /></div>
+              <div class="img1"><img src="{{ asset('front/images/feature_8_1.png') }}" alt="About" /></div>
               <div class="feature-content11">
                 <h4 class="feature-text">IDLSchool</h4>
               </div>

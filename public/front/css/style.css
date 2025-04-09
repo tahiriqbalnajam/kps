@@ -6128,7 +6128,7 @@ a.text-theme:hover,
 }
 
 .main-menu>ul>li>a {
-    padding: 47px 0
+    padding: 20px 0 !important;
 }
 
 .main-menu>ul>li>a:hover {
@@ -6455,8 +6455,8 @@ a.text-theme:hover,
 }
 
 .header-logo {
-    padding-top: 15px;
-    padding-bottom: 15px
+    padding-top: 7px;
+    padding-bottom: 7px
 }
 
 @media (max-width: 575px) {

@@ -38,17 +38,15 @@
             <el-col :span="12">
               <el-form-item label="Select Class" prop="class_id">
                 <el-col :span="11">
-                  <el-select v-model="student.class_id" placeholder="Classes">
-                    <el-option
-                      v-for="stdclass in classes"
-                      :key="stdclass.id"
-                      :label="stdclass.name"
-                      :value="stdclass.id"
-                      style="width: 100%">
-                      <span style="float: left">{{ stdclass.name }}</span>
-                      <span style="float: right">{{ stdclass.total_students }}</span>
-                    </el-option>
-                  </el-select>
+                  <el-tree-select
+                    v-model="student.class_id"
+                    :data="classes"
+                    check-strictly
+                    node-key="id"
+                    :props="classProps"
+                    placeholder="Classes"
+                    style="width: 100%"
+                  />
                 </el-col>
                 <el-col :span="4">
                   <span style="font-size: 11px; text-align: center; width: 100%;"> If not found</span>
@@ -306,9 +304,23 @@ export default {
         callback();
       }
     };
+    var doa = (rule, value, callback) => {
+      if (!value) {
+        return callback(new Error('Select  Date of Admission'));
+      } else {
+        callback();
+      }
+    };
     var monthly_fee = (rule, value, callback) => {
       if (!value) {
         return callback(new Error('Enter monthly fee.'));
+      } else {
+        callback();
+      }
+    };
+    var adminssion_number = (rule, value, callback) => {
+      if (!value) {
+        return callback(new Error('Enter admission#'));
       } else {
         callback();
       }
@@ -334,8 +346,15 @@ export default {
         class_id: [{ validator: class_id, trigger: 'blur' }],
         dob: [{ validator: dob, trigger: 'blur' }],
         b_form: [{ validator: b_form, trigger: 'blur' }],
+        adminssion_number: [{ validator: adminssion_number, trigger: 'blur' }],
+        doa: [{ validator: doa, trigger: 'blur' }],
       },
       classes: [],
+      classProps: {
+        label: 'name',
+        children: 'sections',
+        value: 'id_value' // Change this to use our custom formatted value
+      },
       parents: [],
       genders: [
         {
@@ -422,63 +441,92 @@ export default {
     },
     async handleSubmit(formName) {
       this.loading = true;
-      await this.$refs[formName].validate(valid => {
-        if (valid) {
-          if (this.student.id !== undefined && this.student.id !== null && this.student.id !== '') {
-            stdRes
-              .update(this.student.id, this.student)
-              .then(response => {
-                this.$message({
-                  type: 'success',
-                  message: 'Student info has been updated successfully',
-                  duration: 5 * 1000,
-                });
-                this.handleClose();
-                this.loading = false;
-              })
-              .catch(error => {
-                this.$message({
-                  type: 'error',
-                  message: 'Somthing Wrong while updating' + error,
-                  duration: 5 * 1000,
-                });
-                this.loading = false;
-              })
-              .finally(() => {
-                this.customerForm = false;
-                this.loading = false;
-              });
-          } else {
-            stdRes
-              .store(this.student)
-              .then(response => {
-                this.$message({
-                  message:
-                    'New Student  ' +
-                    this.student.name +
-                    ' has been created successfully.',
-                  type: 'success',
-                  duration: 5 * 1000,
-                });
-                this.account = {
-                  name: '',
-                  phone: '',
-                  address: '',
-                  type: '',
-                };
-                this.$emit('newcustomer', response);
-                this.customerForm = false;
-              })
-              .catch(error => {
-                console.log(error);
-              });
-          }
+      
+      // Parse the class_id format before submitting
+      if (this.student.class_id && typeof this.student.class_id === 'string' && this.student.class_id.startsWith('class_')) {
+        const parts = this.student.class_id.split('_');
+        if (parts.length === 3) {
+          const classId = parseInt(parts[1]);
+          const sectionId = parseInt(parts[2]);
+          
+          // Update the student object for submission
+          const studentForSubmit = {...this.student};
+          studentForSubmit.class_id = classId;
+          studentForSubmit.section_id = sectionId > 0 ? sectionId : null;
+          
+          await this.$refs[formName].validate(valid => {
+            if (valid) {
+              if (studentForSubmit.id !== undefined && studentForSubmit.id !== null && studentForSubmit.id !== '') {
+                stdRes
+                  .update(studentForSubmit.id, studentForSubmit)
+                  .then(response => {
+                    this.$message({
+                      type: 'success',
+                      message: 'Student info has been updated successfully',
+                      duration: 5 * 1000,
+                    });
+                    this.handleClose();
+                    this.loading = false;
+                  })
+                  .catch(error => {
+                    this.$message({
+                      type: 'error',
+                      message: 'Something Wrong while updating' + error,
+                      duration: 5 * 1000,
+                    });
+                    this.loading = false;
+                  })
+                  .finally(() => {
+                    this.customerForm = false;
+                    this.loading = false;
+                  });
+              } else {
+                stdRes
+                  .store(studentForSubmit)
+                  .then(response => {
+                    this.$message({
+                      message:
+                        'New Student  ' +
+                        studentForSubmit.name +
+                        ' has been created successfully.',
+                      type: 'success',
+                      duration: 5 * 1000,
+                    });
+                    this.account = {
+                      name: '',
+                      phone: '',
+                      address: '',
+                      type: '',
+                    };
+                    this.$emit('newcustomer', response);
+                    this.customerForm = false;
+                  })
+                  .catch(error => {
+                    console.log(error);
+                  });
+              }
+            } else {
+              console.log('error submit!!');
+              this.loading = false;
+              return false;
+            }
+          });
         } else {
-          console.log('error submit!!');
           this.loading = false;
-          return false;
+          this.$message({
+            type: 'error',
+            message: 'Invalid class format',
+            duration: 5 * 1000,
+          });
         }
-      });
+      } else {
+        this.loading = false;
+        this.$message({
+          type: 'error',
+          message: 'Please select a class',
+          duration: 5 * 1000,
+        });
+      }
     },
     async getStudent() {
       if(!this.stdid)
@@ -486,13 +534,32 @@ export default {
       
       let { data } = await stdRes.get(this.stdid);
       this.student = data.student;
+      
+      // Format the class_id to follow our new convention if section info is available
+      if (this.student.class_id && this.student.section_id) {
+        this.student.class_id = `class_${this.student.class_id}_${this.student.section_id}`;
+      } else if (this.student.class_id) {
+        this.student.class_id = `class_${this.student.class_id}_0`;
+      }
+      
       data = await stdParent.get(this.student.parent_id);
       this.parents = [data.data.parent];
     },
     async getClasses() {
-      const { data } = await stdClass.list();
-      this.classes = data.classes.data;
-      
+      const { data } = await stdClass.list({ include: 'sections' });
+      // Transform the data to include formatted id_value
+      this.classes = data.classes.data.map(classItem => {
+        return {
+          ...classItem,
+          id_value: `class_${classItem.id}_0`, // For main class nodes
+          sections: classItem.sections?.map(section => {
+            return {
+              ...section,
+              id_value: `class_${classItem.id}_${section.id}` // For section nodes
+            };
+          }) || []
+        };
+      });
     },
     async searchParent(query) {
       this.parentloading = true;
@@ -512,8 +579,11 @@ export default {
         dob: '',
         gender: 'Male',
         monthly_fee: '',
-        subling: '0',
+        sibling: '0',
         religion: 'Islam',
+        status: 'enable',
+        action_required: 'No',
+        action_details: '',
       };
     },
   },

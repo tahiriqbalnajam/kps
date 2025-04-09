@@ -1,9 +1,9 @@
 <template>
-  <el-table :data="timetable" border stripe max-height="650">
-    <!-- Column for Class Names -->
+  <el-table :data="tableData" border stripe max-height="650">
+    <!-- Column for Class/Section Names -->
     <el-table-column label="Classes" width="120" fixed>
       <template v-slot="scope">
-        {{ classes[scope.$index].name }}
+        {{ scope.row.displayName }}
       </template>
     </el-table-column>
 
@@ -44,6 +44,7 @@ const classRes = new Resource('classes');
 const subjectRes = new Resource('subjects');
 const periodRes = new Resource('periods');
 const ttRes = new Resource('timetable');
+const sectionRes = new Resource('sections');
 
 export default {
   name: 'TimeTable',
@@ -51,6 +52,8 @@ export default {
   data() {
     return {
       classes: [],
+      sections: [],
+      tableData: [], // Combined classes and sections data for display
       periods: [],
       teachers: [],
       subjects: [],
@@ -67,20 +70,25 @@ export default {
     this.getClasses();
     this.getSubjects();
     this.getPeriods();
-    
-
+    this.getSections();
   },
   mounted() {
     this.getTimeTable();
   },
   watch: {
-    classes(newClasses) {
-      if (newClasses.length) {
+    classes() {
+      this.prepareTableData();
+    },
+    sections() {
+      this.prepareTableData();
+    },
+    periods() {
+      if (this.tableData.length && this.periods.length) {
         this.setTimeTable();
       }
     },
-    periods(newPeriod) {
-      if (newPeriod.length) {
+    tableData(newTableData) {
+      if (newTableData.length && this.periods.length) {
         this.setTimeTable();
       }
     }
@@ -93,6 +101,7 @@ export default {
     async getClasses() {
       const { data } = await classRes.list();
       this.classes = data.classes.data;
+      this.prepareTableData();
     },
     async getSubjects() {
       const { data } = await subjectRes.list();
@@ -102,10 +111,68 @@ export default {
       const { data } = await periodRes.list();
       this.periods = data.periods.data;
     },
+    async getSections() {
+      const { data } = await sectionRes.list();
+      this.sections = data.sections.data || [];
+      this.prepareTableData();
+    },
+    prepareTableData() {
+      // Only proceed if both classes and sections are loaded
+      if (!this.classes.length) return;
+      
+      let tableData = [];
+      
+      // Group sections by class_id
+      const sectionsByClass = {};
+      if (this.sections && this.sections.length) {
+        this.sections.forEach(section => {
+          if (!sectionsByClass[section.class_id]) {
+            sectionsByClass[section.class_id] = [];
+          }
+          sectionsByClass[section.class_id].push(section);
+        });
+      }
+      
+      // Create table rows for each class and its sections
+      this.classes.forEach(cls => {
+        const classSections = sectionsByClass[cls.id] || [];
+        
+        if (classSections.length > 0) {
+          // Add each section as a row
+          classSections.forEach(section => {
+            tableData.push({
+              id: `section-${section.id}`,
+              type: 'section',
+              classId: cls.id,
+              sectionId: section.id,
+              displayName: `${cls.name} - ${section.name}`,
+              refData: section
+            });
+          });
+        } else {
+          // Add the class itself as a row
+          tableData.push({
+            id: `class-${cls.id}`,
+            type: 'class',
+            classId: cls.id,
+            sectionId: null,
+            displayName: cls.name,
+            refData: cls
+          });
+        }
+      });
+      
+      this.tableData = tableData;
+      
+      // Initialize timetable after preparing tableData
+      if (this.tableData.length && this.periods.length) {
+        this.setTimeTable();
+      }
+    },
     setTimeTable() {
       // Initialize with empty objects to prevent undefined errors
-      if (this.classes.length > 0 && this.periods.length > 0) {
-        this.timetable = this.classes.map(() => this.periods.map(() => ({})));
+      if (this.tableData.length > 0 && this.periods.length > 0) {
+        this.timetable = this.tableData.map(() => this.periods.map(() => ({})));
       }
     },
     getSummaries(param) {
@@ -144,10 +211,10 @@ export default {
         if (data && data.timetable && data.timetable.timetable) {
           const parsedData = JSON.parse(data.timetable.timetable);
           
-          // Ensure timetable structure matches current classes and periods
+          // Ensure timetable structure matches current tableData and periods
           if (Array.isArray(parsedData) && parsedData.length > 0) {
-            // If timetable structure doesn't match current classes/periods, reinitialize
-            if (parsedData.length !== this.classes.length || 
+            // If timetable structure doesn't match current tableData/periods, reinitialize
+            if (parsedData.length !== this.tableData.length || 
                 (parsedData[0] && parsedData[0].length !== this.periods.length)) {
               this.setTimeTable();
             } else {

@@ -45,7 +45,11 @@ class StudentService implements StudentServiceInterface
 
         // Add default status filter if no status filter is provided
         if (!request()->has('filter.status')) {
-            $query->where('status', 'enable');
+            if (request()->has('filter.status') && request('filter.status') === 'true') {
+                $query->where('status', 'disable');
+            } else {
+                $query->where('status', 'enable');
+            }
         }
 
         return $query->paginate($limit)
