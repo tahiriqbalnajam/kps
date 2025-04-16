@@ -11,6 +11,7 @@ use Carbon\CarbonPeriod;
 use App\Models\StudentAttendance;
 use Illuminate\Http\Request;
 use App\Laravue\JsonResponse;
+use App\Models\Settings;
 use Illuminate\Support\Facades\DB;
 use App\Models\SmsQueue;
 use App\Services\Contracts\AttendanceServiceInterface;
@@ -134,6 +135,7 @@ class StudentAttendanceController extends Controller
         $stdclass = $request->stdclass;
         StudentAttendance::where(['attendance_date'=> $date, 'class_id' => $stdclass])->delete();
         $students = $request->students;
+        $settings = \App\Models\Settings::where('setting_key', 'school_name')->first();
         foreach($students as $data){
             $attendance[] = [
                 'class_id' => $data['class_id'],
@@ -141,13 +143,14 @@ class StudentAttendanceController extends Controller
                 'status' => $data['attendance'],
                 'attendance_date' =>  $date,
             ];
-
-          //  if($data['attendance'] == 'Absent') {
-          //      $sms['student_id'] = $data['id'];
-          //      $sms['message'] = 'Dear, '.$data['parents']['name'].',  Your child \''.$data['name'].'\' is absent today';
-          //      $sms['phone'] = $this->format_phone($data['parents']['phone']);
-          //      SmsQueue::create($sms);
-         //   }
+            
+           if(strtolower($data['attendance']) == 'absent') {
+               $sms['student_id'] = $data['id'];
+               $sms['channel'] = 'whatsapp';
+               $sms['message'] = "Dear, ".$data['parents']['name']."\nApka bacha \"".$data['name']."\" (Class ".$data['stdclasses']['name'].") ajj school say ghair hazir hai. Bechy ki hazri yaqeeni bnain,\n Shukarya.\n".$settings->setting_value;
+               $sms['phone'] = $this->format_phone($data['parents']['phone']);
+               SmsQueue::create($sms);
+           }
         }
         StudentAttendance::insert($attendance);
     }
