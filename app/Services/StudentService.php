@@ -30,10 +30,11 @@ class StudentService implements StudentServiceInterface
             ->with('parents', 'stdclasses', 'class_session')
             ->allowedFilters([
                 'id', 'name', 'roll_no', 'adminssion_number', 'is_orphan', 
-                'pef_admission', 'nadra_pending', 'gender', 'status', 'section_id',
+                'pef_admission', 'nadra_pending', 'gender', 'status',
                 AllowedFilter::partial('parent_phone', 'parents.phone'),
                 AllowedFilter::partial('parent_name', 'parents.name'),
                 AllowedFilter::exact('stdclass', 'stdclasses.id'),
+                AllowedFilter::exact('section_id', 'section_id'),
                 // Add custom age filter
                 AllowedFilter::callback('age_less_than', function ($query, $value) {
                     $query->whereRaw('TIMESTAMPDIFF(YEAR, dob, CURDATE()) < ?', [$value]);
@@ -51,6 +52,7 @@ class StudentService implements StudentServiceInterface
                 $query->where('status', 'enable');
             }
         }
+        //return $query->toSql();
 
         return $query->paginate($limit)
             ->appends(request()->query());
