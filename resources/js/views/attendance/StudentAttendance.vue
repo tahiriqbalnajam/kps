@@ -5,14 +5,14 @@
         <el-row :gutter="20">
           <el-col :span="5">
             <el-form-item>
-              <el-select v-model="attendance.stdclass" placeholder="Select class" @change="getStudent">
-                <el-option
-                  v-for="stdclass in classes"
-                  :key="stdclass.id"
-                  :label="stdclass.name"
-                  :value="stdclass.id"
-                />
-              </el-select>
+                <el-tree-select 
+                      check-strictly
+                      v-model="query.stdclass" 
+                      :data="classes"
+                      placeholder="Class" clearable 
+                      style="" class="filter-item" 
+                      @change="getStudent"
+                    />
             </el-form-item>
           </el-col>
           <el-col :span="5">
@@ -123,8 +123,41 @@ export default {
       this.getList();
     }, 500),
     async getList() {
-      const { data } = await classPro.list(this.query);
-      this.classes = data.classes.data;
+      let query = {
+        include: 'sections'
+      };
+      const{ data } = await classPro.list(query);
+      // Transform the classes data to include class and section hierarchy for tree select
+      this.classes = data.classes.data.map(classItem => {
+        // Create the parent class node
+        const classNode = {
+          value: `class_${classItem.id}`,
+          label: `${classItem.name}`,
+          id: classItem.id,
+          type: 'class',
+          name: classItem.name,
+          students_count: classItem.students_count,
+          males_count: classItem.males_count,
+          females_count: classItem.females_count
+        };
+        
+        // Add children if there are sections
+        if (classItem.sections && classItem.sections.length > 0) {
+          classNode.children = classItem.sections.map(section => ({
+            value: `section_${section.id}`,
+            label: `${section.name}`,
+            id: section.id,
+            type: 'section',
+            class_id: classItem.id,
+            name: section.name,
+            students_count: section.students_count,
+            males_count: section.males_count,
+            females_count: section.females_count
+          }));
+        }
+        
+        return classNode;
+      });
       
     },
     todayDate() {
@@ -138,6 +171,19 @@ export default {
     async getStudent() {
       this.student_loading = true;
       this.query.filter.stdclass = this.attenquery.stdclass = this.attendance.stdclass;
+      if (this.query.stdclass) {
+        const selectedValue = this.query.stdclass.toString();
+        
+        if (selectedValue.startsWith('class_')) {
+          // Extract class ID from class_X format
+          const classId = selectedValue.split('_')[1];
+          this.query.filter['stdclass'] = classId;
+        } else if (selectedValue.startsWith('section_')) {
+          // Extract section ID from section_X format
+          const sectionId = selectedValue.split('_')[1];
+          this.query.filter['section_id'] = sectionId;
+        }
+      }
       this.query.filter.status = 'enable';
       this.query.fields = 'id,name,roll_no,class_id,parent_id';
       const { data } = await studentPro.list(this.query);
