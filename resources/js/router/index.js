@@ -78,6 +78,34 @@ export const asyncRoutes = [
         name: 'Student Report',
         meta: { title: 'Student Report', icon: 'people', noCache: true },
       },
+      {
+        path: 'observations',
+        name: 'student-observations',
+        hidden: true,
+        component: () => import('@/views/students/components/StudentObservations.vue'),
+        meta: { title: 'Student Observations', icon: 'people', noCache: true  }
+      },
+      {
+          path: 'observations/create',
+          name: 'create-student-observation',
+          hidden: true,
+          component: () => import('@/views/students/components/CreateStudentObservation.vue'),
+          meta: { title: 'Create Student Observation', icon: 'people', noCache: true  }
+      },
+      {
+          path: 'observations/:id/edit',
+          name: 'edit-student-observation',
+          hidden: true,
+          component: () => import('@/views/students/components/EditStudentObservation.vue'),
+          meta: {   title: 'Edit Student Observation',icon: 'people', noCache: true}
+      },
+      {
+          path: 'observations/:id',
+          name: 'view-student-observation',
+          hidden: true,
+          component: () => import('@/views/students/components/ViewStudentObservation.vue'),
+          meta: { title: 'View Student Observation' , icon: 'people', noCache: true}
+      },
     ],
   },
   {
@@ -255,6 +283,16 @@ export const asyncRoutes = [
           bootstrapIcon: 'graph-up',
           permissions: ['view menu attendance']
         }
+      },
+      {
+        path: 'attendance-graph',
+        component: () => import('@/views/attendance/DailyAttendanceGraph.vue'),
+        name: 'AttendanceGraph',
+        meta: { 
+          title: 'Daily Attendance Graph',
+          icon: 'chart',
+          permissions: ['view menu attendance'] 
+        }
       }
     ],
   },
@@ -277,9 +315,9 @@ export const asyncRoutes = [
         meta: {title: 'Test', bootstrapIcon: 'clipboard2-data', noCache: true},
       },
       {
-        path: 'chapters',
+        path: 'index',
         component: () => import('@/views/exam/Chapters.vue'),
-        name: 'Chapters',
+        name: 'Generate Test',
         meta: {title: 'Chapters', bootstrapIcon: 'book', noCache: true},
       },
       {
@@ -362,6 +400,30 @@ export const asyncRoutes = [
         meta: {title: 'userProfile', bootstrapIcon: 'person-circle', noCache: true},
       },
     ],
+  },
+  {
+    path: '/syllabus',
+    component: Layout,
+    children: [
+      {
+        path: 'repository',
+        name: 'SyllabusRepository',
+        component: () => import('@/views/syllabus/SyllabusRepository.vue'),
+        meta: { title: 'Syllabus Repository', icon: 'el-icon-folder' }
+      },
+      {
+        path: 'tracking',
+        name: 'SyllabusTrackingEntry',
+        component: () => import('@/views/syllabus/SyllabusTrackingEntry.vue'),
+        meta: { title: 'Syllabus Tracking', icon: 'el-icon-timer' }
+      },
+      {
+        path: 'completion',
+        name: 'SyllabusCompletionTracker',
+        component: () => import('@/views/syllabus/SyllabusCompletionTracker.vue'),
+        meta: { title: 'Syllabus Completion', icon: 'el-icon-check' }
+      }
+    ]
   },
   adminRoutes,
   errorRoutes,

@@ -58,9 +58,9 @@
       </div>
     </el-col>
     <el-col :xs="12" :sm="12" :lg="6" class="card-panel-col">
-      <div class="card-panel" style="height: 400px;">
+      <div class="card-panel" style="height: 515px;">
           <div class="panel-heading">Student Birthdays</div>
-            <el-table :data="data.student_birthdays" max-height="250">
+            <el-table :data="data.student_birthdays" max-height="250" empty-text="No birthdays today!">
               <el-table-column prop="name" label="Name"></el-table-column>
               <el-table-column prop="class" label="Class"></el-table-column>
               <el-table-column label="Age">
@@ -72,18 +72,22 @@
       </div>
     </el-col>
     <el-col :xs="12" :sm="12" :lg="6" class="card-panel-col">
-      <div class="card-panel" style="height: 400px;">
+      <div class="card-panel" style="height: 515px;">
           <div class="panel-heading">New Admissions ({{ data.newAdmissions }})</div>
-            <el-table :data="data.newAdmissionsPerClass[0]" max-height="250">
+            <el-table :data="data.newAdmissionsPerClass[0]" max-height="250" empty-text="No new admissions!">
               <el-table-column prop="class_name" label="Class"></el-table-column>
               <el-table-column prop="count" label="Total"></el-table-column>
             </el-table>
       </div>
     </el-col>
+    <el-col :xs="24" :sm="24" :lg="12" class="card-panel-col">
+      <daily-attendance-graph />
+    </el-col>
   </el-row>
 </template>
 
 <script setup>
+import DailyAttendanceGraph from '@/views/attendance/DailyAttendanceGraph.vue';
 import Resource from '@/api/resource';
 let dashRes = new Resource('dashboard');
 import { ref } from 'vue';

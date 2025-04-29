@@ -38,21 +38,21 @@
                 <div class="info-row">
                   <div class="info-item">
                     <span class="label">Student Name:</span>
-                    <span class="value"><b>{{ student.name }}</b></span>
+                    <span class="value" style="font-size: 26px;"><b>{{ student.name }}</b></span>
                   </div>
                   <div class="info-item">
                     <span class="label">Father's Name:</span>
-                    <span class="value"><b>{{ student.parents.name }}</b></span>
+                    <span class="value" style="font-size: 26px;"><b>{{ student.parents.name }}</b></span>
                   </div>
                 </div>
                 <div class="info-row">
                   <div class="info-item">
                     <span class="label">Class:</span>
-                    <span class="value"><b>{{ exam.classes.name }}</b></span>
+                    <span class="value" style="font-size: 26px;"><b>{{ exam.classes.name }}</b></span>
                   </div>
                   <div class="info-item">
                     <span class="label">Roll Number:</span>
-                    <span class="value"><b>{{ student.roll_no }}</b></span>
+                    <span class="value" style="font-size: 26px;"><b>{{ student.roll_no }}</b></span>
                   </div>
                 </div>
               </div>
@@ -84,9 +84,10 @@
                     </tbody>
                   </table>
                 </div>
-
+              </div>
+              <div class="results-section">
                 <div class="assessment-section">
-                  <h3>Performance Assessment</h3>
+                  <h3 style="font-size: 26px;">Performance Assessment</h3>
                   <div class="assessment-item">
                     <span class="label">Grade:</span>
                     <span class="line value asses">{{ calculateGrade(calculateOverallPercentage(student.id)) }}</span>
@@ -245,7 +246,7 @@ export default {
   border-bottom: 2px solid #333;
 }
 .logo-section img {
-  height: 60px;
+  height: 100px;
   margin-right: 15px;
 }
 .school-info {
@@ -253,7 +254,7 @@ export default {
   text-align: center;
 }
 .school-name {
-  font-size: 24px;
+  font-size: 46px;
   font-weight: bold;
   margin-bottom: 5px;
 }
@@ -286,8 +287,9 @@ export default {
 .marks-table th,
 .marks-table td {
   border: 1px solid #ddd;
-  padding: 8px;
+  padding: 4px 0;
   text-align: center;
+  font-size: 26px !important;
 }
 .total-row {
   font-weight: bold;
@@ -353,6 +355,7 @@ export default {
 }
 .label {
   margin-right: 5px;
+  font-size: 18px;
 }
 .value {
 
@@ -371,6 +374,8 @@ export default {
 }
 .asses {
   width: 50%;
+  font-size: 18px;
+  font-weight: bold;
 }
 .assessment-item {
     margin-bottom: 10px;
@@ -426,7 +431,7 @@ export default {
   border-bottom: 2px solid #333;
 }
 .logo-section img {
-  height: 60px;  /* Reduced from 80px */
+  height: 100px;  /* Reduced from 80px */
   margin-right: 15px;
 }
 .school-info {
@@ -469,6 +474,7 @@ export default {
   border: 1px solid #ddd;
   padding: 8px;
   text-align: center;
+  font-size: 18px;
 }
 .total-row {
   font-weight: bold;
@@ -534,6 +540,7 @@ export default {
 }
 .label {
   margin-right: 5px;
+  font-size: 18px;
 }
 .value {
 
@@ -552,6 +559,8 @@ export default {
 }
 .asses {
   width: 50%;
+  font-size: 18px;
+  font-weight: bold;
 }
 .assessment-item {
     margin-bottom: 10px;

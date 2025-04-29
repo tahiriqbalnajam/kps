@@ -41,7 +41,7 @@
                   <i class="fas fa-map-location"></i>IDLBRidge St#7, H#273, Fort Abbas Pakistan
                 </li>
                 <li>
-                  <i class="fas fa-phone"></i><a href="tel:+923457050405">+92-3457050405</a>
+                  <i class="fas fa-phone"></i><a href="tel:+923457050405">+92-345-7050405</a>
                 </li>
                 <li>
                   <i class="fas fa-envelope"></i><a href="mailto:info@idlschool.pk">info@idlschool.pk</a>
@@ -90,12 +90,12 @@
                 </ul>
               </nav>
               <div class="header-button">
-                <button
+                <!-- <button
                   type="button"
                   class="icon-btn sideMenuToggler d-inline-block d-lg-none">
                   <i class="far fa-shopping-cart"></i>
                   <span class="badge">5</span>
-                </button>
+                </button> -->
                 <button
                   type="button"
                   class="th-menu-toggle d-inline-block d-lg-none">
@@ -151,35 +151,35 @@
               <img
                 class="brand-box"
                 src="{{ asset('front/images/goldan-gate-high-school.png') }}"
-                alt="Brand Logo 2" />
+                alt="KPHS Logo" />
             </div>
 
             <div class="swiper-slide">
               <img
                 class="brand-box"
-                src="{{ asset('front/images/qayadat.jpg') }}"
-                alt="Brand Logo 3" />
+                src="{{ asset('front/images/qayadat.png') }}"
+                alt="Qayadat Logo" />
             </div>
 
             <div class="swiper-slide">
               <img
                 class="brand-box"
-                src="{{ asset('front/images/brand_3_4.svg') }}"
-                alt="Brand Logo 4" />
+                src="{{ asset('front/images/Binat-ul-Husna.png') }}"
+                alt="Binat ul husna Logo" />
             </div>
 
             <div class="swiper-slide">
               <img
                 class="brand-box"
-                src="{{ asset('front/images/brand_3_5.svg') }}"
-                alt="Brand Logo 5" />
+                src="{{ asset('front/images/fasal-school.png') }}"
+                alt="fasal school logo" />
             </div>
 
             <div class="swiper-slide">
               <img
                 class="brand-box"
-                src="{{ asset('front/images/brand_3_6.svg') }}"
-                alt="Brand Logo 6" />
+                src="{{ asset('front/images/the-diamond-future.png') }}"
+                alt="the-diamond-future logo" />
             </div>
 
           </div>
@@ -367,7 +367,7 @@
               <i class="fas fa-money-bill-wave fa-3x text-theme"></i>
             </div>
             <h4>Fee Management</h4>
-            <p>Automated billing, payment tracking, and receipt generation</p>
+            <p>Billing, payment tracking, and receipt generation</p>
           </div>
         </div>
         <div class="col-md-4 mb-4">
@@ -376,7 +376,61 @@
               <i class="fas fa-chalkboard-teacher fa-3x text-theme"></i>
             </div>
             <h4>Teacher Portal</h4>
-            <p>Attendance management, grade books, and communication tools</p>
+            <p>Specialized portal for teachers to mark attendance using QR code.</p>
+          </div>
+        </div>
+        <div class="col-md-4 mb-4">
+          <div class="feature-card p-4 text-center">
+            <div class="icon mb-3">
+              <i class="fa-solid fa-family-pants fa-3x text-theme"></i>
+            </div>
+            <h4>Parents Module</h4>
+            <p>Keep parents informed with updates on attendance, performance, and fee status.</p>
+          </div>
+        </div>
+        <div class="col-md-4 mb-4">
+          <div class="feature-card p-4 text-center">
+            <div class="icon mb-3">
+              <i class="fa-brands fa-whatsapp fa-3x text-theme"></i>
+            </div>
+            <h4>Whatsapp SMS </h4>
+            <p>Instantly send SMS to parents, teachers, or students for announcements or reminders.</p>
+          </div>
+        </div>
+        <div class="col-md-4 mb-4">
+          <div class="feature-card p-4 text-center">
+            <div class="icon mb-3">
+              <i class="fa-regular fa-calendar-clock fa-3x text-theme"></i>
+            </div>
+            <h4>TimeTable</h4>
+            <p>Smart timetable generation for classes and teachers — conflict-free and customizable.</p>
+          </div>
+        </div>
+        <div class="col-md-4 mb-4">
+          <div class="feature-card p-4 text-center">
+            <div class="icon mb-3">
+              <i class="fa-solid fa-screen-users fa-3x text-theme"></i>
+            </div>
+            <h4>Class & Subject</h4>
+            <p>Easily manage classes, subjects, sections, and link them with specific teachers.</p>
+          </div>
+        </div>
+        <div class="col-md-4 mb-4">
+          <div class="feature-card p-4 text-center">
+            <div class="icon mb-3">
+              <i class="fa-regular fa-calendar-clock fa-3x text-theme"></i>
+            </div>
+            <h4>Attendance Module</h4>
+            <p>Online attendance system for students and teachers with instant reporting.</p>
+          </div>
+        </div>
+        <div class="col-md-4 mb-4">
+          <div class="feature-card p-4 text-center">
+            <div class="icon mb-3">
+              <i class="fa-solid fa-diploma fa-3x text-theme"></i>
+            </div>
+            <h4>Assessments</h4>
+            <p>Manage exams & test track performance, and generate reports quickly.</p>
           </div>
         </div>
       </div>
@@ -403,12 +457,12 @@
                       <i class="fa-solid fa-star-sharp"></i><i class="fa-solid fa-star-sharp"></i><i class="fa-solid fa-star-sharp"></i><i class="fa-solid fa-star-sharp"></i><i class="fa-solid fa-star-sharp"></i>
                     </div>
                     <p class="testi-box3_text">
-                      “This software reduced our administrative work by 50%! Highly recommended. School staff using the software or a happy principal/teacher.”
+                      “Managing student records used to be a headache — but not anymore! This software makes attendance, profiles, and academics easy to handle. We highly recommend it.”
                     </p>
                     <h3 class="box-title">Principal</h3>
                     <p class="testi-box3_desig">Kiran Public High School Fort Abbas</p>
                   </div>
-                  <div class="testi-box3_img"><img src="{{ asset('front/img/testimonial/testi_12_1.jpg') }}" alt="Avater" /></div>
+                  <div class="testi-box3_img"><img src="{{ asset('front/images/testimonial/tahir_iqbal.jpg') }}" alt="Avater" /></div>
                 </div>
               </div>
               <div class="swiper-slide">
@@ -418,12 +472,12 @@
                       <i class="fa-solid fa-star-sharp"></i><i class="fa-solid fa-star-sharp"></i><i class="fa-solid fa-star-sharp"></i><i class="fa-solid fa-star-sharp"></i><i class="fa-solid fa-star-sharp"></i>
                     </div>
                     <p class="testi-box3_text">
-                      “CRM enables businesses to provide faster, more responsive customer service by centralizing customer inquiries, tracking support tickets, and providing agents with access to customer history.”
+                      “Fee collection and tracking are now fully automated. The receipt generation is smooth, and parents are happier too. Highly recommended for school accounts!”
                     </p>
-                    <h3 class="box-title">Jackline Techie</h3>
-                    <p class="testi-box3_desig">Head of Manager</p>
+                    <h3 class="box-title">Principal</h3>
+                    <p class="testi-box3_desig">The Diamond Future Education System School</p>
                   </div>
-                  <div class="testi-box3_img"><img src="{{ asset('front/img/testimonial/testi_12_2.jpg') }}" alt="Avater" /></div>
+                  <div class="testi-box3_img"><img src="{{ asset('front/images/testimonial/Majid.jpg') }}" alt="Avater" /></div>
                 </div>
               </div>
               <div class="swiper-slide">
@@ -433,12 +487,12 @@
                       <i class="fa-solid fa-star-sharp"></i><i class="fa-solid fa-star-sharp"></i><i class="fa-solid fa-star-sharp"></i><i class="fa-solid fa-star-sharp"></i><i class="fa-solid fa-star-sharp"></i>
                     </div>
                     <p class="testi-box3_text">
-                      “CRM enables businesses to provide faster, more responsive customer service by centralizing customer inquiries, tracking support tickets, and providing agents with access to customer history.”
+                      “Our teachers love the portal! Marking attendance, managing grades, and communicating with parents is now just a few clicks away. It’s a game-changer.”
                     </p>
-                    <h3 class="box-title">Abraham Khalil</h3>
-                    <p class="testi-box3_desig">Head of Design, Layers</p>
+                    <h3 class="box-title">Principal</h3>
+                    <p class="testi-box3_desig">Faisal Public High School</p>
                   </div>
-                  <div class="testi-box3_img"><img src="{{ asset('front/img/testimonial/testi_12_1.jpg') }}" alt="Avater" /></div>
+                  <div class="testi-box3_img"><img src="{{ asset('front/images/testimonial/shafiq-tatla.jpg') }}" alt="Avater" /></div>
                 </div>
               </div>
               <div class="swiper-slide">
@@ -448,12 +502,12 @@
                       <i class="fa-solid fa-star-sharp"></i><i class="fa-solid fa-star-sharp"></i><i class="fa-solid fa-star-sharp"></i><i class="fa-solid fa-star-sharp"></i><i class="fa-solid fa-star-sharp"></i>
                     </div>
                     <p class="testi-box3_text">
-                      “CRM enables businesses to provide faster, more responsive customer service by centralizing customer inquiries, tracking support tickets, and providing agents with access to customer history.”
+                      “From student data to fee and teacher management — this system has everything in one place. It has simplified our operations completely. Highly recommended!”
                     </p>
-                    <h3 class="box-title">David Farnandes</h3>
-                    <p class="testi-box3_desig">Head of Manager</p>
+                    <h3 class="box-title">Principal</h3>
+                    <p class="testi-box3_desig">Qayadat Public School</p>
                   </div>
-                  <div class="testi-box3_img"><img src="{{ asset('front/img/testimonial/testi_12_2.jpg') }}" alt="Avater" /></div>
+                  <div class="testi-box3_img"><img src="{{ asset('front/images/testimonial/mehmood-ul-hassan.jpg') }}" alt="Avater" /></div>
                 </div>
               </div>
               <div class="swiper-slide">
@@ -463,12 +517,12 @@
                       <i class="fa-solid fa-star-sharp"></i><i class="fa-solid fa-star-sharp"></i><i class="fa-solid fa-star-sharp"></i><i class="fa-solid fa-star-sharp"></i><i class="fa-solid fa-star-sharp"></i>
                     </div>
                     <p class="testi-box3_text">
-                      “CRM enables businesses to provide faster, more responsive customer service by centralizing customer inquiries, tracking support tickets, and providing agents with access to customer history.”
+                      “The communication tools within the teacher portal have improved parent-teacher interaction greatly. Real-time updates keep everyone informed. Very effective!”
                     </p>
-                    <h3 class="box-title">Jackline Techie</h3>
-                    <p class="testi-box3_desig">Head of Design, Layers</p>
+                    <h3 class="box-title">Principal</h3>
+                    <p class="testi-box3_desig">Binat ul Husna Fort Abbas</p>
                   </div>
-                  <div class="testi-box3_img"><img src="{{ asset('front/img/testimonial/testi_12_1.jpg') }}" alt="Avater" /></div>
+                  <div class="testi-box3_img"><img src="{{ asset('front/images/testimonial/Binat-ul-Husna.jpg') }}" alt="Avater" /></div>
                 </div>
               </div>
               <div class="swiper-slide">
@@ -478,12 +532,12 @@
                       <i class="fa-solid fa-star-sharp"></i><i class="fa-solid fa-star-sharp"></i><i class="fa-solid fa-star-sharp"></i><i class="fa-solid fa-star-sharp"></i><i class="fa-solid fa-star-sharp"></i>
                     </div>
                     <p class="testi-box3_text">
-                      “CRM enables businesses to provide faster, more responsive customer service by centralizing customer inquiries, tracking support tickets, and providing agents with access to customer history.”
+                      “The interface is super user-friendly. Our staff learned it in no time. It’s fast, reliable, and fits perfectly for any school. Definitely worth it!”
                     </p>
-                    <h3 class="box-title">Abraham Khalil</h3>
-                    <p class="testi-box3_desig">Head of Manager</p>
+                    <h3 class="box-title">Principal</h3>
+                    <p class="testi-box3_desig">Goldan Gate High School </p>
                   </div>
-                  <div class="testi-box3_img"><img src="{{ asset('front/img/testimonial/testi_12_2.jpg') }}" alt="Avater" /></div>
+                  <div class="testi-box3_img"><img src="{{ asset('front/images/testimonial/mehmood-ul-hassan.jpg') }}" alt="Avater" /></div>
                 </div>
               </div>
             </div>

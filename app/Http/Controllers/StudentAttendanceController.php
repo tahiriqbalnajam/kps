@@ -293,4 +293,47 @@ class StudentAttendanceController extends Controller
         $summary = $this->attendanceService->get_attendance_summry($month);
         return response()->json(new JsonResponse(['summary' => $summary]));
     }
+
+    /**
+     * Get daily attendance data for graph
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function getDailyAttendanceGraph(Request $request)
+    {
+        $startDate = $request->start_date;
+        $endDate = $request->end_date;
+        
+        // Create an array of all dates in the range
+        $period = CarbonPeriod::create($startDate, $endDate);
+        $dates = [];
+        $presentCount = [];
+        $absentCount = [];
+
+        foreach ($period as $date) {
+            $formattedDate = $date->format('Y-m-d');
+            $dates[] = $date->format('M d');
+
+            // Count present students for this date
+            $present = StudentAttendance::where('attendance_date', $formattedDate)
+                ->where('status', 'present')
+                ->count();
+            $presentCount[] = $present;
+
+            // Count absent students for this date
+            $absent = StudentAttendance::where('attendance_date', $formattedDate)
+                ->where('status', 'absent')
+                ->count();
+            $absentCount[] = $absent;
+        }
+
+        $attendanceData = [
+            'dates' => $dates,
+            'present' => $presentCount,
+            'absent' => $absentCount,
+        ];
+
+        return response()->json(new JsonResponse(['attendanceData' => $attendanceData]));
+    }
 }

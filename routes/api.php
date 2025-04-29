@@ -3,6 +3,9 @@
 use App\Models\Acl;
 use Illuminate\Contracts\Routing\Registrar as RouteContract;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\SyllabusController;
+use App\Http\Controllers\SyllabusTrackingController;
+use App\Http\Controllers\SyllabusCompletionController;
 
 /*
 |--------------------------------------------------------------------------
@@ -64,7 +67,8 @@ Route::post('absent_comment', 'StudentAttendanceController@absent_comment');
 Route::get('get_att_comments/{id}', 'StudentAttendanceController@get_att_comment');
 Route::post('getdailyclasswise', 'StudentAttendanceController@dailyclasswise');
 Route::post('attendance/summary', 'StudentAttendanceController@get_attendance_summry');
-
+// Student attendance graph endpoint
+Route::get('student/attendance/daily-graph', 'StudentAttendanceController@getDailyAttendanceGraph');
 //teacher attendance
 Route::apiResource('teacher_attendance', 'TeacherAttendanceController');
 Route::post('check_salary_generated', 'TeacherAttendanceController@check_salary_generated');
@@ -123,7 +127,30 @@ Route::namespace('Api')->group(function() {
 
         Route::get('roles/{role}/permissions', 'RoleController@permissions')->middleware('permission:' . Acl::PERMISSION_PERMISSION_MANAGE);
         Route::get('requests', 'RequestController@index');
+
+        // Student Observation Routes
+        Route::get('student-observations', 'StudentObservationController@index');
+        Route::get('student-observations/{id}', 'StudentObservationController@show');
+        Route::post('student-observations', 'StudentObservationController@store');
+        Route::put('student-observations/{id}', 'StudentObservationController@update');
+        Route::delete('student-observations/{id}', 'StudentObservationController@destroy');
+        Route::get('students/{studentId}/observations', 'StudentObservationController@getStudentObservations');
     });
+});
+
+Route::prefix('syllabus')->group(function () {
+    Route::get('repository', [SyllabusController::class, 'index']);
+    Route::post('repository', [SyllabusController::class, 'store']);
+    Route::put('repository/{id}', [SyllabusController::class, 'update']);
+    Route::delete('repository/{id}', [SyllabusController::class, 'destroy']);
+
+    Route::get('tracking', [SyllabusTrackingController::class, 'index']);
+    Route::post('tracking', [SyllabusTrackingController::class, 'store']);
+    Route::put('tracking/{id}', [SyllabusTrackingController::class, 'update']);
+    Route::delete('tracking/{id}', [SyllabusTrackingController::class, 'destroy']);
+
+    Route::get('completion', [SyllabusCompletionController::class, 'index']);
+    Route::put('completion/{id}', [SyllabusCompletionController::class, 'markCompletion']);
 });
 
 Route::get('/orders', function () {
