@@ -115,7 +115,7 @@ class StudentAttendanceController extends Controller
 
     /**
      * Show the form for creating a new resource.
-     *[]
+     *[] 
      * @return \Illuminate\Http\Response
      */
     public function create()
@@ -135,7 +135,23 @@ class StudentAttendanceController extends Controller
         $stdclass = $request->stdclass;
         StudentAttendance::where(['attendance_date'=> $date, 'class_id' => $stdclass])->delete();
         $students = $request->students;
-        $settings = \App\Models\Settings::where('setting_key', 'school_name')->first();
+
+        // Fetch relevant settings once before the loop
+        $settingsCollection = Settings::whereIn('setting_key', [
+            'school_name', 
+            'address', 
+            'phone', 
+            'absent_sms_template',
+            'message_channel'
+        ])->pluck('setting_value', 'setting_key');
+
+        $schoolName = $settingsCollection->get('school_name', 'Your School'); // Default if not set
+        $schoolAddress = $settingsCollection->get('address', '');
+        $schoolPhone = $settingsCollection->get('phone', '');
+        $absentSmsTemplate = $settingsCollection->get('absent_sms_template', "Dear [[parent_name]], your child [[student_name]] (Class [[class_title]]) is absent today. Please ensure attendance. Thank you. - [[school_name]]"); // Default template
+        $messageChannel = $settingsCollection->get('message_channel', 'sms'); // Default channel
+
+        $attendance = [];
         foreach($students as $data){
             $attendance[] = [
                 'class_id' => $data['class_id'],
@@ -145,26 +161,58 @@ class StudentAttendanceController extends Controller
             ];
             
            if(strtolower($data['attendance']) == 'absent') {
+               $sms = []; // Initialize sms array here
                $sms['student_id'] = $data['id'];
-               $sms['channel'] = 'whatsapp';
-               $sms['message'] = "Dear, ".$data['parents']['name']."\nApka bacha \"".$data['name']."\" (Class ".$data['stdclasses']['name'].") ajj school say ghair hazir hai. Bechy ki hazri yaqeeni bnain,\n Shukarya.\n".$settings->setting_value;
-               $sms['phone'] = $this->format_phone($data['parents']['phone']);
-               SmsQueue::create($sms);
+               $sms['channel'] = $messageChannel; // Use channel from settings
+
+               // Prepare data for placeholder replacement
+               $parentName = $data['parents']['name'] ?? 'Parent';
+               $studentName = $data['name'] ?? 'Student';
+               $className = $data['stdclasses']['name'] ?? 'N/A';
+
+               // Replace placeholders in the template
+               $message = str_replace(
+                   ['[[parent_name]]', '[[student_name]]', '[[class_title]]', '[[school_name]]', '[[school_address]]', '[[school_phone]]'],
+                   [$parentName, $studentName, $className, $schoolName, $schoolAddress, $schoolPhone],
+                   $absentSmsTemplate
+               );
+
+               $sms['message'] = $message; // Assign the processed message
+               $sms['phone'] = isset($data['parents']['phone']) ? $this->format_phone($data['parents']['phone']) : null;
+               
+               // Only create SMS queue if phone number is valid
+               if ($sms['phone']) {
+                   SmsQueue::create($sms);
+               }
            }
         }
-        StudentAttendance::insert($attendance);
+        // Use insert for better performance if attendance array is not empty
+        if (!empty($attendance)) {
+            StudentAttendance::insert($attendance);
+        }
+
+        // Consider returning a response, e.g., success message
+        return response()->json(new JsonResponse(['message' => 'Attendance recorded successfully.']));
     }
 
 
     function format_phone($phone) {
-        $phone = ltrim($phone, '0'); //remove 0 from start
-        $phone = ((strpos( $phone, "92" ) === 0)) ? $phone : '92'.$phone;
-        $find = array(' ', '-');
-        $replace = array('','');
-        $phone = str_replace($find, $replace, $phone);
+        if (empty($phone)) {
+            return null; // Return null for empty phone numbers
+        }
+        $phone = preg_replace('/[^0-9]/', '', $phone); // Remove non-numeric characters
+        $phone = ltrim($phone, '0'); //remove 0 from start if exists
+        // Add 92 prefix if it doesn't start with 92 and has a reasonable length (e.g., 10 digits for Pakistan mobile)
+        if (strlen($phone) === 10 && strpos($phone, "92") !== 0) {
+             $phone = '92' . $phone;
+        } else if (strlen($phone) !== 12 || strpos($phone, "92") !== 0) {
+            // Basic validation: if it's not 12 digits starting with 92 after formatting, consider it invalid for this context
+             // Log::warning("Invalid phone format after processing: " . $phone); // Optional: Log invalid formats
+             return null; 
+        }
+       
         return $phone;
     }
-
 
     function dailyclasswise(Request $request) {
         $date = $request->attendance_date;

@@ -159,20 +159,26 @@
                 </el-form>
               </el-tab-pane>
               <el-tab-pane label="Message Settings" name="message">
-                <el-form :model="form" label-width="250px">
+                <el-form :model="message" label-width="250px">
                   <el-form-item label="Message Channel">
-
-                      <el-select v-model="message.message_channel" filterable placeholder="Select Message Channel">
-                          <el-option
-                              label="SMS"
-                              value="sms"
-                          />
-                          <el-option
-                              label="WhatsApp"
-                              value="whatsapp"
-                          />
-                      </el-select>
+                    <el-select v-model="message.message_channel" filterable placeholder="Select Message Channel">
+                      <el-option label="SMS" value="sms" />
+                      <el-option label="WhatsApp" value="whatsapp" />
+                    </el-select>
                   </el-form-item>
+
+                  <el-form-item label="SMS Template">
+                    <el-input
+                      v-model="message.absent_sms_template"
+                      type="textarea"
+                      :rows="5"
+                      placeholder="Enter your custom SMS template here."
+                    />
+                    <div class="mt-2 text-gray-500 text-sm">
+                      Available placeholders: '[[parent_name]]', '[[student_name]]', '[[class_title]]', '[[school_name]]', '[[school_address]]', '[[school_phone]]'
+                    </div>
+                  </el-form-item>
+
                   <el-form-item>
                     <el-button type="primary" @click="saveMessageSettings()" :loading="form_element.updating">Save</el-button>
                   </el-form-item>
@@ -211,6 +217,7 @@ export default {
       },
       message: {
           message_channel: '',
+          absent_sms_template: '', // Add sms_template property
       },
       school_form: {
         school_name: '',
@@ -271,6 +278,7 @@ export default {
       this.exam_form.result_header = settings.result_header || '';
       this.student_form.admission_rules = settings.admission_rules || '';
       this.message.message_channel = settings.message_channel || '';
+      this.message.absent_sms_template = settings.absent_sms_template || ''; // Load sms_template
     },
     handleLogoUpload(file) {
       if (file && file.raw) {
