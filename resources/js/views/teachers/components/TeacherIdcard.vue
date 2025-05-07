@@ -99,7 +99,7 @@ export default {
       return this.modelValue;
     },
     qrCodeUrl() {
-      return `${window.location.origin}/teacher/${this.teacher.id || ''}/online`;
+      return `${window.location.origin}/#/teacher/${this.teacher.id || ''}/online`;
     },
     currentDate() {
       return this.currentDateStr;
