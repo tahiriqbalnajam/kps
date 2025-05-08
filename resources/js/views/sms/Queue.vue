@@ -72,7 +72,7 @@
           </el-form-item>
           <el-form-item v-show="sms.smstype == 'Multiple'" label="Select Classes" :label-width="formLabelWidth">
             <el-select v-model="sms.classes" multiple placeholder="Select">
-              <el-option v-for="item in classes" :key="item.id" :label="item.name | uppercaseFirst" :value="item.id" />
+              <el-option v-for="item in classes" :key="item.id" :label="item.name" :value="item.id" />
             </el-select>
           </el-form-item>
           <el-form-item v-show="sms.smstype == 'Single'" label="Phone" :label-width="formLabelWidth">
