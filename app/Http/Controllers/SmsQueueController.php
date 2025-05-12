@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\SmsQueue as SMS;
-use App\Models\Settings;
 use App\Models\Student;
+use App\Models\Settings;
+use App\Models\SmsQueue;
 use Illuminate\Support\Arr;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use App\Models\SmsQueue as SMS;
 use Illuminate\Http\JsonResponse;
 
 class SmsQueueController extends Controller
@@ -56,30 +57,53 @@ class SmsQueueController extends Controller
                  $message = $request->message;
                  $data = array();
                  foreach($classes as $sclass) {
-                     $students = Student::with('parents')->where('class_id', $sclass)->get();
+                     $students = Student::with('parents')->where('class_id', $sclass)->where('status', 'enable')->get();
                      foreach($students as $student) {
-                         $phone = $student->parents->phone;
-                         $data[] = array('student_id' => $student->id, 'message' => $message, 'phone' => $phone, 'channel' => $request->channel);
+                         $phone = isset($student->parents->phone) ? $this->format_phone($student->parents->phone) : null;
+                         $data[] = array('student_id' => $student->id, 'message' => $message, 
+                                            'phone' => $phone, 'channel' => $request->channel);
                      }
                  }
-                 print_r($data);
                  SMS::insert($data);
              } else {
-                 $smstext = Settings::find(1)->fee_sms;
+                $settingsCollection = Settings::where('setting_key', [
+                    'school_name', 
+                    'address', 
+                    'phone', 
+                    'fee_sms_template',
+                    'message_channel'
+                ])->pluck('setting_value', 'setting_key');
+                $schoolName = $settingsCollection->get('school_name', 'Your School'); // Default if not set
+                $schoolAddress = $settingsCollection->get('address', '');
+                $schoolPhone = $settingsCollection->get('phone', '');
+                $messageChannel = $settingsCollection->get('message_channel', 'sms');
                  $data = array();
                  $smsz = $request->get('sms');
                  $find = array('{{parent_name}}', '{{student_name}}');
-                 foreach($smsz as $sms){
-                     if(!$sms['phone'])
+                 foreach($smsz as $msg){
+                     if(!$msg['phone'])
                          continue;
 
-                     $replace = array($sms['parent'], $sms['name']);
-                     $text = str_replace($find, $replace, $smstext);
-                     $phone = $this->format_phone($sms['phone']);
-                     $data[] = array('student_id' => $sms['id'], 'message' => $text, 'phone' => $phone, 'channel' => $request->channel);
+                    $sms = []; // Initialize sms array here
+                    $sms['student_id'] = $msg['id'];
+                    $sms['channel'] = $messageChannel; // Use channel from settings
+                    $parentName = $msg['parents']['name'] ?? 'Parent';
+                    $studentName = $msg['name'] ?? 'Student';
+                    $className = $msg['stdclasses']['name'] ?? 'N/A';
+                    $pendingSmsTemplate = $settingsCollection->get('fee_sms_template', "Dear [[parent_name]], your child [[student_name]] (Class [[class_title]]) has a pending fee. Please pay fee at earliest as possible. Thank you. - [[school_name]]"); // Default template
+                    $message = str_replace(
+                        ['[[parent_name]]', '[[student_name]]', '[[class_title]]', '[[school_name]]', '[[school_address]]', '[[school_phone]]'],
+                        [$parentName, $studentName, $className, $schoolName, $schoolAddress, $schoolPhone],
+                        $pendingSmsTemplate
+                    );
+                    $sms['message'] = $message; // Assign the processed message
+                    $sms['phone'] = isset($msg['phone']) ? $this->format_phone($msg['phone']) : null;
+                    
+                    // Only create SMS queue if phone number is valid
+                    if ($msg['phone']) {
+                        SmsQueue::create($sms);
+                    }
                  }
-
-                 SMS::insert($data); // Eloquent approach
                  return response()->json(new JsonResponse(['sms' => true]));
              }
         }
