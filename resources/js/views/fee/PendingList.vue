@@ -140,8 +140,8 @@ export default {
     async getList() {
       this.loading = true;
       const { data } = await pendingfeePro.list(this.query);
-      this.pendingfee = data.fee.data;
-      this.total = data.fee.total;
+      this.pendingfee = data.students.data;
+      this.total = data.students.total;
       this.loading = false;
     },
     async search_data() {
