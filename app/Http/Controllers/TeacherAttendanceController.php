@@ -124,22 +124,62 @@ class TeacherAttendanceController extends Controller
         else{
             DB::beginTransaction();
             try {
-                TeacherAttendance::where('attendance_date', $date)->delete();
-                foreach($teachers as $data){
-                    $attendance[] = [
-                        'teacher_id' => $data['id'],
-                        'status' => $data['attendance'],
-                        'attendance_date' =>  $date,
-                    ];
+                $update_all = $request->has('update_all') && $request->update_all;
+                
+                // Only delete all records if update_all is checked
+                if ($update_all) {
+                    TeacherAttendance::where('attendance_date', $date)->delete();
+                }
+               
+                $settingsCollection = Settings::where('setting_key', [
+                    'opening_time', 
+                ])->pluck('setting_value', 'setting_key');
+                $opening_time = $settingsCollection['opening_time'];
+                
+                $attendance = [];
+                foreach($teachers as $data) {
+                    $teacher_id = $data['id'];
+                    $status = $data['attendance'];
+                    
+                    // Check if attendance record exists for this teacher on this date
+                    $existing_attendance = TeacherAttendance::where('teacher_id', $teacher_id)
+                        ->where('attendance_date', $date)
+                        ->first();
+                        
+                    if ($existing_attendance) {
+                        // Update existing record if update_all is checked
+                        if ($update_all) {
+                            $attendance[] = [
+                                'teacher_id' => $teacher_id,
+                                'status' => $status,
+                                'attendance_date' => $date,
+                                'opening_time' => $opening_time,
+                            ];
+                        }
+                        // Otherwise, leave existing record untouched
+                    } else {
+                        // Insert new record if none exists
+                        $attendance[] = [
+                            'teacher_id' => $teacher_id,
+                            'status' => $status,
+                            'attendance_date' => $date,
+                            'opening_time' => $opening_time,
+                        ];
+                    }
 
-                    if($data['attendance'] == 'Absent') {
+                    if($status == 'absent') {
                         $sms['user_id'] = $data['id'];
+                        $sms['channel'] = 'whatsapp';
                         $sms['message'] = 'Dear teacher '.$data['name'].',  Your are absent today from school.';
                         $sms['phone'] = $this->format_phone($data['phone']);
                         SmsQueue::create($sms);
                     }
                 }
-                TeacherAttendance::insert($attendance);
+                
+                // Only insert if there are records to insert
+                if (!empty($attendance)) {
+                    TeacherAttendance::insert($attendance);
+                }
 
                 DB::commit();
                 return response()->json(new JsonResponse(['success' => true]));

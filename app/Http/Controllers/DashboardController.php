@@ -67,11 +67,12 @@ class DashboardController extends Controller
         }
 
         $holidayDates = Holiday::whereDate('holiday_date', $date)->pluck('holiday_date')->toArray();
-        $absentStudents = Student::whereDoesntHave('attendances', function ($query) use ($date) {
-            $query->whereDate('attendance_date', $date)->where('status', 'present');
-        })->whereDoesntHave('attendances', function ($query) use ($holidayDates) {
-            $query->whereIn('attendance_date', $holidayDates);
-        })->get();
+        $absentStudents = Student::where('status', 'enable')
+            ->whereDoesntHave('attendances', function ($query) use ($date) {
+                $query->whereDate('attendance_date', $date)->where('status', 'present');
+            })->whereDoesntHave('attendances', function ($query) use ($holidayDates) {
+                $query->whereIn('attendance_date', $holidayDates);
+            })->get();
 
         $totalAbsent = $absentStudents->count();
 
@@ -89,11 +90,13 @@ class DashboardController extends Controller
         }
 
         // Fetch teachers who have attendance marked as 'absent' or no attendance marked at all
-        $absentTeachers = Teacher::whereDoesntHave('attendances', function ($query) use ($date) {
+        $absentTeachers = Teacher::where('status','active')->whereDoesntHave('attendances', function ($query) use ($date) {
             $query->whereDate('attendance_date', $date)->where('status', 'present');
-        })->whereHas('attendances', function ($query) use ($date) {
-            $query->whereDate('attendance_date', $date)->where('status', 'absent')->orWhere('status', 'leave');
-        })->pluck('name');
+        })
+        // ->whereHas('attendances', function ($query) use ($date) {
+        //     $query->whereDate('attendance_date', $date)->where('status', 'absent')->orWhere('status', 'leave');
+        // })
+        ->pluck('name');
 
         // Count the total number of absent teachers
         $totalAbsent = $absentTeachers->count();
