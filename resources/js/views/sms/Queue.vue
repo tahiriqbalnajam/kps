@@ -10,12 +10,25 @@
       <el-button style="margin-left: 10px;" type="danger" icon="el-icon-delete" :loading="sendsmsloading" @click="clearQueue()">
         Clear Queue
       </el-button>
+      <el-button 
+        style="margin-left: 10px;" 
+        type="danger" 
+        icon="el-icon-delete" 
+        :disabled="multipleSelection.length === 0"
+        @click="handleDelete()">
+        Delete Selected
+      </el-button>
     </div>
     <el-table
       :data="list"
       style="width: 100%"
       empty-text="No SMS to send"
+      @selection-change="handleSelectionChange"
     >
+      <el-table-column
+        type="selection"
+        width="55">
+      </el-table-column>
       <el-table-column label="Phone" prop="phone" />
       <el-table-column label="Channel" prop="channel" />
       <el-table-column label="Student" prop="student.name" />
@@ -119,6 +132,7 @@ export default {
       downloading: false,
       editnow: false,
       formLabelWidth: '250',
+      multipleSelection: [], // Add this line to track selected rows
       sms: {
         id: '',
         smstype: 'Single',
@@ -127,7 +141,7 @@ export default {
         phone: '',
         channel: '',
       },
-        message_ids: [],
+      message_ids: [],
       query: {
         page: 1,
         limit: 15,
@@ -145,6 +159,12 @@ export default {
       this.defaultMessageChannel()
   },
   methods: {
+    // Add this method to handle table selection changes
+    handleSelectionChange(val) {
+      this.multipleSelection = val;
+      console.log('Selected rows:', this.multipleSelection.length);
+    },
+    
     async handleSizeChange (val) {
       console.log(`每页 ${val} 条`);
       this.query.limit = val
@@ -185,17 +205,38 @@ export default {
       this.editnow = true;
     },
     async handleDelete(id, name) {
-      this.$confirm('Do you really want to delete?', 'Warning', {
+      // If id is provided, delete single record, otherwise delete selected records
+      const isMultiDelete = id === undefined;
+      const confirmMessage = isMultiDelete 
+        ? 'Do you really want to delete selected records?' 
+        : 'Do you really want to delete?';
+
+      this.$confirm(confirmMessage, 'Warning', {
         confirmButtonText: 'OK',
         cancelButtonText: 'Cancel',
         type: 'warning'
       }).then(async() => {
-        await smsqueuePro.destroy(id);
+        if (isMultiDelete) {
+          // Multiple delete
+          if (this.multipleSelection.length === 0) return;
+          
+          const deletePromises = this.multipleSelection.map(item => smsqueuePro.destroy(item.id));
+          await Promise.all(deletePromises);
+          
+          this.$message({
+            type: 'success',
+            message: `${this.multipleSelection.length} records deleted successfully`
+          });
+          this.multipleSelection = [];
+        } else {
+          // Single delete
+          await smsqueuePro.destroy(id);
+          this.$message({
+            type: 'success',
+            message: name + ' deleted successfully'
+          });
+        }
         this.getList();
-        this.message({
-          type: 'success',
-          message: name+' Delete successfully'
-        });
       });
     },
     async onSubmit() {
