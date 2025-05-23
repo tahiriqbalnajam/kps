@@ -1,23 +1,6 @@
 <template>
   <el-card v-if="user.name">
     <el-tabs v-model="activeActivity" @tab-click="handleClick">
-      <el-tab-pane :label="t('user.timeline')" name="first">
-        <div class="block">
-          <el-timeline>
-            <el-timeline-item
-                placement="top"
-                v-for="(item, index) in timeLinesData"
-                :key="index"
-                :timestamp="item.created_at"
-            >
-              <el-card>
-                <h4>{{item.title}}</h4>
-                <p>{{item.content}}</p>
-              </el-card>
-            </el-timeline-item>
-          </el-timeline>
-        </div>
-      </el-tab-pane>
       <el-tab-pane v-loading="updating" :label="t('user.account')" name="second">
         <el-form :model="user" label-width="120px">
           <el-form-item :label="t('user.name')">
@@ -26,29 +9,26 @@
           <el-form-item :label="t('user.email')">
             <el-input v-model="user.email" :disabled="disabled"/>
           </el-form-item>
-          <el-form-item :label="t('user.sex')">
-            <el-radio-group v-model="user.sex">
-              <el-radio :label="0">{{ t('user.male') }}</el-radio>
-              <el-radio :label="1">{{ t('user.female') }}</el-radio>
-            </el-radio-group>
-          </el-form-item>
-          <el-form-item :label="t('user.birthday')">
-            <el-date-picker
-                v-model="user.birthday"
-                type="datetime"
-                :placeholder="t('user.birthday')"
-                value-format="YYYY-MM-DD HH:mm:ss"
+          
+          <!-- Password change section -->
+          <el-divider content-position="left">Change Password</el-divider>
+          <el-form-item label="New Password">
+            <el-input 
+              v-model="passwordForm.password" 
+              type="password" 
+              show-password
+              placeholder="Enter new password"
             />
           </el-form-item>
-          <el-form-item :label="t('user.description')">
-            <el-input
-                v-model="user.description"
-                maxlength="255"
-                :placeholder="t('user.description')"
-                show-word-limit
-                type="textarea"
+          <el-form-item label="Confirm Password">
+            <el-input 
+              v-model="passwordForm.password_confirmation" 
+              type="password" 
+              show-password
+              placeholder="Confirm new password"
             />
           </el-form-item>
+          <!-- End password change section -->
           <el-form-item>
             <el-button type="primary" @click="onSubmit">
               {{t('form.save')}}
@@ -75,9 +55,6 @@ const props = defineProps({
         email: '',
         avatar: '',
         roles: [],
-        sex: 0,
-        birthday: '2006-01-02 15:04:05',
-        description: ''
       }
     },
   },
@@ -85,9 +62,15 @@ const props = defineProps({
 
 const {t} = useI18n({useScope: 'global'})
 
+// Add passwordForm data
+const passwordForm = reactive({
+  password: '',
+  password_confirmation: ''
+})
+
 const userResource = new UserResource('users')
 const resData = reactive({
-  activeActivity: 'first',
+  activeActivity: 'second',
   disabled: computed(() => {
     if (props.user.id) {
       getTimeLines()
@@ -110,19 +93,54 @@ const resData = reactive({
 const handleClick = (tab, event) => {
 
 }
+
+// Add password validation function
+const validatePassword = () => {
+  if (passwordForm.password && !passwordForm.password_confirmation) {
+    ElMessage.error('Please confirm your password')
+    return false
+  }
+  
+  if (passwordForm.password && passwordForm.password_confirmation && 
+      passwordForm.password !== passwordForm.password_confirmation) {
+    ElMessage.error('Passwords do not match')
+    return false
+  }
+  
+  return true
+}
+
 const onSubmit = () => {
+  // Validate password if it's being changed
+  if (passwordForm.password && !validatePassword()) {
+    return
+  }
+  
   resData.updating = true
   let params = {
     sex: props.user.sex,
     description: props.user.description
   }
+  
   if (props.user.birthday) {
     params.birthday = dayjs(props.user.birthday).format('YYYY-MM-DD HH:mm:ss')
   }
+  
+  // Add password to params if it's being changed
+  if (passwordForm.password) {
+    params.password = passwordForm.password
+    params.password_confirmation = passwordForm.password_confirmation
+  }
+  
   userResource
       .update(props.user.id, params)
       .then(response => {
         resData.updating = false
+        
+        // Reset password fields after successful update
+        passwordForm.password = ''
+        passwordForm.password_confirmation = ''
+        
         ElMessage({
           message: 'User information has been updated successfully',
           type: 'success',

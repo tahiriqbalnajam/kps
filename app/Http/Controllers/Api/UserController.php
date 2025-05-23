@@ -141,10 +141,16 @@ class UserController extends BaseController
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 403);
         }
-
-        $user->sex = intval($request->input('sex'));
-        $user->birthday = $request->input('birthday');
-        $user->description = $request->input('description');
+        if ($request->has('password')) {
+            $validator = Validator::make($request->all(), [
+                'password' => 'required|min:6',
+                'confirmPassword' => 'same:password'
+            ]);
+            if ($validator->fails()) {
+                return response()->json(['errors' => $validator->errors()], 403);
+            }
+            $user->password = Hash::make($request->input('password'));
+        }
         $user->save();
         return new UserResource($user);
     }
@@ -231,11 +237,6 @@ class UserController extends BaseController
                 'required',
                 Rule::notIn([Acl::ROLE_ADMIN])
             ] : '',
-            'sex' => [
-                'required',
-                Rule::in([0, 1])
-            ],
-            'birthday' => 'date_format:Y-m-d H:i:s',
             'description' => 'max:255'
         ];
     }

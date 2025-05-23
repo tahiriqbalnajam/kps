@@ -35,11 +35,16 @@
       <el-table-column label="Message" prop="message" />
       <el-table-column label="Status" prop="status" />
       <el-table-column label="Error" prop="api_error" />
+      <el-table-column label="Created Date" prop="created_at">
+        <template #default="scope">
+          {{ formatDate(scope.row.created_at) }}
+        </template>
+      </el-table-column>
       <el-table-column align="right">
-        <template slot="header" slot-scope="scope">
+        <template #header>
           <el-input ref="search" v-model="query.keyword" size="mini" placeholder="Type to search" v-on:input="debounceInput" />
         </template>
-        <template slot-scope="scope">
+        <template #default="scope">
           <el-button
             size="mini"
             @click="handleEdit(scope.row.id, scope.row.name)"
@@ -107,6 +112,7 @@
 import Pagination from '@/components/Pagination/index.vue';
 import {debounce} from 'lodash';
 import Resource from '@/api/resource';
+import moment from 'moment';
 import {
     completeSMS,
     getDefaultMessageChannel,
@@ -159,6 +165,10 @@ export default {
       this.defaultMessageChannel()
   },
   methods: {
+
+    formatDate(date) {
+      return moment(date).format('DD/MM/YYYY');
+    },
     // Add this method to handle table selection changes
     handleSelectionChange(val) {
       this.multipleSelection = val;
@@ -202,6 +212,7 @@ export default {
     async handleEdit(id, name) {
       const { original } = await smsqueuePro.get(id);
       this.sms = original.sms;
+      this.sms.smstype = 'Single';
       this.editnow = true;
     },
     async handleDelete(id, name) {
