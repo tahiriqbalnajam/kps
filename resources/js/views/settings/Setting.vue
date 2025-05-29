@@ -167,15 +167,28 @@
                     </el-select>
                   </el-form-item>
 
-                  <el-form-item label="SMS Template">
+                  <el-form-item label="Absent SMS Template">
                     <el-input
                       v-model="message.absent_sms_template"
                       type="textarea"
                       :rows="5"
-                      placeholder="Enter your custom SMS template here."
+                      placeholder="Enter your custom SMS template for absent notifications."
                     />
                     <div class="mt-2 text-gray-500 text-sm">
                       Available placeholders: '[[parent_name]]', '[[student_name]]', '[[class_title]]', '[[school_name]]', '[[school_address]]', '[[school_phone]]'
+                    </div>
+                  </el-form-item>
+
+                  <el-form-item label="Fee SMS Template">
+                    <el-input
+                      v-model="message.fee_sms_template"
+                      type="textarea"
+                      :rows="5"
+                      placeholder="Enter your custom SMS template for fee reminders."
+                    />
+                    <div class="mt-2 text-gray-500 text-sm">
+                      Available placeholders: '[[parent_name]]', '[[student_name]]', '[[class_title]]', '[[due_date]]', '[[amount]]', '[[school_name]]'
+                      <!-- Added more relevant placeholders for fees -->
                     </div>
                   </el-form-item>
 
@@ -217,7 +230,8 @@ export default {
       },
       message: {
           message_channel: '',
-          absent_sms_template: '', // Add sms_template property
+          absent_sms_template: '',
+          fee_sms_template: '', // Add fee_sms_template property
       },
       school_form: {
         school_name: '',
@@ -278,7 +292,8 @@ export default {
       this.exam_form.result_header = settings.result_header || '';
       this.student_form.admission_rules = settings.admission_rules || '';
       this.message.message_channel = settings.message_channel || '';
-      this.message.absent_sms_template = settings.absent_sms_template || ''; // Load sms_template
+      this.message.absent_sms_template = settings.absent_sms_template || '';
+      this.message.fee_sms_template = settings.fee_sms_template || ''; // Load fee_sms_template
     },
     handleLogoUpload(file) {
       if (file && file.raw) {
@@ -316,18 +331,17 @@ export default {
       try {
         const formData = new FormData();
 
-        // Add all form fields
+        // Add all form fields from the message object
         Object.keys(this.message).forEach(key => {
-            localStorage.setItem(key, this.message[key])
             formData.append(key, this.message[key] || '');
         });
 
         await this.settingResource.store(formData);
-        await this.getList();
-        this.$message.success('Settings updated successfully');
+        await this.getList(); // Refresh settings after save
+        this.$message.success('Message settings updated successfully');
       } catch (error) {
-        console.error('Error saving settings:', error);
-        this.$message.error('Failed to save settings');
+        console.error('Error saving message settings:', error);
+        this.$message.error('Failed to save message settings');
       } finally {
         this.form_element.updating = false;
       }
