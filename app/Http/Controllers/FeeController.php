@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\DB;
 
 class FeeController extends Controller
 {
-    const ITEM_PER_PAGE = 30;
+    const ITEM_PER_PAGE = 3000;
     /**
      * Display a listing of the resource.
      *
@@ -24,6 +24,7 @@ class FeeController extends Controller
         $limit = Arr::get($searchParams, 'limit', static::ITEM_PER_PAGE);
         $keyword = $request->get('keyword');
         $stdclass = $request->get('stdclass');
+        $feetype_id = $request->get('feetype_id');
         //$stdclass = '11';
         $student_id = $request->get('id');
         $date = $request->get('date');
@@ -36,6 +37,9 @@ class FeeController extends Controller
                     })
                     ->when( $keyword,  function($q) use ($keyword) {
                         return $q->where( 'student.name', 'like', '%'.$keyword.'%');
+                    })
+                    ->when( $feetype_id,  function($q) use ($feetype_id) {
+                        return $q->where( 'fee_type_id', 'like', '%'.$feetype_id.'%');
                     })
                     ->whereHas('student.stdclasses', function ($query) use ($stdclass) {
                         if ($stdclass) {
