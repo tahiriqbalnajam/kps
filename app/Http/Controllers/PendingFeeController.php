@@ -29,8 +29,8 @@ class PendingFeeController extends Controller
 
         // Subquery to get the latest fee payment date for each student
         $latestFee = DB::table('fee')
-                   ->select('student_id','created_at', DB::raw('MAX(payment_to_date) as payment_to_date')) // Get only the latest payment_to_date
-                   ->groupBy('student_id','created_at');
+                   ->select('student_id',DB::raw('MAX(created_at) as created_at'), DB::raw('MAX(payment_to_date) as payment_to_date')) // Get only the latest payment_to_date
+                   ->groupBy('student_id');
 
         $students = DB::table('students')
                 ->select('students.id','students.name', 'classes.name as classname','parents.name as parent', 'parents.phone as phone', 'f.payment_to_date','f.created_at as paidat') // Select payment_to_date from subquery 'f'
