@@ -193,7 +193,7 @@ class TeacherController extends Controller
         $year = $request->input('month') ? date('Y', strtotime($request->input('month'))): date('Y');
         $allowedLeaves = $request->input('allowed_leaves', 1);
 
-        $teachers = Teacher::all();
+        $teachers = Teacher::where('status', 'active')->get();
         $pay=array();
         foreach($teachers as $teacher){
             $teacher_details = array('teacher_id' => $teacher->id, 'name'=> $teacher->name, 'month' => $request->input('month'),
