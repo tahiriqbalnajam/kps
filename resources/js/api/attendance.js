@@ -84,3 +84,12 @@ export function attendanceSummary(data) {
     data,
   });
 }
+
+export function getDailyAttendanceGraph(params) {
+  return request({
+    url: '/student/attendance/daily-graph',
+    method: 'get',
+    params,
+  });
+}
+

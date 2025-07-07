@@ -19,6 +19,7 @@ use App\Http\Controllers\SyllabusCompletionController;
 */
 //students
 Route::apiResource('students', 'StudentController');
+Route::post('students/export', 'StudentController@exportStudents'); // New route for export
 Route::get('students/{id}/subject-wise-scores', 'StudentController@getSubjectWiseScores');
 //classes
 Route::apiResource('classes', 'ClassesController');
@@ -167,4 +168,16 @@ Route::get('/orders', function () {
     }
 
     return responseSuccess(['items' => $data]);
+});
+
+// Complaints routes
+Route::prefix('complaints')->group(function () {
+    Route::get('/', [App\Http\Controllers\ComplaintController::class, 'index']);
+    Route::post('/', [App\Http\Controllers\ComplaintController::class, 'store']);
+    Route::get('/students', [App\Http\Controllers\ComplaintController::class, 'getStudents']);
+    Route::get('/teachers', [App\Http\Controllers\ComplaintController::class, 'getTeachers']);
+    Route::get('/{complaint}', [App\Http\Controllers\ComplaintController::class, 'show']);
+    Route::put('/{complaint}', [App\Http\Controllers\ComplaintController::class, 'update']);
+    Route::patch('/{complaint}/status', [App\Http\Controllers\ComplaintController::class, 'updateStatus']);
+    Route::delete('/{complaint}', [App\Http\Controllers\ComplaintController::class, 'destroy']);
 });

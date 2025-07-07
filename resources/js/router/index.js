@@ -376,6 +376,19 @@ export const asyncRoutes = [
     ],
   },
   {
+    path: '/complaints',
+    component: Layout,
+    redirect: '/complaints/index',
+    children: [
+      {
+        path: 'index',
+        component: () => import('@/views/complaint/ComplaintManagement.vue'),
+        name: 'Complaints',
+        meta: { title: 'Complaints', bootstrapIcon: 'exclamation-triangle-fill', noCache: true },
+      },
+    ],
+  },
+  {
     path: '/settings',
     component: Layout,
     redirect: '/settings/Setting',

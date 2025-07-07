@@ -206,7 +206,7 @@ import CharacterCertificate from '@/views/students/StudentCharacterCertificate.v
 import SchoolLeavingCertificate from '@/views/students/SchoolLeavingCertificate.vue';
 import AddStudent from '@/views/students/AddStudent.vue';
 import AdmissionCertificate from '@/views/students/components/AdmissionCertificate.vue';
-import { editClass } from '@/api/student.js';
+import { editClass, exportStudent } from '@/api/student.js'; // Ensure exportStudent is imported
 import HeadControls from '@/components/HeadControls.vue';
 const student = new Resource('students');
 const classes = new Resource('classes');
@@ -464,36 +464,104 @@ export default {
       this.showschoolleavingcertificate = true;
       this.studentid = id;
     },
-    handleDownload() {
-      this.downloadLoading = true;
-      import('@/vendor/Export2Excel').then(excel => {
-        const tHeader = ['Roll#', 'Adm #', 'Name', 'Parent Name', 'Phone','Class','Gender','Fee','DOB'];
-        const filterVal = ['roll_no', 'adminssion_number', 'name', 'parent_name', 'phone','class','gender','fee','dob'];
-        const list = this.formateData(this.list);
-        const data = this.formatJson(filterVal, list);
-        excel.export_json_to_excel({
-          header: tHeader,
-          data,
-          filename: 'paid_fee_today',
+    async handleDownload() {
+      if (this.total === 0) {
+        this.$message({
+          message: 'No data to export.',
+          type: 'info'
         });
-      });
+        return;
+      }
+      this.downloadLoading = true;
+      try {
+        const exportParams = {};
+
+        // Main filter: filtercol and keyword
+        if (this.query.filtercol && this.query.keyword !== undefined && this.query.keyword !== null && this.query.keyword !== '') {
+          if (this.query.filtercol === 'all') {
+             exportParams[`filter[all]`] = this.query.keyword;
+          } else {
+             exportParams[`filter[${this.query.filtercol}]`] = this.query.keyword;
+          }
+        }
+
+        // Class/Section filter
+        if (this.query.stdclass) {
+          const selectedValue = this.query.stdclass.toString();
+          if (selectedValue.startsWith('class_')) {
+            const classId = selectedValue.split('_')[1];
+            exportParams['filter[stdclass]'] = classId; 
+          } else if (selectedValue.startsWith('section_')) {
+            const sectionId = selectedValue.split('_')[1];
+            exportParams['filter[section_id]'] = sectionId; 
+          }
+        }
+
+        // More filters
+        if (this.query.morefilters && this.query.morefilters.length > 0) {
+          this.query.morefilters.forEach(filter => {
+            if (filter === 'gender_male') exportParams['filter[gender]'] = 'Male';
+            else if (filter === 'gender_female') exportParams['filter[gender]'] = 'Female';
+            else if (filter === 'is_orphan') exportParams['filter[is_orphan]'] = 'Yes'; 
+            else if (filter === 'pef_admission_done') exportParams['filter[pef_admission]'] = 'Yes';
+            else if (filter === 'pef_admission_pending') exportParams['filter[pef_admission]'] = 'No';
+            else if (filter === 'nadra_pending') exportParams['filter[nadra_b_form_verified]'] = 'No'; 
+            else if (filter === 'under_five') exportParams['filter[age_less_than]'] = '5'; 
+            else if (filter === 'view_inactive') exportParams['filter[status]'] = 'disable'; 
+          });
+        }
+        
+        exportStudent(exportParams) // Pass the constructed exportParams
+          .then(response => {
+            const blob = new Blob([response], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `students_${moment().format('YYYYMMDD_HHmmss')}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url); // Clean up
+          })
+          .catch(error => {
+            console.error('Error downloading file:', error);
+            this.$message({
+              message: 'Download failed. Please try again.',
+              type: 'error'
+            });
+          });
+
+      } catch (error) {
+        console.error('Error during export:', error);
+        this.$message({
+          message: 'Export failed. Please try again.',
+          type: 'error'
+        });
+      } finally {
+        // It's hard to know when download finishes with window.location.href
+        // Consider using a timeout or a more sophisticated download handling if needed
+        setTimeout(() => {
+            this.downloadLoading = false;
+        }, 1500); // Stop loading indicator after a delay
+      }
     },
-    formateData(data) {
-      const formatedData = data.map(record => (
+    formateData(dataToFormat) {
+      const formatedData = dataToFormat.map(record => (
         {
           adminssion_number: record.adminssion_number,
           roll_no: record.roll_no,
           name: record.name,
-          parent_name: record.parents.name,
-          phone: record.parents.phone,
-          class: record.stdclasses.name,
+          parent_name: record.parents ? record.parents.name : '',
+          phone: record.parents ? record.parents.phone : '',
+          class: record.stdclasses ? record.stdclasses.name : '',
           gender: record.gender,
           fee: record.monthly_fee,
-          dob: record.dob,
+          dob: this.dateformat(record.dob), // Ensure dob is formatted
+          b_form: record.b_form,
+          status: record.status,
         }
       )
       );
-      this.downloadLoading = false;
       return formatedData;
     },
     formatJson(filterVal, jsonData) {

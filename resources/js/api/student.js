@@ -21,3 +21,11 @@ export function getSubjectWiseScores(id) {
     method: 'get',
   });
 }
+
+export function exportStudent(stdData){
+  return request({
+    url: 'students/export',
+    method: 'post',
+    data: stdData,
+  });
+}

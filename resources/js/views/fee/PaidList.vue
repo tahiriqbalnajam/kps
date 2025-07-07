@@ -23,6 +23,24 @@
                 </el-form-item>
               </el-col>
               
+              <!-- Fee Type Filter -->
+              <el-col :xs="24" :sm="12" :md="6" :lg="5" :xl="5">
+                <el-form-item label="" class="mb-0">
+                  <el-select 
+                    v-model="query.feetype_id" 
+                    placeholder="Fee Type" 
+                    clearable 
+                    class="filter-item full-width"
+                    @change="handleFilter">
+                    <el-option 
+                      v-for="item in feeTypes" 
+                      :key="item.id" 
+                      :label="upperFirst(item.title)" 
+                      :value="item.id" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+
               <!-- Date Range Picker -->
               <el-col :xs="24" :sm="12" :md="10" :lg="9" :xl="9">
                 <el-date-picker
@@ -177,6 +195,7 @@ import moment from 'moment';
 import { debounce } from 'lodash';
 const feePro = new Resource('fee');
 const clasRes = new Resource('classes');
+const feetypeRes = new Resource('feetypes');
 export default {
   name: '',
   components: { Pagination,HeadControls, PayFee, FeePrint },
@@ -194,6 +213,7 @@ export default {
       fee: [],
       totalfee: 0,
       classes: null,
+      feeTypes: null,
       openpayfee: false,
       search: '',
       total: 0,
@@ -211,6 +231,7 @@ export default {
         limit: 15,
         date: [this.todayDate(), this.todayDate()],
         stdclass: '',
+        feetype_id: '',
       },
       pickerOptions: {
         shortcuts: [{
@@ -246,6 +267,7 @@ export default {
   created() {
     this.getList();
     this.getClasses();
+    this.getFeeTypes();
   },
   methods: {
     upperFirst(txt) {
@@ -369,6 +391,10 @@ export default {
     async getClasses() {
       const{ data } = await clasRes.list();
       this.classes = data.classes.data;
+    },
+    async getFeeTypes() {
+      const { data } = await feetypeRes.list();
+      this.feeTypes = data.feetypes.data;
     },
     async search_data() {
       await this.getList();

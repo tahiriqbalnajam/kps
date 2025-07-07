@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\DB;
 use Spatie\QueryBuilder\QueryBuilder;
 use Spatie\QueryBuilder\AllowedFilter;
 use App\Services\Contracts\StudentServiceInterface;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\StudentsExport;
 
 class StudentController extends Controller
 {
@@ -105,6 +107,14 @@ class StudentController extends Controller
     public function destroy($id)
     {
         //
+    }
+
+    public function exportStudents(Request $request)
+    {
+        $searchParams = $request->all();
+        $studentQuery = $this->studentService->listStudents($searchParams);
+
+        return Excel::download(new StudentsExport($studentQuery), 'students_export.csv', \Maatwebsite\Excel\Excel::CSV);
     }
 
     public function addattendance(Request $request){

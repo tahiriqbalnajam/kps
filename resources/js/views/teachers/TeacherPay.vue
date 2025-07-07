@@ -28,9 +28,21 @@
       <el-table size="small" :data="teachers" style="width: 100%;" max-height="550" empty-text="Not Generated" show-summary :summary-method="getSummaries">
         <el-table-column prop="name" label="Teacher"  />
         <el-table-column prop="salary" label="Salary"  />
-        <el-table-column prop="working_days" label="Working Days" />
-        <el-table-column prop="attende_days" label="Present Days"  />
-        <el-table-column prop="absent_days" label="Absent Days"  />
+        <el-table-column prop="working_days" label="Working Days">
+           <template #default="scope">
+            <el-input v-model="scope.row.working_days" placeholder="" size="normal" clearable @change="updateDaysFromWorking(scope.row)" />
+          </template>
+        </el-table-column>
+        <el-table-column prop="present_days" label="Present Days">
+           <template #default="scope">
+            <el-input v-model="scope.row.present_days" placeholder="" size="normal" clearable @change="updateDaysFromPresent(scope.row)" />
+          </template>
+        </el-table-column>
+        <el-table-column prop="absent_days" label="Absent Days">
+           <template #default="scope">
+            <el-input v-model="scope.row.absent_days" placeholder="" size="normal" clearable @change="updateDaysFromAbsent(scope.row)" />
+          </template>
+        </el-table-column>
         <el-table-column prop="allow_leaves" label="Allow Leaves"  />
         <el-table-column prop="payable_days" label="Payable Days"  />
         <el-table-column prop="daily_salary" label="Daily Salary" />
@@ -41,17 +53,17 @@
         </el-table-column>
       <el-table-column label="Fine">
         <template #default="scope">
-          <el-input v-model="scope.row.fine" placeholder="" size="normal" clearable @change="" />
+          <el-input v-model="scope.row.fine" placeholder="" size="normal" clearable @change="calc_salary()" />
         </template>
       </el-table-column>
       <el-table-column label="Bonus">
         <template #default="scope">
-          <el-input v-model="scope.row.bonus" placeholder="" size="normal" clearable @change=""></el-input>
+          <el-input v-model="scope.row.bonus" placeholder="" size="normal" clearable @change="calc_salary()"></el-input>
         </template>
       </el-table-column>
       <el-table-column label="Paid">
         <template #default="scope">
-          <el-input v-model="scope.row.paid" placeholder="" size="normal" clearable @change=""></el-input>
+          <el-input v-model="scope.row.paid" placeholder="" size="normal" clearable @change="calc_salary()"></el-input>
         </template>
       </el-table-column>
       <el-table-column label="Previous Balance">
@@ -92,13 +104,72 @@ export default {
     disabledDate(time) {
       return time.getTime() > Date.now()
     },
+    updateDaysFromWorking(row) {
+      // When working days changes, update absent days based on present days
+      const workingDays = parseInt(row.working_days) || 0;
+      const presentDays = parseInt(row.present_days) || 0;
+      
+      // Ensure present days doesn't exceed working days
+      row.present_days = Math.min(presentDays, workingDays);
+      
+      // Calculate absent days
+      row.absent_days = workingDays - parseInt(row.present_days);
+      
+      this.calc_salary();
+    },
+    
+    updateDaysFromPresent(row) {
+      // When present days changes, update absent days
+      const workingDays = parseInt(row.working_days) || 0;
+      const presentDays = parseInt(row.present_days) || 0;
+      
+      // Ensure present days doesn't exceed working days
+      row.present_days = Math.min(presentDays, workingDays);
+      
+      // Calculate absent days
+      row.absent_days = workingDays - parseInt(row.present_days);
+      
+      this.calc_salary();
+    },
+    
+    updateDaysFromAbsent(row) {
+      // When absent days changes, update present days
+      const workingDays = parseInt(row.working_days) || 0;
+      const absentDays = parseInt(row.absent_days) || 0;
+      
+      // Ensure absent days doesn't exceed working days
+      row.absent_days = Math.min(absentDays, workingDays);
+      
+      // Calculate present days
+      row.present_days = workingDays - parseInt(row.absent_days);
+      
+      this.calc_salary();
+    },
+    calc_salary() {
+      this.teachers.forEach(teacher => {
+        // Convert to integers to ensure proper calculation
+        const workingDays = parseInt(teacher.working_days) || 0;
+        const absentDays = parseInt(teacher.absent_days) || 0;
+        const allowLeaves = parseInt(teacher.allow_leaves) || 0;
+        const dailySalary = parseFloat(teacher.daily_salary) || 0;
+        
+        // Calculate payable days
+        const payableDays = workingDays - Math.max(0, absentDays - allowLeaves);
+        teacher.payable_days = payableDays;
+        
+        // Calculate total pay
+        teacher.total_pay = Math.round(dailySalary * payableDays);
+      });
+    },
     total_pay(row){
-      const total_pay = (row.total_pay) ?? 0;
-      const fine = (row.fine) ?? 0;
-      const bonus = (row.bonus) ?? 0;
-      const paid = (row.paid) ?? 0;
-      const previous_balance = (row.previous_balance) ?? 0;
-      return parseInt(total_pay) - parseInt(fine) + parseInt(bonus) - parseInt(paid) + parseInt(previous_balance);
+      const total_pay = parseInt(row.total_pay) || 0;
+      const fine = parseInt(row.fine) || 0;
+      const bonus = parseInt(row.bonus) || 0;
+      const paid = parseInt(row.paid) || 0;
+      const previous_balance = parseInt(row.previous_balance) || 0;
+      
+      // Calculate balance according to the formula
+      return total_pay - fine + bonus - paid + previous_balance;
     },
     async savePay() {
       const { data } = await findSavedPay(this.query);
