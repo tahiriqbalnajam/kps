@@ -30,27 +30,36 @@ class FeeController extends Controller
         $date = $request->get('date');
         $pending = $request->get('pending');
 
+        // Get the fee type title
+        $feeType = DB::table('fee_types')->where('id', $feetype_id)->value('title');
         // Build the base query that will be reused
-        $baseQuery = Fee::with(['feetype','fee_meta','student.stdclasses']) 
-                    ->when($student_id,  function($q) use ($student_id) {
-                        return $q->where('student_id', $student_id);
-                    })
-                    ->when( $keyword,  function($q) use ($keyword) {
-                        return $q->where( 'student.name', 'like', '%'.$keyword.'%');
-                    })
-                    ->when( $feetype_id,  function($q) use ($feetype_id) {
-                        return $q->where( 'fee_type_id', 'like', '%'.$feetype_id.'%');
-                    })
-                    ->whereHas('student.stdclasses', function ($query) use ($stdclass) {
-                        if ($stdclass) {
-                            $query->where('class_id', $stdclass);
-                        }
-                    })
-                    ->when($date, function($q) use($date) {
-                        $start_date = Carbon::parse($date[0])->startOfDay();
-                        $end_date = Carbon::parse($date[1])->endOfDay();
-                        return $q->whereBetween('created_at', [$start_date, $end_date]);
-                    });
+        $baseQuery = Fee::with(['feetype', 'student.stdclasses'])
+            ->with(['fee_meta' => function($query) use ($feeType) {
+                if ($feeType) {
+                $query->where('meta_key', $feeType);
+                }
+            }])
+            ->when($student_id,  function($q) use ($student_id) {
+                return $q->where('student_id', $student_id);
+            })
+            ->when($keyword,  function($q) use ($keyword) {
+                return $q->where('student.name', 'like', '%'.$keyword.'%');
+            })
+            ->when($feetype_id, function($q) use ($feeType) {
+                return $q->whereHas('fee_meta', function($query) use ($feeType) {
+                $query->where('meta_key', $feeType);
+                });
+            })
+            ->whereHas('student.stdclasses', function ($query) use ($stdclass) {
+                if ($stdclass) {
+                $query->where('class_id', $stdclass);
+                }
+            })
+            ->when($date, function($q) use($date) {
+                $start_date = Carbon::parse($date[0])->startOfDay();
+                $end_date = Carbon::parse($date[1])->endOfDay();
+                return $q->whereBetween('created_at', [$start_date, $end_date]);
+            });
         
         // Clone the base query for pagination
         $fee = (clone $baseQuery)
