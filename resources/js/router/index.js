@@ -10,10 +10,10 @@ import errorRoutes from './modules/error'
 
 export const constantRoutes = [
   {
-    path: '/teacher-attendance',
+    path: '/online-attendance',
     component: () => import('@/views/teachers/QrcodeAtt.vue'),
-    name: 'Teacher Online Attendance',
-    meta: { title: 'Teacher Online Attendance', bootstrapIcon: 'currency-exchange', noCache: true },
+    name: 'Online Attendance',
+    meta: { title: 'Online Attendance', bootstrapIcon: 'currency-exchange', noCache: true },
   },
   {
     path: '/login',

@@ -148,7 +148,9 @@ class StudentController extends Controller
             // Create new attendance record
             StudentAttendance::create([
                 'student_id' => $id,
+                'class_id' => $student->class_id,
                 'status' => 'present',
+                'attendance_date' => now()->toDateString(),
                 'created_at' => now(),
             ]);
             return response()->json(new JsonResponse(['message' => 'Attendance marked successfully']));
