@@ -135,6 +135,7 @@
                   <el-dropdown-item icon="el-icon-delete" :command="'certificat~'+scope.row.id">Character Certificat</el-dropdown-item>
                   <el-dropdown-item icon="el-icon-delete" :command="'schoolleaving~'+scope.row.id">School Leaving Certificat</el-dropdown-item>
                   <el-dropdown-item icon="el-icon-delete" :command="'delete~'+scope.row.id">Delete Student</el-dropdown-item>
+                  <el-dropdown-item icon="el-icon-delete" :command="'qrcode~'+scope.row.id">QRCode</el-dropdown-item>
                 </el-dropdown-menu>
               </template>
             </el-dropdown>
@@ -183,6 +184,10 @@
     <character-certificate  v-if="showcharactercertificate" :showcharactercertificate="showcharactercertificate" :stdid="studentid" @doneFeeDetail="doneFeeDetail" />
     <school-leaving-certificate  v-if="showschoolleavingcertificate" :showschoolleavingcertificate="showschoolleavingcertificate" :stdid="studentid" @doneFeeDetail="doneFeeDetail" />
     <fee-print v-if="openfeeprint" :feeid="feeid" :openfeeprint="openfeeprint" @doneFeePrint="doneFeePrint" />
+    <student-idcard v-if="showIDCard"
+      :showcardprop="showIDCard"
+      @closeIdcard="closeIdcard"  
+      :stdid="studentid" />
   </div>
 </template>
 <script>
@@ -205,6 +210,7 @@ import FeeDetail from '@/views/fee/component/FeeDetail.vue';
 import CharacterCertificate from '@/views/students/StudentCharacterCertificate.vue';
 import SchoolLeavingCertificate from '@/views/students/SchoolLeavingCertificate.vue';
 import AddStudent from '@/views/students/AddStudent.vue';
+import StudentIdcard from '@/views/students/components/StudentIdcard.vue';
 import AdmissionCertificate from '@/views/students/components/AdmissionCertificate.vue';
 import { editClass, exportStudent } from '@/api/student.js'; // Ensure exportStudent is imported
 import HeadControls from '@/components/HeadControls.vue';
@@ -213,13 +219,14 @@ const classes = new Resource('classes');
 export default {
   name: 'StudentList',
   components: { Pagination, AddStudent,  PayFee, FeePrint, FeeDetail, HeadControls, CharacterCertificate, 
-                SchoolLeavingCertificate,AdmissionCertificate },
+                SchoolLeavingCertificate,AdmissionCertificate, StudentIdcard },
   directives: { },
   filters: {
     
   },
   data() {
     return {
+      showIDCard: false,
       downloadLoading: false,
       stdid: null,
       studentid: null,
@@ -313,6 +320,9 @@ export default {
       }
       if (method == 'schoolleaving') {
         this.SchoolLeavingCertificate(id);
+      }
+      if (method == 'qrcode') {
+        this.generateStudentQRCode(id);
       }
     },
     debounceInput: debounce(function (e) {
@@ -576,6 +586,19 @@ export default {
     showFeeDetails(id) {
       this.studentid = id;
       this.openfeedetail = true;
+    },
+    generateStudentQRCode(id) {
+      console.log(id);
+      if (id) {
+        this.studentid = id;
+        this.showIDCard = true;
+      } else {
+        this.$message.error('Could not open ID card: Missing student data');
+      }
+    },
+    closeIdcard() {
+      this.showIDCard = false;
+      this.studentid = null;
     },
     addClass() {
 

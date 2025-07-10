@@ -132,4 +132,28 @@ class StudentController extends Controller
         $this->studentService->editClass($selected_students, $desired_class);
 
     }
+
+    public function online_attendance($id) {
+        $student = Student::find($id);
+        if (!$student) {
+            return response()->json(new JsonResponse(['message' => 'Student not found'], 404));
+        }
+
+        // Check if attendance already exists for today
+        $todayAttendance = StudentAttendance::where('student_id', $id)
+            ->whereDate('created_at', now()->toDateString())
+            ->first();
+
+        if (!$todayAttendance) {
+            // Create new attendance record
+            StudentAttendance::create([
+                'student_id' => $id,
+                'status' => 'present',
+                'created_at' => now(),
+            ]);
+            return response()->json(new JsonResponse(['message' => 'Attendance marked successfully']));
+        }
+
+        return response()->json(new JsonResponse(['message' => 'Attendance already submitted']));
+    }
 }

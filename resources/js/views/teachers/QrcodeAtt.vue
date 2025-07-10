@@ -148,7 +148,7 @@ export default {
         paintBoundingBox(detectedCodes, ctx) {
             for (const detectedCode of detectedCodes) {
                 const { boundingBox: { x, y, width, height } } = detectedCode;
-                ctx.lineWidth = 2;
+                ctx.lineWidth = 4;
                 ctx.strokeStyle = '#007bff';
                 ctx.strokeRect(x, y, width, height);
             }

@@ -68,6 +68,7 @@ Route::post('absent_comment', 'StudentAttendanceController@absent_comment');
 Route::get('get_att_comments/{id}', 'StudentAttendanceController@get_att_comment');
 Route::post('getdailyclasswise', 'StudentAttendanceController@dailyclasswise');
 Route::post('attendance/summary', 'StudentAttendanceController@get_attendance_summry');
+Route::get('/student/{id}/online', 'StudentController@online_attendance');
 // Student attendance graph endpoint
 Route::get('student/attendance/daily-graph', 'StudentAttendanceController@getDailyAttendanceGraph');
 //teacher attendance
