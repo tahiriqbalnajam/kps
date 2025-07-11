@@ -207,22 +207,32 @@ export default {
       const sums = []
       columns.forEach((column, index) => {
         if (index === 1) {
-          const values = data.reduce((total, item) => total + Number(item[column.property]), 0);
+          const values = data.reduce((total, item) => total + (Number(item[column.property]) || 0), 0);
           sums[index] = h('div', { style: { fontWeight: 'bold' } }, [
             '',
             values
           ])
           return
         }
-        else if (index === 8 ||  index === 13) {
-          const values = data.reduce((total, item) => total + Number(item[column.property]), 0);
+        else if (index === 8) {
+          // Estimated Salary (total_pay)
+          const values = data.reduce((total, item) => total + (Number(item.total_pay) || 0), 0);
           sums[index] = h('div', { style: { fontWeight: 'bold' } }, [
             values,
           ])
           return;
-        } else if ( index === 13) {
-          console.log(item);
-          const values = data.reduce((total, item) => total + Number(item[column.property]), 0);
+        }
+        else if (index === 11) {
+          // Paid column
+          const values = data.reduce((total, item) => total + (Number(item.paid) || 0), 0);
+          sums[index] = h('div', { style: { fontWeight: 'bold' } }, [
+            values,
+          ])
+          return;
+        }
+        else if (index === 13) {
+          // Balance column
+          const values = data.reduce((total, item) => total + (Number(this.total_pay(item)) || 0), 0);
           sums[index] = h('div', { style: { fontWeight: 'bold' } }, [
             values,
           ])

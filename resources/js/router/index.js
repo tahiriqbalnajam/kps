@@ -13,7 +13,7 @@ export const constantRoutes = [
     path: '/online-attendance',
     component: () => import('@/views/teachers/QrcodeAtt.vue'),
     name: 'Online Attendance',
-    meta: { title: 'Online Attendance', bootstrapIcon: 'currency-exchange', noCache: true },
+    meta: { title: 'Online Attendance', bootstrapIcon: 'camera-fill', noCache: true },
   },
   {
     path: '/login',
