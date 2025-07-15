@@ -121,7 +121,12 @@
           <el-row :gutter="20">
             <el-col :span="6">
               <el-form-item label="Monthly Fee" prop="monthly_fee">
-                <el-input v-model="student.monthly_fee" />
+                <el-input-number v-model="student.monthly_fee" controls-position="right"/>
+              </el-form-item>
+            </el-col>
+            <el-col :span="6">
+              <el-form-item label="Fee Discount" prop="monthly_fee_discount">
+                <el-input-number v-model="student.monthly_fee_discount" controls-position="right"/>
               </el-form-item>
             </el-col>
             <el-col :span="6">
@@ -131,9 +136,6 @@
                   <el-option label="Female" value="female" />
                 </el-select>
               </el-form-item>
-            </el-col>
-            <el-col :span="6">
-              
             </el-col>
             <el-col :span="6">
               
@@ -385,6 +387,7 @@ export default {
         b_form: '',
         gender: 'Male',
         monthly_fee: '',
+        monthly_fee_discount: '',
         sibling: '0',
         is_orphan: 'No',
         pef_admission: 'Yes',
@@ -403,6 +406,7 @@ export default {
         b_form: '',
         gender: 'Male',
         monthly_fee: '',
+        monthly_fee_discount: '',
         sibling: '0',
         is_orphan: 'No',
         pef_admission: 'Yes',
@@ -579,6 +583,7 @@ export default {
         dob: '',
         gender: 'Male',
         monthly_fee: '',
+        monthly_fee_discount: '',
         sibling: '0',
         religion: 'Islam',
         status: 'enable',

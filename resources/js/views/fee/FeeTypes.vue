@@ -1,8 +1,10 @@
 <template>
   <div class="app-container">
     <div class="filter-container">
-      <el-button class="filter-item" style="margin-left: 10px;" type="success" icon="el-icon-plus" @click="editnow = true">
-        Add Fee Type
+      <el-button class="filter-item" style="margin-left: 10px;" type="success" @click="editnow = true">
+        <el-icon class="el-icon--left">
+            <Plus />
+          </el-icon> Add Fee Type
       </el-button>
     </div>
     <el-table
@@ -13,15 +15,16 @@
       <el-table-column label="Title" prop="title" />
       <el-table-column label="Amount" prop="amount" />
       <el-table-column align="right">
-      <template slot="header" slot-scope="scope">
+      <template slot="header" #header="scope">
         <el-input ref="search" v-model="query.keyword" size="mini" placeholder="Type to search" v-on:input="debounceInput" />
       </template>
-      <template slot-scope="scope">
+      <template #default="scope">
         <el-button
           size="mini"
           @click="handleEdit(scope.row.id, scope.row.title)"
           >Edit</el-button>
         <el-button
+          v-if="scope.row.title !== 'Monthly Fee'"
           size="mini"
           type="danger"
           @click="handleDelete(scope.row.id, scope.row.title)"
@@ -36,6 +39,7 @@
       direction="rtl"
       custom-class="demo-drawer"
       ref="drawer"
+      :before-close="handleClose"
     >
       <div class="demo-drawer__content">
         <el-form :model="feetype">
@@ -58,6 +62,7 @@
 import Pagination from '@/components/Pagination/index.vue';
 import Resource from '@/api/resource';
 import { debounce } from 'lodash';
+import { Plus } from '@element-plus/icons-vue'
 const feetypesPro = new Resource('feetypes');
 export default {
     name: 'FeeTypes',
@@ -133,6 +138,10 @@ export default {
           this.getList();
           this.resetFeeType();
         }
+      },
+      handleClose() {
+        this.editnow = false;
+        this.resetFeeType();
       },
       resetFeeType() {
         this.feetype = {
