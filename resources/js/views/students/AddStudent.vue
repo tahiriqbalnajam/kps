@@ -5,7 +5,7 @@
       title="Add Student"
       :direction="direction"
       :before-close="handleClose"
-      size="80%"
+      size="95%"
     >
     <template #header>
       <el-page-header>
@@ -25,42 +25,44 @@
         >
           <el-divider content-position="left" style="margin-bottom: 30px;"><el-tag type="success" effect="plain">1. Student Information</el-tag></el-divider>
           <el-row :gutter="20">
-            <el-col :span="6">
+            <el-col :xs="24" :sm="12" :md="8" :lg="6" :xl="6">
               <el-form-item label="Name" prop="name">
                 <el-input v-model="student.name" />
               </el-form-item>
             </el-col>
-            <el-col :span="6">
+            <el-col :xs="24" :sm="12" :md="8" :lg="6" :xl="6">
               <el-form-item label="Roll No." prop="roll_no">
                 <el-input v-model="student.roll_no" />
               </el-form-item>
             </el-col>
-            <el-col :span="12">
+            <el-col :xs="24" :sm="24" :md="8" :lg="12" :xl="12">
               <el-form-item label="Select Class" prop="class_id">
-                <el-col :span="11">
-                  <el-tree-select
-                    v-model="student.class_id"
-                    :data="classes"
-                    check-strictly
-                    node-key="id"
-                    :props="classProps"
-                    placeholder="Classes"
-                    style="width: 100%"
-                  />
-                </el-col>
-                <el-col :span="4">
-                  <span style="font-size: 11px; text-align: center; width: 100%;"> If not found</span>
-                </el-col>
-                <el-col :span="9">
-                  <el-button class="filter-item" style="margin-left: 10px;" type="warning" icon="el-icon-plus" @click="addstdclasspop = true">
-                    Add Class
-                  </el-button>
-                </el-col>
+                <el-row :gutter="10">
+                  <el-col :xs="24" :sm="14" :md="11" :lg="11" :xl="11">
+                    <el-tree-select
+                      v-model="student.class_id"
+                      :data="classes"
+                      check-strictly
+                      node-key="id"
+                      :props="classProps"
+                      placeholder="Classes"
+                      style="width: 100%"
+                    />
+                  </el-col>
+                  <el-col :xs="24" :sm="4" :md="4" :lg="4" :xl="4" class="text-center">
+                    <span style="font-size: 11px; text-align: center; width: 100%;"> If not found</span>
+                  </el-col>
+                  <el-col :xs="24" :sm="6" :md="9" :lg="9" :xl="9">
+                    <el-button class="filter-item" style="margin-left: 10px; width: 100%;" type="warning" icon="el-icon-plus" @click="addstdclasspop = true">
+                      Add Class
+                    </el-button>
+                  </el-col>
+                </el-row>
               </el-form-item>
             </el-col>
           </el-row>
           <el-row :gutter="20">
-            <el-col :span="6">
+            <el-col :xs="24" :sm="12" :md="8" :lg="6" :xl="6">
               <el-form-item label="DOB" prop="dob">
                 <el-date-picker
                   format="DD/MM/YYYY"
@@ -68,10 +70,11 @@
                   v-model="student.dob"
                   type="date"
                   placeholder="Pick a date of birth"
+                  style="width: 100%"
                 />
               </el-form-item>
             </el-col>
-            <el-col :span="6">
+            <el-col :xs="24" :sm="12" :md="8" :lg="6" :xl="6">
               <el-form-item label="DOA" prop="doa">
                 <el-date-picker
                   format="DD/MM/YYYY"
@@ -79,10 +82,11 @@
                   v-model="student.doa"
                   type="date"
                   placeholder="Pick a date of admission"
+                  style="width: 100%"
                 />
               </el-form-item>
             </el-col>
-            <el-col :span="6">
+            <el-col :xs="24" :sm="12" :md="8" :lg="6" :xl="6">
               <el-form-item label="Admission#" prop="adminssion_number">
                 <el-input v-model="student.adminssion_number" />
               </el-form-item>
@@ -90,19 +94,19 @@
           </el-row>
           <el-divider content-position="left" style="margin-top:50px; margin-bottom: 30px"><el-tag type="success" effect="plain"><b>2.</b> Other Information</el-tag></el-divider>
           <el-row :gutter="20">
-            <el-col :span="6">
+            <el-col :xs="24" :sm="12" :md="6" :lg="6" :xl="6">
               <el-form-item label="B Form#" prop="b_form">
                 <el-input v-model="student.b_form" />
               </el-form-item>
             </el-col>
-            <el-col :span="6">
+            <el-col :xs="24" :sm="12" :md="6" :lg="6" :xl="6">
               <el-form-item label="Previous School" prop="previous_school">
                 <el-input v-model="student.previous_school" />
               </el-form-item>
             </el-col>
-            <el-col :span="6">
+            <el-col :xs="24" :sm="12" :md="6" :lg="6" :xl="6">
               <el-form-item label="Religion" prop="religion">
-                <el-select v-model="student.religion" placeholder="Select Religion">
+                <el-select v-model="student.religion" placeholder="Select Religion" style="width: 100%">
                   <el-option
                     v-for="religion in religions"
                     :key="religion.value"
@@ -112,63 +116,63 @@
                 </el-select>
               </el-form-item>
             </el-col>
-            <el-col :span="6">
+            <el-col :xs="24" :sm="12" :md="6" :lg="6" :xl="6">
               <el-form-item label="Cast" prop="cast">
                 <el-input v-model="student.cast" />
               </el-form-item>
             </el-col>
           </el-row>
           <el-row :gutter="20">
-            <el-col :span="6">
+            <el-col :xs="24" :sm="12" :md="6" :lg="6" :xl="6">
               <el-form-item label="Monthly Fee" prop="monthly_fee">
-                <el-input-number v-model="student.monthly_fee" controls-position="right"/>
+                <el-input-number v-model="student.monthly_fee" controls-position="right" style="width: 100%"/>
               </el-form-item>
             </el-col>
-            <el-col :span="6">
+            <el-col :xs="24" :sm="12" :md="6" :lg="6" :xl="6">
               <el-form-item label="Fee Discount" prop="monthly_fee_discount">
-                <el-input-number v-model="student.monthly_fee_discount" controls-position="right"/>
+                <el-input-number v-model="student.monthly_fee_discount" controls-position="right" style="width: 100%"/>
               </el-form-item>
             </el-col>
-            <el-col :span="6">
+            <el-col :xs="24" :sm="12" :md="6" :lg="6" :xl="6">
               <el-form-item label="Gender" prop="gender">
-                <el-select v-model="student.gender" placeholder="Gender">
+                <el-select v-model="student.gender" placeholder="Gender" style="width: 100%">
                   <el-option label="Male" value="male" />
                   <el-option label="Female" value="female" />
                 </el-select>
               </el-form-item>
             </el-col>
-            <el-col :span="6">
+            <el-col :xs="24" :sm="12" :md="6" :lg="6" :xl="6">
               
             </el-col>
           </el-row>
           <el-row :gutter="20">
-            <el-col :span="6">
+            <el-col :xs="24" :sm="12" :md="6" :lg="6" :xl="6">
               <el-form-item label="Sibling" prop="sibling">
-                <el-radio-group v-model="student.sibling">
+                <el-radio-group v-model="student.sibling" size="small">
                   <el-radio-button label="1">Yes</el-radio-button>
                   <el-radio-button label="0">No</el-radio-button>
                 </el-radio-group>
               </el-form-item>
             </el-col>
-            <el-col :span="6">
+            <el-col :xs="24" :sm="12" :md="6" :lg="6" :xl="6">
               <el-form-item label="Orphan Student" prop="is_orphan">
-                <el-radio-group v-model="student.is_orphan">
+                <el-radio-group v-model="student.is_orphan" size="small">
                   <el-radio-button label="Yes">Yes</el-radio-button>
                   <el-radio-button label="No">No</el-radio-button>
                 </el-radio-group>
               </el-form-item>
             </el-col>
-            <el-col :span="6">
+            <el-col :xs="24" :sm="12" :md="6" :lg="6" :xl="6">
               <el-form-item label="Registration with PEF" prop="pef_admission">
-                <el-radio-group v-model="student.pef_admission">
+                <el-radio-group v-model="student.pef_admission" size="small">
                   <el-radio-button label="Yes">Yes</el-radio-button>
                   <el-radio-button label="No">No</el-radio-button>
                 </el-radio-group>
               </el-form-item>
             </el-col>
-            <el-col :span="6">
+            <el-col :xs="24" :sm="12" :md="6" :lg="6" :xl="6">
               <el-form-item label="Nadra Pending" prop="nadra_pending">
-                <el-radio-group v-model="student.nadra_pending">
+                <el-radio-group v-model="student.nadra_pending" size="small">
                   <el-radio-button label="Yes" value="Yes">Yes</el-radio-button>
                   <el-radio-button label="No" value="No">No</el-radio-button>
                 </el-radio-group>
@@ -178,54 +182,56 @@
 
           <el-divider content-position="left" style="margin-top:50px; margin-bottom: 30px;"><el-tag type="success" effect="plain"><b>3.</b> Father/Guardien Information</el-tag></el-divider>
           <el-form-item label="Parent" prop="parent_id">
-                <el-col :span="10">
-                  <el-select
-                    v-model="student.parent_id"
-                    filterable
-                    remote
-                    reserve-keyword
-                    placeholder="Start typing to search parent"
-                    :remote-method="searchParent"
-                    :loading="parentloading"
-                    style="width: 100%"
-                    >
-                    <el-option
-                      v-for="parent in parents"
-                      :key="parent.id"
-                      :label="parent.name + ' (' + parent.cnic + ')'"
-                      :value="parent.id"
-                    />
-                  </el-select>
-                </el-col>
-                <el-col :span="4">
-                  <span style="font-size: 11px; text-align: center; width: 100%;"> If not found</span>
-                </el-col>
-                <el-col :span="10">
-                  <el-button class="filter-item" style="margin-left: 10px;" type="success" icon="el-icon-plus" @click="addparentpop = true">
-                    Add Parent
-                  </el-button>
-                </el-col>
+            <el-row :gutter="10">
+              <el-col :xs="24" :sm="14" :md="10" :lg="10" :xl="10">
+                <el-select
+                  v-model="student.parent_id"
+                  filterable
+                  remote
+                  reserve-keyword
+                  placeholder="Start typing to search parent"
+                  :remote-method="searchParent"
+                  :loading="parentloading"
+                  style="width: 100%"
+                  >
+                  <el-option
+                    v-for="parent in parents"
+                    :key="parent.id"
+                    :label="parent.name + ' (' + parent.cnic + ')'"
+                    :value="parent.id"
+                  />
+                </el-select>
+              </el-col>
+              <el-col :xs="24" :sm="4" :md="4" :lg="4" :xl="4" class="text-center">
+                <span style="font-size: 11px; text-align: center; width: 100%;"> If not found</span>
+              </el-col>
+              <el-col :xs="24" :sm="6" :md="10" :lg="10" :xl="10">
+                <el-button class="filter-item" style="margin-left: 10px; width: 100%;" type="success" icon="el-icon-plus" @click="addparentpop = true">
+                  Add Parent
+                </el-button>
+              </el-col>
+            </el-row>
+          </el-form-item>
+          <el-divider content-position="left" style="margin-top:50px; margin-bottom: 30px"><el-tag type="success" effect="plain"><b>4.</b> Others</el-tag></el-divider>
+          <el-row :gutter="20">
+            <el-col :xs="24" :sm="12" :md="6" :lg="6" :xl="6">
+              <el-form-item label="Any Action" prop="status">
+                <el-radio-group v-model="student.action_required" size="small">
+                  <el-radio-button label="Yes">Yes</el-radio-button>
+                  <el-radio-button label="No">No</el-radio-button>
+                </el-radio-group>
+                <el-input v-model="student.action_details" v-if="student.action_required == 'Yes'" :rows="2" type="textarea" style="margin-top: 20px; width: 100%;"/>
               </el-form-item>
-              <el-divider content-position="left" style="margin-top:50px; margin-bottom: 30px"><el-tag type="success" effect="plain"><b>4.</b> Others</el-tag></el-divider>
-              <el-row :gutter="20">
-                <el-col :span="6">
-                  <el-form-item label="Any Action" prop="status">
-                    <el-radio-group v-model="student.action_required">
-                      <el-radio-button label="Yes">Yes</el-radio-button>
-                      <el-radio-button label="No">No</el-radio-button>
-                    </el-radio-group>
-                    <el-input v-model="student.action_details" v-if="student.action_required == 'Yes'" :rows="2" type="textarea" style="margin-top: 20px; width: 225px;"/>
-                  </el-form-item>
-                </el-col>
-                <el-col :span="6">
-                  <el-form-item label="Status" prop="status">
-                    <el-radio-group v-model="student.status">
-                      <el-radio-button label="enable">Enable</el-radio-button>
-                      <el-radio-button label="disable">Disable</el-radio-button>
-                    </el-radio-group>
-                  </el-form-item>
-                </el-col>
-              </el-row>
+            </el-col>
+            <el-col :xs="24" :sm="12" :md="6" :lg="6" :xl="6">
+              <el-form-item label="Status" prop="status">
+                <el-radio-group v-model="student.status" size="small">
+                  <el-radio-button label="enable">Enable</el-radio-button>
+                  <el-radio-button label="disable">Disable</el-radio-button>
+                </el-radio-group>
+              </el-form-item>
+            </el-col>
+          </el-row>
         </el-form>
         <div slot="footer" class="dialog-footer">
          
@@ -594,5 +600,29 @@ export default {
   },
 };
 </script>
-<style  scoped>
+<style scoped>
+.text-center {
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .form-container {
+    padding: 10px;
+  }
+  
+  .el-form-item {
+    margin-bottom: 15px;
+  }
+  
+  .el-divider {
+    margin: 20px 0 !important;
+  }
+}
+
+@media (max-width: 576px) {
+  .filter-item {
+    margin-left: 0 !important;
+    margin-top: 10px;
+  }
+}
 </style>
