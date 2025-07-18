@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Classes;
 use App\Models\Parents;
+use App\Services\ParentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
@@ -78,14 +79,9 @@ class ParentController extends Controller
             'profession' => 'required',
             'cnic' => 'required',
         ]);
-        $parent = new Parents();
-        $parent->name = $request->name;
-        $parent->phone  = $request->phone;
-        $parent->password = $request->password;
-        $parent->address = $request->address;
-        $parent->profession = $request->profession;
-        $parent->cnic  = $request->cnic;
-        $parent->save();
+        
+        $parent = $this->parentService->createParent($validated);
+        
         return response()->json(new JsonResponse(['parent' => $parent]));
     }
 
@@ -120,14 +116,8 @@ class ParentController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $parent = Parents::find($id);
-        $parent->name = $request->name;
-        $parent->phone  = $request->phone;
-        $parent->password = $request->password;
-        $parent->address = $request->address;
-        $parent->profession = $request->profession;
-        $parent->cnic  = $request->cnic;
-        $parent->save();
+        $parent = $this->parentService->updateParent($id, $request->all());
+        
         return response()->json(new JsonResponse(['parent' => $parent]));
     }
 

@@ -62,13 +62,14 @@ class StudentService implements StudentServiceInterface
     {
         try {
             DB::beginTransaction();
-            $user['name'] = $data['name'];
-            $user['email'] = $data['name'].rand(10,100).'@idlschool.com';
-            $user['password'] = bcrypt('idl123');
-            $user = User::create($user);
-            $role = Role::findByName('student');
-            $user->syncRoles($role);
-            $data['user_id'] = $user->id;
+            //commmented as user creation is not required here, user will be created in parent controller
+            // $user['name'] = $data['name'];
+            // $user['email'] = $data['name'].rand(10,100).'@idlschool.com';
+            // $user['password'] = bcrypt('idl123');
+            // $user = User::create($user);
+            // $role = Role::findByName('student');
+            // $user->syncRoles($role);
+            // $data['user_id'] = $user->id;
             $student = Student::create($data);
             DB::commit();
             return $student;

@@ -15,6 +15,24 @@ const adminRoutes = {
   children: [
     /** User managements */
     {
+      path: '/settings',
+      redirect: '/settings/Setting',
+      children: [
+        {
+          path: 'settings',
+          component: () => import('@/views/settings/Setting.vue'),
+          name: 'Setting',
+          meta: { title: 'Setting', bootstrapIcon: 'gear-fill', noCache: true },
+        },
+      ],
+    },
+    {
+      path: 'import',
+      component: () => import('@/views/upload/ImportData.vue'),
+      name: 'ImportData',
+      meta: { title: 'Import CSV', bootstrapIcon: 'file-earmark-spreadsheet-fill' },
+    },
+    {
       path: 'users/edit/:id(\\d+)',
       component: () => import('@/views/users/UserProfile.vue'),
       name: 'UserProfile',
