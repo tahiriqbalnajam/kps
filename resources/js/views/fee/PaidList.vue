@@ -6,7 +6,7 @@
           <el-col :xs="24" :sm="24" :md="18" :lg="18" :xl="18">
             <el-row :gutter="16" type="flex" align="middle">
               <!-- Class Filter -->
-              <el-col :xs="24" :sm="12" :md="6" :lg="5" :xl="5">
+              <el-col :xs="6" :sm="4" :md="3" :lg="3" :xl="3">
                 <el-form-item label="" class="mb-0">
                   <el-select 
                     v-model="query.stdclass" 
@@ -24,7 +24,7 @@
               </el-col>
               
               <!-- Fee Type Filter -->
-              <el-col :xs="24" :sm="12" :md="6" :lg="5" :xl="5">
+              <el-col :xs="6" :sm="4" :md="3" :lg="3" :xl="3">
                 <el-form-item label="" class="mb-0">
                   <el-select 
                     v-model="query.feetype_id" 
@@ -42,37 +42,38 @@
               </el-col>
 
               <!-- Date Range Picker -->
-              <el-col :xs="24" :sm="12" :md="10" :lg="9" :xl="9">
-                <el-date-picker
-                  v-model="query.date"
-                  type="daterange"
-                  align="right"
-                  unlink-panels
-                  range-separator="To"
-                  start-placeholder="Start month"
-                  end-placeholder="End month"
-                  :picker-options="pickerOptions"
-                  value-format="YYYY-MM-DD"
-                  class="full-width"
-                />
+              <el-col :xs="24" :sm="12" :md="10" :lg="6" :xl="6">
+                <el-form-item label="" class="mb-0">
+                  <el-date-picker
+                    v-model="query.date"
+                    type="daterange"
+                    align="right"
+                    unlink-panels
+                    range-separator="To"
+                    start-placeholder="Start month"
+                    end-placeholder="End month"
+                    :picker-options="pickerOptions"
+                    value-format="YYYY-MM-DD"
+                    class="full-width"
+                  />
+                </el-form-item>
               </el-col>
               
               <!-- Action Buttons -->
-              <el-col :xs="24" :sm="24" :md="8" :lg="10" :xl="10">
+              <el-col :xs="24" :sm="24" :md="8" :lg="6" :xl="6">
                 <div class="action-buttons">
                   <el-button 
                     class="filter-item" 
-                    type="primary" 
-                    :icon="Search" 
+                    type="primary"
                     @click="getList()">
-                    <el-icon><Search /></el-icon>{{ $t('table.search') }}
+                    <el-icon class="el-icon--left"><Search /></el-icon> {{ $t('table.search') }}
                   </el-button>
                   <el-button 
                     class="filter-item" 
                     type="success" 
                     :loading="downloading"
                     @click="downloadPDF()">
-                    <el-icon><Download /></el-icon> Download Report
+                    <el-icon class="el-icon--left"><Download /></el-icon> Download Report
                   </el-button>
                 </div>
               </el-col>
@@ -125,16 +126,16 @@
       </el-table-column>
       <el-table-column align="right">
         <template #header>
-          <el-input ref="search" v-model="query.keyword" size="mini" placeholder="Type to search" v-on:input="debounceInput" />
+          <el-input ref="search" v-model="query.keyword" size="small" placeholder="Type to search" v-on:input="debounceInput" />
         </template>
         <template slot="header" #default="scope">
             <el-button
               type="primary"
-              size="mini"
+              size="small"
               @click="printIt(scope.row.id)"
             ><el-icon><Printer /></el-icon></el-button>
             <el-button
-              size="mini"
+              size="small"
               type="danger"
               @click="handleDelete(scope.row.id, scope.row.name)"
             ><el-icon><Delete /></el-icon></el-button>

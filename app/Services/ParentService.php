@@ -3,9 +3,9 @@
 namespace App\Services;
 
 use App\Models\Parents;
-use Illuminate\Support\Facades\Hash;
+use App\Services\Contracts\ParentServiceInterface;
 
-class ParentService
+class ParentService implements ParentServiceInterface
 {
     /**
      * Create a new parent record
@@ -15,23 +15,23 @@ class ParentService
      */
     public function createParent(array $data)
     {
-        $parent = new Parents();
-        $parent->name = $data['name'];
-        $parent->phone = $data['phone'];
-        $parent->address = $data['address'];
-        $parent->profession = $data['profession'];
-        $parent->cnic = $data['cnic'];
-        $parent->save();
-        
-        return $parent;
+        return Parents::create($data);
     }
 
     /**
-     * Find or create a parent by phone or CNIC
+     * Update an existing parent
      *
+     * @param int $id
      * @param array $data
      * @return Parents
      */
+    public function updateParent(int $id, array $data)
+    {
+        $parent = Parents::findOrFail($id);
+        $parent->update($data);
+        return $parent;
+    }
+
     public function findOrCreateParent(array $data)
     {
         // Try to find existing parent by phone or CNIC
@@ -45,27 +45,5 @@ class ParentService
 
         return $parent;
     }
-
-    /**
-     * Update an existing parent
-     *
-     * @param int $id
-     * @param array $data
-     * @return Parents
-     */
-    public function updateParent($id, array $data)
-    {
-        $parent = Parents::find($id);
-        
-        if ($parent) {
-            $parent->name = $data['name'];
-            $parent->phone = $data['phone'];
-            $parent->address = $data['address'];
-            $parent->profession = $data['profession'];
-            $parent->cnic = $data['cnic'];
-            $parent->save();
-        }
-        
-        return $parent;
-    }
 }
+

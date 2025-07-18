@@ -1,11 +1,12 @@
 <?php
 
 use App\Models\Acl;
-use Illuminate\Contracts\Routing\Registrar as RouteContract;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ImportController;
 use App\Http\Controllers\SyllabusController;
 use App\Http\Controllers\SyllabusTrackingController;
 use App\Http\Controllers\SyllabusCompletionController;
+use Illuminate\Contracts\Routing\Registrar as RouteContract;
 
 /*
 |--------------------------------------------------------------------------
@@ -182,3 +183,10 @@ Route::prefix('complaints')->group(function () {
     Route::patch('/{complaint}/status', [App\Http\Controllers\ComplaintController::class, 'updateStatus']);
     Route::delete('/{complaint}', [App\Http\Controllers\ComplaintController::class, 'destroy']);
 });
+
+Route::prefix('import')->group(function () {
+    Route::post('upload', [ImportController::class, 'uploadCsv']);
+    Route::post('process', [ImportController::class, 'processImport']);
+    Route::get('example', [ImportController::class, 'downloadExample']);
+});
+

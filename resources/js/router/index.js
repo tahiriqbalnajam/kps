@@ -10,12 +10,6 @@ import errorRoutes from './modules/error'
 
 export const constantRoutes = [
   {
-    path: '/online-attendance',
-    component: () => import('@/views/teachers/QrcodeAtt.vue'),
-    name: 'Online Attendance',
-    meta: { title: 'Online Attendance', bootstrapIcon: 'camera-fill', noCache: true },
-  },
-  {
     path: '/login',
     component: () => import('@/views/login/index.vue'),
     hidden: true,
@@ -62,14 +56,14 @@ export const asyncRoutes = [
   {
     path: '/students',
     component: Layout,
-    redirect: '/students/index',
+    redirect: '/students/list',
     meta: { title: 'Students', bootstrapIcon: 'mortarboard-fill', noCache: true },
     children: [
       {
-        path: 'index',
+        path: 'list',
         component: () => import('@/views/students/StudentList.vue'),
-        name: 'List',
-        meta: { title: 'List',bootstrapIcon: 'person-lines-fill', icon: 'person-lines-fill', noCache: true },
+        name: 'Students List',
+        meta: { title: 'Students',bootstrapIcon: 'person-lines-fill', icon: 'person-lines-fill', noCache: true },
       },
       {
         path: 'report/:id',
@@ -109,32 +103,6 @@ export const asyncRoutes = [
     ],
   },
   {
-    path: '/classes',
-    component: Layout,
-    redirect: '/classes/list',
-    meta: { title: 'Class/Subject', bootstrapIcon: 'person-workspace', noCache: true, permissions: ['view menu classes'] },
-    children: [
-      {
-        path: 'list',
-        component: () => import('@/views/stdclasses/classlist.vue'),
-        name: 'Classes',
-        meta: { title: 'Classes', bootstrapIcon: 'clipboard-minus-fill', noCache: true },
-      },
-      {
-        path: 'subjects',
-        component: () => import('@/views/stdclasses/subjects.vue'),
-        name: 'Subjects',
-        meta: { title: 'Subjects', bootstrapIcon: 'book-half', noCache: true },
-      },
-      {
-        path: 'subject_class',
-        component: () => import('@/views/stdclasses/subjectToClass.vue'),
-        name: 'Assign Subject',
-        meta: { title: 'Assign Subject', bootstrapIcon: 'book', noCache: true },
-      },
-    ],
-  },
-  {
     path: '/parents',
     component: Layout,
     redirect: '/parents/list',
@@ -147,47 +115,7 @@ export const asyncRoutes = [
       },
     ],
   },
-  {
-    path: '/fee',
-    component: Layout,
-    redirect: '/fee/paidlist',
-    meta: { title: 'Fee', bootstrapIcon: 'currency-dollar', noCache: true, permissions: ['view menu fee'] },
-    children: [
-      {
-        path: 'paidlist',
-        component: () => import('@/views/fee/paidlist.vue'),
-        name: 'Paid',
-        meta: { title: 'Paid', bootstrapIcon: 'diamond-fill', noCache: true },
-      },
-      {
-        path: 'pendinglist',
-        component: () => import('@/views/fee/pendinglist.vue'),
-        name: 'Pending',
-        meta: { title: 'Pending', bootstrapIcon: 'diamond-half', noCache: true },
-      },
-      {
-        path: 'feetypes',
-        component: () => import('@/views/fee/feetypes.vue'),
-        name: 'Fee Types',
-        meta: { title: 'Fee Types', bootstrapIcon: 'currency-exchange', noCache: true },
-      },
-    ],
-  },
-  {
-    path: '/sms',
-    component: Layout,
-    redirect: '/sms/queue',
-    meta: { title: 'SMS', bootstrapIcon: 'envelope-fill', noCache: true },
-    children: [
-      {
-        path: 'queue',
-        component: () => import('@/views/sms/Queue.vue'),
-        name: 'SMS Queue',
-        meta: { title: 'SMS Queue', bootstrapIcon: 'envelope', noCache: true },
-      },
-    ],
-  },
-  {
+   {
     path: '/teacher',
     component: Layout,
     redirect: '/teacher/list',
@@ -221,52 +149,142 @@ export const asyncRoutes = [
     ],
   },
   {
+    path: '/academics',
+    component: Layout,
+    redirect: '/academics/list',
+    meta: { title: 'Academics', bootstrapIcon: 'mortarboard-fill', noCache: true, permissions: ['view menu classes'] },
+    children: [
+      {
+        path: 'list',
+        component: () => import('@/views/stdclasses/classlist.vue'),
+        name: 'Classes',
+        meta: { title: 'Classes', bootstrapIcon: 'clipboard-minus-fill', noCache: true },
+      },
+      {
+        path: 'subjects',
+        component: () => import('@/views/stdclasses/subjects.vue'),
+        name: 'Subjects',
+        meta: { title: 'Subjects', bootstrapIcon: 'book-half', noCache: true },
+      },
+      {
+        path: 'subject_class',
+        component: () => import('@/views/stdclasses/subjectToClass.vue'),
+        name: 'Assign Subject',
+        meta: { title: 'Assign Subject', bootstrapIcon: 'book', noCache: true },
+      },
+      {
+        path: '/syllabus',
+        meta: { title: 'syllabus', bootstrapIcon: 'person-workspace', noCache: true, permissions: ['view menu classes'] },
+        children: [
+          {
+            path: 'repository',
+            name: 'SyllabusRepository',
+            component: () => import('@/views/syllabus/SyllabusRepository.vue'),
+            meta: { title: 'Syllabus Repository', icon: 'el-icon-folder' }
+          },
+          {
+            path: 'tracking',
+            name: 'SyllabusTrackingEntry',
+            component: () => import('@/views/syllabus/SyllabusTrackingEntry.vue'),
+            meta: { title: 'Syllabus Tracking', icon: 'el-icon-timer' }
+          },
+          {
+            path: 'completion',
+            name: 'SyllabusCompletionTracker',
+            component: () => import('@/views/syllabus/SyllabusCompletionTracker.vue'),
+            meta: { title: 'Syllabus Completion', icon: 'el-icon-check' }
+          }
+        ]
+      },
+    ],
+  },
+  {
     path: '/attendance',
     component: Layout,
-    redirect: '/attendance/add',
+    redirect: '/attendance/mark/add',
     meta: { title: 'Attendance', bootstrapIcon: 'calendar-check-fill', noCache: true,permissions: ['view menu attendance'] },
     children: [
       {
-        path: 'add',
-        component: () => import('@/views/attendance/StudentAttendance.vue'),
-        name: 'Mark Students Attendance',
-        meta: { title: 'Mark Students Attendance', bootstrapIcon: 'calendar-plus', noCache: true },
+        path: 'mark',
+        redirect: '/attendance/mark/add',
+        meta: { title: 'Mark', bootstrapIcon: 'calendar-plus', noCache: true },
+        children: [
+          {
+            path: 'add',
+            component: () => import('@/views/attendance/StudentAttendance.vue'),
+            name: 'Students',
+            meta: { title: 'Students', bootstrapIcon: 'calendar-plus', noCache: true },
+          },
+          {
+            path: 'attendance',
+            component: () => import('@/views/teachers/AddAttendance.vue'),
+            name: 'Teacher',
+            meta: { title: 'Teacher', bootstrapIcon: 'calendar3', noCache: true },
+          },
+        ],
       },
       {
-        path: 'students-monthly-report',
-        component: () => import('@/views/attendance/StudentsAttMonthlyReport.vue'),
-        name: 'Monthly/Classwise',
-        meta: { title: 'Monthly/Classwise', bootstrapIcon: 'calendar3', noCache: true },
+        path: 'reports',
+        redirect: '/attendance/mark/add',
+        meta: { title: 'Reports', bootstrapIcon: 'calendar-plus', noCache: true },
+        children: [
+          {
+            path: 'report',
+            component: () => import('@/views/attendance/AttendanceReport.vue'),
+            name: 'AttendanceReport',
+            meta: {
+              title: 'Grand Report',
+              bootstrapIcon: 'graph-up',
+              permissions: ['view menu attendance']
+            }
+          },
+          {
+            path: 'students-monthly-report',
+            component: () => import('@/views/attendance/StudentsAttMonthlyReport.vue'),
+            name: 'Monthly/Classwise',
+            meta: { title: 'Monthly/Classwise', bootstrapIcon: 'calendar3', noCache: true },
+          },
+          {
+            path: 'daily-classwise',
+            component: () => import('@/views/attendance/AttReportDailyClasswise.vue'),
+            name: 'Daily/Classwise',
+            meta: { title: 'Daily/Classwise', bootstrapIcon: 'calendar-date-fill', noCache: true },
+          },
+          {
+            path: 'student-yearly',
+            component: () => import('@/views/attendance/AttReportStudentYearly.vue'),
+            name: 'Any Student',
+            meta: { title: 'Any Student', bootstrapIcon: 'calendar3-range', noCache: true },
+          },
+          {
+            path: 'attendance-graph',
+            component: () => import('@/views/attendance/DailyAttendanceGraph.vue'),
+            name: 'AttendanceGraph',
+            meta: { 
+              title: 'Daily Graph',
+              bootstrapIcon: 'bar-chart-line-fill',
+              permissions: ['view menu attendance'] 
+            }
+          },
+          {
+            path: 'absent-foreach-class',
+            component: () => import('@/views/attendance/AbsentForeachClass.vue'),
+            name: 'Absent per class',
+            meta: { title: 'Absent Per Class', bootstrapIcon: 'calendar-minus-fill', noCache: true },
+          },
+          {
+            path: 'teacher-att-report',
+            component: () => import('@/views/teachers/TeacherMonthlyAttReport.vue'),
+            name: 'Teacher Monthly',
+            meta: { title: 'Teachers Monthly', bootstrapIcon: 'calendar-check-fill', noCache: true },
+          },
+        ],
       },
       {
-        path: 'daily-classwise',
-        component: () => import('@/views/attendance/AttReportDailyClasswise.vue'),
-        name: 'Daily/Classwise',
-        meta: { title: 'Daily/Classwise', bootstrapIcon: 'calendar3-range', noCache: true },
-      },
-      {
-        path: 'student-yearly',
-        component: () => import('@/views/attendance/AttReportStudentYearly.vue'),
-        name: 'Student Monthly',
-        meta: { title: 'Student Attendance Per Month', bootstrapIcon: 'calendar3-range', noCache: true },
-      },
-      {
-        path: 'attendance',
-        component: () => import('@/views/teachers/AddAttendance.vue'),
-        name: 'Mark Teacher Attendance',
-        meta: { title: 'Mark Teacher Attendance', bootstrapIcon: 'calendar3', noCache: true },
-      },
-      {
-        path: 'teacher-att-report',
-        component: () => import('@/views/teachers/TeacherMonthlyAttReport.vue'),
-        name: 'Attendance Report',
-        meta: { title: 'Teachers Monthly', bootstrapIcon: 'calendar-check-fill', noCache: true },
-      },
-      {
-        path: 'absent-foreach-class',
-        component: () => import('@/views/attendance/AbsentForeachClass.vue'),
-        name: 'Absetn per class',
-        meta: { title: 'Absent Classwise', bootstrapIcon: 'calendar-check-fill', noCache: true },
+        path: '/online-attendance',
+        component: () => import('@/views/teachers/QrcodeAtt.vue'),
+        name: 'Online Attendance',
+        meta: { title: 'Online Attendance', bootstrapIcon: 'camera-fill', noCache: true },
       },
       {
         path: 'holidays',
@@ -274,26 +292,64 @@ export const asyncRoutes = [
         name: 'Manage Holidays',
         meta: { title: 'Manage Holidays', bootstrapIcon: 'calendar3-range', noCache: true },
       },
-      {
-        path: 'report',
-        component: () => import('@/views/attendance/AttendanceReport.vue'),
-        name: 'AttendanceReport',
-        meta: {
-          title: 'Attendance Report',
-          bootstrapIcon: 'graph-up',
-          permissions: ['view menu attendance']
-        }
+    ],
+  },
+  {
+    path: '/finance',
+    component: Layout,
+    redirect: '/finance/queue',
+    meta: {title: 'Finanace', bootstrapIcon: 'credit-card-2-back-fill', noCache: true, permissions: ['view menu timetabel']},
+    children: [
+     {
+        path: '/fee',
+        redirect: '/fee/paidlist',
+        meta: { title: 'Fee', bootstrapIcon: 'currency-dollar', noCache: true, permissions: ['view menu fee'] },
+        children: [
+          {
+            path: 'paidlist',
+            component: () => import('@/views/fee/paidlist.vue'),
+            name: 'Paid',
+            meta: { title: 'Paid', bootstrapIcon: 'diamond-fill', noCache: true },
+          },
+          {
+            path: 'pendinglist',
+            component: () => import('@/views/fee/pendinglist.vue'),
+            name: 'Pending',
+            meta: { title: 'Pending', bootstrapIcon: 'diamond-half', noCache: true },
+          },
+          {
+            path: 'feetypes',
+            component: () => import('@/views/fee/feetypes.vue'),
+            name: 'Fee Types',
+            meta: { title: 'Fee Types', bootstrapIcon: 'currency-exchange', noCache: true },
+          },
+        ],
       },
       {
-        path: 'attendance-graph',
-        component: () => import('@/views/attendance/DailyAttendanceGraph.vue'),
-        name: 'AttendanceGraph',
-        meta: { 
-          title: 'Daily Attendance Graph',
-          icon: 'chart',
-          permissions: ['view menu attendance'] 
-        }
-      }
+        path: '/accounts',
+        redirect: '/accounts/index',
+        name: 'Accounts',
+        alwaysShow: true,
+        meta: {
+          title: 'Accounts',
+          bootstrapIcon: 'people-fill',
+          permissions: ['view menu accounts'],
+        },
+        children: [
+          {
+            path: 'index',
+            component: () => import('@/views/accounts/Main.vue'),
+            name: 'Customer',
+            meta: { title: 'Accounts', bootstrapIcon: 'people', noCache: true },
+          },
+          {
+            path: 'transactions',
+            component: () => import('@/views/accounts/transactions.vue'),
+            name: 'Transactions',
+            meta: { title: 'Transactions', bootstrapIcon: 'wallet2', noCache: true },
+          },
+        ],
+      },
     ],
   },
   {
@@ -330,10 +386,30 @@ export const asyncRoutes = [
     ],
   },
   {
+    path: '/communication',
+    component: Layout,
+    redirect: '/communication/queue',
+    meta: {title: 'communication', bootstrapIcon: 'chat-right-text-fill', noCache: true, permissions: ['view menu timetabel']},
+    children: [
+      {
+        path: 'queue',
+        component: () => import('@/views/sms/Queue.vue'),
+        name: 'Whatsapp Queue',
+        meta: { title: 'Whatsapp Queue', bootstrapIcon: 'whatsapp', noCache: true },
+      },
+      {
+        path: 'complaints',
+        component: () => import('@/views/complaint/ComplaintManagement.vue'),
+        name: 'Complaints',
+        meta: { title: 'Complaints', bootstrapIcon: 'exclamation-triangle-fill', noCache: true },
+      },
+    ],
+  },
+  {
     path: '/timetable',
     component: Layout,
     redirect: '/timetable/create',
-    meta: {title: 'TimeTable', bootstrapIcon: 'calendar', noCache: true, permissions: ['view menu timetabel']},
+    meta: {title: 'TimeTable', bootstrapIcon: 'clock-fill', noCache: true, permissions: ['view menu timetabel']},
     children: [
       {
         path: 'generator',
@@ -350,58 +426,6 @@ export const asyncRoutes = [
     ],
   },
   {
-    path: '/accounts',
-    component: Layout,
-    redirect: '/accounts/index',
-    name: 'Accounts',
-    alwaysShow: true,
-    meta: {
-      title: 'Accounts',
-      bootstrapIcon: 'people-fill',
-      permissions: ['view menu accounts'],
-    },
-    children: [
-      {
-        path: 'index',
-        component: () => import('@/views/accounts/Main.vue'),
-        name: 'Customer',
-        meta: { title: 'Accounts', bootstrapIcon: 'people', noCache: true },
-      },
-      {
-        path: 'transactions',
-        component: () => import('@/views/accounts/transactions.vue'),
-        name: 'Transactions',
-        meta: { title: 'Transactions', bootstrapIcon: 'wallet2', noCache: true },
-      },
-    ],
-  },
-  {
-    path: '/complaints',
-    component: Layout,
-    redirect: '/complaints/index',
-    children: [
-      {
-        path: 'index',
-        component: () => import('@/views/complaint/ComplaintManagement.vue'),
-        name: 'Complaints',
-        meta: { title: 'Complaints', bootstrapIcon: 'exclamation-triangle-fill', noCache: true },
-      },
-    ],
-  },
-  {
-    path: '/settings',
-    component: Layout,
-    redirect: '/settings/Setting',
-    children: [
-      {
-        path: 'settings',
-        component: () => import('@/views/settings/Setting.vue'),
-        name: 'Setting',
-        meta: { title: 'Setting', bootstrapIcon: 'gear-fill', noCache: true },
-      },
-    ],
-  },
-  {
     path: '/profile',
     component: Layout,
     redirect: '/profile/edit',
@@ -413,30 +437,6 @@ export const asyncRoutes = [
         meta: {title: 'userProfile', bootstrapIcon: 'person-circle', noCache: true},
       },
     ],
-  },
-  {
-    path: '/syllabus',
-    component: Layout,
-    children: [
-      {
-        path: 'repository',
-        name: 'SyllabusRepository',
-        component: () => import('@/views/syllabus/SyllabusRepository.vue'),
-        meta: { title: 'Syllabus Repository', icon: 'el-icon-folder' }
-      },
-      {
-        path: 'tracking',
-        name: 'SyllabusTrackingEntry',
-        component: () => import('@/views/syllabus/SyllabusTrackingEntry.vue'),
-        meta: { title: 'Syllabus Tracking', icon: 'el-icon-timer' }
-      },
-      {
-        path: 'completion',
-        name: 'SyllabusCompletionTracker',
-        component: () => import('@/views/syllabus/SyllabusCompletionTracker.vue'),
-        meta: { title: 'Syllabus Completion', icon: 'el-icon-check' }
-      }
-    ]
   },
   adminRoutes,
   errorRoutes,

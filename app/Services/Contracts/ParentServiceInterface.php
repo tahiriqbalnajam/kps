@@ -1,9 +1,7 @@
 <?php
 namespace App\Services\Contracts;
 
-use App\Models\Student;
-
-interface StudentServiceInterface
+interface ParentServiceInterface
 {
     public function createParent(array $data);
     public function findOrCreateParent(array $data);

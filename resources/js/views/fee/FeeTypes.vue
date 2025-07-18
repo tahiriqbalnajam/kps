@@ -22,13 +22,13 @@
         <el-button
           size="mini"
           @click="handleEdit(scope.row.id, scope.row.title)"
-          >Edit</el-button>
+          ><el-icon><Edit /></el-icon></el-button>
         <el-button
           v-if="scope.row.title !== 'Monthly Fee'"
           size="mini"
           type="danger"
           @click="handleDelete(scope.row.id, scope.row.title)"
-        >Delete</el-button>
+        ><el-icon><Delete /></el-icon></el-button>
       </template>
       </el-table-column>
     </el-table>
@@ -62,7 +62,7 @@
 import Pagination from '@/components/Pagination/index.vue';
 import Resource from '@/api/resource';
 import { debounce } from 'lodash';
-import { Plus } from '@element-plus/icons-vue'
+import { Plus, Edit, Delete } from '@element-plus/icons-vue'
 const feetypesPro = new Resource('feetypes');
 export default {
     name: 'FeeTypes',

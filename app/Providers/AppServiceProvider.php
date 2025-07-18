@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
 
 use App\Services\TestService;
+use App\Services\Contracts\ParentServiceInterface;
+use App\Services\ParentService;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -21,6 +23,8 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(TestService::class, function ($app) {
             return new TestService();
         });
+
+        $this->app->bind(ParentServiceInterface::class, ParentService::class);
     }
 
     /**

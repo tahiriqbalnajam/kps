@@ -8,6 +8,13 @@
     size="50%"
     @close="donePayFee()"
   >
+  <template #header>
+      <el-page-header>
+        <template #content>
+          <span class="text-large font-600 mr-3"> Pay Fee </span>
+        </template>
+      </el-page-header>
+    </template>
     <div class="demo-drawer__content">
       <el-form :model="fee">
         <el-form-item label="Student" :label-width="formLabelWidth">

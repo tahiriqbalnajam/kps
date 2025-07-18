@@ -4,15 +4,22 @@ namespace App\Http\Controllers;
 
 use App\Models\Classes;
 use App\Models\Parents;
-use App\Services\ParentService;
-use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 use App\Laravue\JsonResponse;
+use Illuminate\Support\Facades\DB;
+use App\Services\Contracts\ParentServiceInterface;
 
 class ParentController extends Controller
 {
+    protected $parentService;
     const ITEM_PER_PAGE = 1000;
+
+    public function __construct(ParentServiceInterface $parentService)
+    {
+        $this->parentService = $parentService;
+    }
+
     /**
      * Display a listing of the resource.
      *

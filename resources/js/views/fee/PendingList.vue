@@ -1,11 +1,11 @@
 <template>
   <div class="app-container">
     <div class="filter-container">
-      <el-button style="margin-right: 10px;" type="success" icon="el-icon-plus" @click="openpayfee = true">
-        Pay Fee
+      <el-button style="margin-right: 10px;" type="success" @click="openpayfee = true">
+        <el-icon class="el-icon--left"><Money /></el-icon>Pay Fee
       </el-button>
-      <el-button type="danger" icon="el-icon-message" :loading="smsloading" @click="addSmsQueue()">
-        Add to SMS Queue
+      <el-button type="danger" :loading="smsloading" @click="addSmsQueue()">
+       <el-icon class="el-icon--left"><Message /></el-icon> Add to SMS Queue
       </el-button>
     </div>
     <el-table
@@ -14,12 +14,12 @@
       style="width: 100%"
       :loading="loading"
       @selection-change="handleSelectionChange"
+      size="small"
     >
       <el-table-column
         type="selection"
         width="55"
       />
-      <el-table-column label="ID" prop="roll_no" />
       <el-table-column label="Student" prop="name" />
       <el-table-column label="Parent" prop="parent" />
       <el-table-column label="Phone" prop="phone" />
@@ -36,11 +36,11 @@
       </el-table-column>
       <el-table-column align="right">
         <template slot="header" #header="scope">
-          <el-input ref="search" v-model="query.keyword" size="mini" placeholder="Type to search" v-on:input="debounceInput" />
+          <el-input ref="search" v-model="query.keyword" size="small" placeholder="Type to search" v-on:input="debounceInput" />
         </template>
         <template #default="scope">
           <el-button
-            size="mini"
+            size="small"
             type="danger"
             @click="payFee(scope.row.id, scope.row.name)"
           >Pay Fee</el-button>
@@ -69,6 +69,7 @@ import Pagination from '@/components/Pagination/index.vue';
 import PayFee from './component/PayFee.vue';
 import FeePrint from './component/FeePrint.vue';
 import Resource from '@/api/resource';
+import { Plus,Message,Money, Edit } from '@element-plus/icons-vue'
 import moment from 'moment';
 import { debounce } from 'lodash';
 const pendingfeePro = new Resource('pendingfee');
