@@ -8,7 +8,7 @@ class Teacher extends Model {
 
     
     protected $fillable = [
-        'user_id','class_id','name','teacher_special_id','designation', 'father_name','father_cnic', 'doj','education', 'experience', 'gender', 
+        'user_id','class_id','name','teacher_special_id','designation', 'father_name','father_cnic', 'doj', 'dob','education', 'experience', 'gender', 
         'pay', 'cnic', 'address', 'phone', 'profession','active'
     ];
 

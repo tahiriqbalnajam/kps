@@ -180,8 +180,13 @@
               </el-form-item>
             </el-col>
             <el-col :span="8">
-              <el-form-item label="Designation" :label-width="formLabelWidth" prop="cnic">
+              <el-form-item label="Designation" :label-width="formLabelWidth" prop="designation">
                 <el-input v-model="teacher.designation" autocomplete="off" />
+              </el-form-item>
+            </el-col>
+            <el-col :span="8">
+              <el-form-item label="Date of Birth" :label-width="formLabelWidth" prop="dob">
+                <el-date-picker v-model="teacher.dob" type="date" placeholder="Pick a birth date" format="DD/MM/YYYY" value-format="YYYY-MM-DD"/>
               </el-form-item>
             </el-col>
           </el-row>
@@ -329,6 +334,9 @@ export default {
         doj: [
           { required: true, message: 'Please input joining date', trigger: 'blur' },
         ],
+        designation: [
+          { required: true, message: 'Please input designation', trigger: 'blur' },
+        ],
         class_id: [
           { required: true, message: 'Please select class', trigger: 'blur' },
         ],
@@ -348,6 +356,7 @@ export default {
         gender:'',
         status:'active',
         class_id: '',
+        dob: '',
       },
       resetteacher: {
         id: '',
@@ -364,6 +373,7 @@ export default {
         gender:'',
         status:'active',
         class_id: '',
+        dob: '',
       },
       query: {
         page: 1,

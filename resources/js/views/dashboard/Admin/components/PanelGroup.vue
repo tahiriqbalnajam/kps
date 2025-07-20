@@ -60,12 +60,22 @@
     <el-col :xs="12" :sm="12" :lg="6" class="card-panel-col">
       <div class="card-panel" style="height: 515px;">
           <div class="panel-heading">Student Birthdays</div>
-            <el-table :data="data.student_birthdays" max-height="250" empty-text="No birthdays today!">
+            <el-table :data="data.student_birthdays" max-height="200" empty-text="No birthdays today!">
               <el-table-column prop="name" label="Name"></el-table-column>
               <el-table-column prop="class" label="Class"></el-table-column>
               <el-table-column label="Age">
                 <template #default="scope">
-                  {{ new Date().getFullYear() - new Date(scope.row.dob).getFullYear() }} years
+                  {{ new Date().getFullYear() - new Date(scope.row.dob).getFullYear() }} yrs
+                </template>
+              </el-table-column>
+            </el-table>
+          <div class="panel-heading">Teacher Birthdays</div>
+            <el-table :data="data.teacher_birthdays" max-height="200" empty-text="No birthdays today!">
+              <el-table-column prop="name" label="Name"></el-table-column>
+              <el-table-column prop="subject" label="Subject"></el-table-column>
+              <el-table-column label="Age">
+                <template #default="scope">
+                  {{ new Date().getFullYear() - new Date(scope.row.dob).getFullYear() }} yrs
                 </template>
               </el-table-column>
             </el-table>
@@ -103,7 +113,7 @@ const getData = async () => {
 };
 
 const data = ref({total_students: 0, total_absent_students: 0, total_teachers: 0, total_absent_teachers: 0, 
-                  absent_teachers: [], student_birthdays: [], newAdmissionsPerClass: [], newAdmissions: 0});
+                  absent_teachers: [], student_birthdays: [], teacher_birthdays: [], newAdmissionsPerClass: [], newAdmissions: 0});
 
 
 getData().then((result) => {
