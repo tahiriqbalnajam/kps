@@ -37,7 +37,7 @@ class TeacherController extends Controller
         $filtercol = $request->get('filtercol');
         
         $all = ($request->get('filtercol') == 'all') ? true : false;
-        $data = Teacher::select($this->column_select)
+        $data = Teacher::select($this->column_select)->where('status', 'active')
         //->where('name', 'like', '%'.$keyword.'%')
         ->when($all || ($filtercol == 'name' && !empty($keyword)), function ($query) use ($all, $keyword) {
             if($all)

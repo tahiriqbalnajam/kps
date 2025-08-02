@@ -1,80 +1,121 @@
 <template>
   <div class="app-container">
-    <div class="filter-container">
-      <head-controls>
-            <el-row :gutter="20" justify="space-between">
-              <el-col :span="14">
-                <el-row>
-                  <el-col :span="6"  :xs="14" :sm="12" :md="10" :lg="6" :xl="6">
-                    <el-select v-model="query.filtercol" placeholder="Class" class="filter-item">
-                      <el-option v-for="filter in filtercol" :key="filter.col" :label="upperFirst(filter.display)" :value="filter.col" />
-                    </el-select>
-                  </el-col>
-                  <el-col :span="6"  :xs="14" :sm="12" :md="10" :lg="6" :xl="6">
-                    <el-input v-model="query.keyword" placeholder="Student info" style="width: 200px;" class="filter-item" v-on:input="debounceInput" clearable />
-                  </el-col>
-                  <el-col :span="4"  :xs="14" :sm="12" :md="10" :lg="6" :xl="4">
-                    <el-tree-select 
-                      check-strictly
-                      v-model="query.stdclass" 
-                      :data="classes"
-                      placeholder="Class" clearable 
-                      style="width: 130px" class="filter-item" 
-                      @change="handleFilter"
-                    />
-                  </el-col>
-                  <el-col :span="2"  :xs="14" :sm="12" :md="10" :lg="6" :xl="3">
-                    <el-select
-                      v-model="query.morefilters"
-                      multiple
-                      placeholder="Select more filter"
-                      style="width: 240px"
-                      @change="handleFilter"
-                    >
-                      <el-option label="Male" value="gender_male"/>
-                      <el-option label="Female" value="gender_female"/>
-                      <el-option label="Is Orphan" value="is_orphan"/>
-                      <el-option label="PEF Adm Pedning" value="pef_admission_pending"/>
-                      <el-option label="PEF Adm Done" value="pef_admission_done"/>
-                      <el-option label="Nadra Pending" value="nadra_pending"/>
-                      <el-option label="Age < 5year" value="under_five"/>
-                      <el-option label="View Disabled" value="view_inactive"/>
-                    </el-select>
-                    <!-- <el-button  class="filter-item" type="primary" :icon="Search"  @click="handleFilter">
-                      {{ $t('table.search') }}
-                    </el-button> -->
-                  </el-col>
-                </el-row>
-              </el-col>
-              <el-col :span="4"  :xs="6" :sm="6" :md="6" :lg="6" :xl="6">
-                <el-row justify="end">
-                  <el-col :span="6" :xs="6" :sm="6" :md="6" :lg="6" :xl="4">
-                    <el-tooltip content="Add Student" placement="top">
-                      <el-button class="filter-item" type="success" :icon="User" @click="addStudentFunc()">
-                        <el-icon :size="15"><UserFilled /></el-icon>
-                      </el-button>
-                    </el-tooltip>
-                  </el-col>
-                  <el-col :span="6"  :xs="6" :sm="6" :md="6" :lg="6" :xl="4">
-                    <el-tooltip content="Students Excel" placement="top">
-                      <el-button class="filter-item" :loading="downloadLoading"  type="danger" :icon="Search"  @click="handleDownload">
-                        <el-icon><Download /></el-icon>
-                      </el-button>
-                    </el-tooltip>
-                  </el-col>
-                  <el-col :span="6"  :xs="6" :sm="6" :md="6" :lg="6" :xl="4">
-                    <el-tooltip content="Change Class" placement="top">
-                      <el-button :disabled="multiStudentOption.multiStudent.length <= 0" class="filter-item"  type="warning" :icon="Edit"  @click="dialogVisible = true">
-                        <el-icon><Sort /></el-icon>  
-                      </el-button>
-                    </el-tooltip>
-                  </el-col>
-                </el-row>
-              </el-col>
-            </el-row>
-        </head-controls>
-      <el-alert title="Record Update" type="success" v-if="alertRec"> </el-alert>
+    <!-- Compact Filter Header -->
+    <div class="compact-filter-header">
+      <div class="filter-section">
+        <!-- Search Controls -->
+        <div class="search-controls">
+          <el-select 
+            v-model="query.filtercol" 
+            placeholder="Search by..." 
+            class="search-type-select"
+            size="default"
+          >
+            <el-option v-for="filter in filtercol" :key="filter.col" :label="upperFirst(filter.display)" :value="filter.col" />
+          </el-select>
+          
+          <el-input 
+            v-model="query.keyword" 
+            placeholder="Enter search term..." 
+            class="search-input" 
+            v-on:input="debounceInput" 
+            clearable
+            size="default"
+          >
+            <template #prefix>
+              <el-icon><Search /></el-icon>
+            </template>
+          </el-input>
+        </div>
+
+        <!-- Filter Controls -->
+        <div class="filter-controls">
+          <el-tree-select 
+            check-strictly
+            v-model="query.stdclass" 
+            :data="classes"
+            placeholder="Select class..." 
+            clearable 
+            class="class-select" 
+            @change="handleFilter"
+            size="default"
+          />
+          
+          <el-select
+            v-model="query.morefilters"
+            multiple
+            placeholder="Filters..."
+            class="more-filters-select"
+            @change="handleFilter"
+            collapse-tags
+            collapse-tags-tooltip
+            size="default"
+          >
+            <el-option label="👨 Male" value="gender_male"/>
+            <el-option label="👩 Female" value="gender_female"/>
+            <el-option label="💝 Orphan" value="is_orphan"/>
+            <el-option label="📋 PEF Pending" value="pef_admission_pending"/>
+            <el-option label="✅ PEF Done" value="pef_admission_done"/>
+            <el-option label="🆔 Nadra Pending" value="nadra_pending"/>
+            <el-option label="👶 Age < 5yr" value="under_five"/>
+            <el-option label="🚫 Disabled" value="view_inactive"/>
+          </el-select>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="action-section">
+        <el-button-group class="action-button-group">
+          <el-tooltip content="Add New Student" placement="top">
+            <el-button 
+              type="success" 
+              @click="addStudentFunc()"
+              size="default"
+              class="action-btn"
+            >
+              <el-icon><UserFilled /></el-icon>
+            </el-button>
+          </el-tooltip>
+          
+          <el-tooltip content="Export to Excel" placement="top">
+            <el-button 
+              :loading="downloadLoading"  
+              type="primary" 
+              @click="handleDownload"
+              size="default"
+              class="action-btn"
+            >
+              <el-icon><Download /></el-icon>
+            </el-button>
+          </el-tooltip>
+          
+          <el-tooltip content="Change Selected Students Class" placement="top">
+            <el-button 
+              :disabled="multiStudentOption.multiStudent.length <= 0" 
+              type="warning" 
+              @click="dialogVisible = true"
+              size="default"
+              class="action-btn"
+            >
+              <el-icon><Sort /></el-icon>
+            </el-button>
+          </el-tooltip>
+        </el-button-group>
+      </div>
     </div>
+
+    <!-- Success Alert -->
+    <el-alert 
+      title="Records updated successfully!" 
+      type="success" 
+      v-if="alertRec"
+      show-icon
+      :closable="true"
+      @close="alertRec = false"
+      class="success-alert"
+    />
+
+    <!-- Student Table Card -->
     <el-card class="box-card">
   <el-table
           :data="list"
@@ -193,12 +234,15 @@
 <script>
 import {
   User,
+  UserFilled,
   Document,
   Edit,
   Message,
   Search,
   Star,
   ArrowDown,
+  Download,
+  Sort,
 } from '@element-plus/icons-vue'
 import moment from 'moment';
 import { debounce } from 'lodash';
@@ -613,10 +657,270 @@ export default {
 };
 </script>
 <style scoped>
-.demo-pagination-block {
-  margin-top: 10px;
+/* Main Container */
+.app-container {
+  padding: 16px;
+  background: #f5f7fa;
+  min-height: 100vh;
 }
+
+/* Compact Filter Header */
+.compact-filter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: white;
+  padding: 12px 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 16px;
+  border: 1px solid #e4e7ed;
+}
+
+/* Filter Section */
+.filter-section {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex: 1;
+  flex-wrap: wrap;
+}
+
+/* Search Controls */
+.search-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.search-type-select {
+  width: 140px;
+  min-width: 140px;
+}
+
+.search-input {
+  width: 280px;
+  min-width: 200px;
+}
+
+/* Filter Controls */
+.filter-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.class-select {
+  width: 160px;
+  min-width: 160px;
+}
+
+.more-filters-select {
+  width: 200px;
+  min-width: 200px;
+}
+
+/* Action Section */
+.action-section {
+  display: flex;
+  align-items: center;
+  margin-left: 16px;
+}
+
+.action-button-group {
+  display: flex;
+  gap: 0;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.action-btn {
+  border-radius: 0;
+  border-right: 1px solid rgba(255, 255, 255, 0.3);
+  font-weight: 500;
+  transition: all 0.3s ease;
+  min-width: 44px;
+  height: 36px;
+}
+
+.action-btn:last-child {
+  border-right: none;
+}
+
+.action-btn:hover {
+  transform: translateY(-1px);
+  z-index: 1;
+  position: relative;
+}
+
+/* Success Alert */
+.success-alert {
+  margin-bottom: 16px;
+  border-radius: 6px;
+}
+
+/* Pagination */
+.demo-pagination-block {
+  margin-top: 16px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
 .demo-pagination-block .demonstration {
   margin-bottom: 16px;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .search-input {
+    width: 240px;
+    min-width: 180px;
+  }
+  
+  .class-select {
+    width: 140px;
+    min-width: 140px;
+  }
+  
+  .more-filters-select {
+    width: 180px;
+    min-width: 180px;
+  }
+}
+
+@media (max-width: 992px) {
+  .compact-filter-header {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+  
+  .filter-section {
+    justify-content: center;
+  }
+  
+  .action-section {
+    margin-left: 0;
+    justify-content: center;
+  }
+  
+  .search-controls {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  
+  .filter-controls {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 768px) {
+  .app-container {
+    padding: 12px;
+  }
+  
+  .compact-filter-header {
+    padding: 16px;
+  }
+  
+  .filter-section {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .search-controls {
+    width: 100%;
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .filter-controls {
+    width: 100%;
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .search-type-select,
+  .search-input,
+  .class-select,
+  .more-filters-select {
+    width: 100%;
+    min-width: unset;
+  }
+  
+  .action-button-group {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .compact-filter-header {
+    padding: 12px;
+  }
+  
+  .action-btn {
+    min-width: 40px;
+    height: 32px;
+  }
+  
+  .action-button-group {
+    width: 100%;
+    justify-content: space-around;
+  }
+}
+
+/* Enhanced Input Styles */
+.search-input :deep(.el-input__wrapper) {
+  border-radius: 6px;
+  transition: all 0.3s ease;
+}
+
+.search-input :deep(.el-input__wrapper):hover {
+  border-color: #409eff;
+}
+
+.search-input :deep(.el-input__wrapper):focus-within {
+  border-color: #409eff;
+  box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
+}
+
+/* Select Styles */
+.search-type-select :deep(.el-select__wrapper),
+.class-select :deep(.el-select__wrapper),
+.more-filters-select :deep(.el-select__wrapper) {
+  border-radius: 6px;
+  transition: all 0.3s ease;
+}
+
+.search-type-select :deep(.el-select__wrapper):hover,
+.class-select :deep(.el-select__wrapper):hover,
+.more-filters-select :deep(.el-select__wrapper):hover {
+  border-color: #409eff;
+}
+
+/* Custom scrollbar for filter dropdowns */
+:deep(.el-select-dropdown__list) {
+  max-height: 200px;
+}
+
+:deep(.el-select-dropdown__list)::-webkit-scrollbar {
+  width: 6px;
+}
+
+:deep(.el-select-dropdown__list)::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+:deep(.el-select-dropdown__list)::-webkit-scrollbar-thumb {
+  background: #c0c4cc;
+  border-radius: 3px;
+}
+
+:deep(.el-select-dropdown__list)::-webkit-scrollbar-thumb:hover {
+  background: #a8abb2;
 }
 </style>
