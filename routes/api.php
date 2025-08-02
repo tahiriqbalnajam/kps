@@ -190,3 +190,14 @@ Route::prefix('import')->group(function () {
     Route::get('example', [ImportController::class, 'downloadExample']);
 });
 
+// Accounting routes
+Route::prefix('accounting')->group(function () {
+    Route::get('/', [App\Http\Controllers\AccountingController::class, 'index']);
+    Route::post('/', [App\Http\Controllers\AccountingController::class, 'store']);
+    Route::get('/dashboard', [App\Http\Controllers\AccountingController::class, 'dashboard']);
+    Route::get('/categories', [App\Http\Controllers\AccountingController::class, 'getCategories']);
+    Route::get('/{id}', [App\Http\Controllers\AccountingController::class, 'show']);
+    Route::put('/{id}', [App\Http\Controllers\AccountingController::class, 'update']);
+    Route::delete('/{id}', [App\Http\Controllers\AccountingController::class, 'destroy']);
+});
+

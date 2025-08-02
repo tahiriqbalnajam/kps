@@ -56,7 +56,7 @@ export const asyncRoutes = [
   {
     path: '/students',
     component: Layout,
-    redirect: '/students/list',
+    redirect: 'students/list',
     meta: { title: 'Students', bootstrapIcon: 'mortarboard-fill', noCache: true },
     children: [
       {
@@ -105,7 +105,7 @@ export const asyncRoutes = [
   {
     path: '/parents',
     component: Layout,
-    redirect: '/parents/list',
+    redirect: 'parents/list',
     children: [
       {
         path: 'list',
@@ -118,7 +118,7 @@ export const asyncRoutes = [
    {
     path: '/teacher',
     component: Layout,
-    redirect: '/teacher/list',
+    redirect: 'teacher/list',
     meta: { title: 'Teachers', bootstrapIcon: 'person-gear', noCache: true, permissions: ['view menu teachers'] },
     children: [
       {
@@ -151,7 +151,7 @@ export const asyncRoutes = [
   {
     path: '/academics',
     component: Layout,
-    redirect: '/academics/list',
+    redirect: 'academics/list',
     meta: { title: 'Academics', bootstrapIcon: 'mortarboard-fill', noCache: true, permissions: ['view menu classes'] },
     children: [
       {
@@ -173,7 +173,7 @@ export const asyncRoutes = [
         meta: { title: 'Assign Subject', bootstrapIcon: 'book', noCache: true },
       },
       {
-        path: '/syllabus',
+        path: 'syllabus',
         meta: { title: 'syllabus', bootstrapIcon: 'person-workspace', noCache: true, permissions: ['view menu classes'] },
         children: [
           {
@@ -201,12 +201,12 @@ export const asyncRoutes = [
   {
     path: '/attendance',
     component: Layout,
-    redirect: '/attendance/mark/add',
+    redirect: 'attendance/mark/add',
     meta: { title: 'Attendance', bootstrapIcon: 'calendar-check-fill', noCache: true,permissions: ['view menu attendance'] },
     children: [
       {
         path: 'mark',
-        redirect: '/attendance/mark/add',
+        redirect: 'mark/add',
         meta: { title: 'Mark', bootstrapIcon: 'calendar-plus', noCache: true },
         children: [
           {
@@ -225,7 +225,7 @@ export const asyncRoutes = [
       },
       {
         path: 'reports',
-        redirect: '/attendance/mark/add',
+        redirect: 'reports/report',
         meta: { title: 'Reports', bootstrapIcon: 'calendar-plus', noCache: true },
         children: [
           {
@@ -281,7 +281,7 @@ export const asyncRoutes = [
         ],
       },
       {
-        path: '/online-attendance',
+        path: 'online-attendance',
         component: () => import('@/views/teachers/QrcodeAtt.vue'),
         name: 'Online Attendance',
         meta: { title: 'Online Attendance', bootstrapIcon: 'camera-fill', noCache: true },
@@ -297,12 +297,12 @@ export const asyncRoutes = [
   {
     path: '/finance',
     component: Layout,
-    redirect: '/finance/queue',
+    redirect: '/finance/accounting/dashboard',
     meta: {title: 'Finanace', bootstrapIcon: 'credit-card-2-back-fill', noCache: true, permissions: ['view menu timetabel']},
     children: [
      {
-        path: '/fee',
-        redirect: '/fee/paidlist',
+        path: 'fee',
+        redirect: 'fee/paidlist',
         meta: { title: 'Fee', bootstrapIcon: 'currency-dollar', noCache: true, permissions: ['view menu fee'] },
         children: [
           {
@@ -326,8 +326,39 @@ export const asyncRoutes = [
         ],
       },
       {
-        path: '/accounts',
-        redirect: '/accounts/index',
+        path: 'accounting',
+        redirect: 'accounting/dashboard',
+        meta: { title: 'Accounting', bootstrapIcon: 'calculator', noCache: true, permissions: ['view menu accounting'] },
+        children: [
+          {
+            path: 'dashboard',
+            component: () => import('@/views/accounting/Dashboard.vue'),
+            name: 'Accounting Dashboard',
+            meta: { title: 'Dashboard', bootstrapIcon: 'speedometer2', noCache: true },
+          },
+          {
+            path: 'transactions',
+            component: () => import('@/views/accounting/TransactionList.vue'),
+            name: 'Transactions1',
+            meta: { title: 'Transactions', bootstrapIcon: 'list-ul', noCache: true },
+          },
+          {
+            path: 'income',
+            component: () => import('@/views/accounting/IncomeForm.vue'),
+            name: 'Add Income',
+            meta: { title: 'Add Income', bootstrapIcon: 'plus-circle', noCache: true },
+          },
+          {
+            path: 'expense',
+            component: () => import('@/views/accounting/ExpenseForm.vue'),
+            name: 'Add Expense',
+            meta: { title: 'Add Expense', bootstrapIcon: 'dash-circle', noCache: true },
+          },
+        ],
+      },
+      {
+        path: 'accounts',
+        redirect: 'accounts/index',
         name: 'Accounts',
         alwaysShow: true,
         meta: {
@@ -355,7 +386,7 @@ export const asyncRoutes = [
   {
     path: '/exam',
     component: Layout,
-    redirect: '/exam/test',
+    redirect: 'exam/test',
     meta: {title: 'Assessments', bootstrapIcon: 'journal-text', noCache: true,  permissions: ['view menu exam'],},
     children: [
       {
@@ -388,7 +419,7 @@ export const asyncRoutes = [
   {
     path: '/communication',
     component: Layout,
-    redirect: '/communication/queue',
+    redirect: 'communication/queue',
     meta: {title: 'communication', bootstrapIcon: 'chat-right-text-fill', noCache: true, permissions: ['view menu timetabel']},
     children: [
       {
@@ -408,7 +439,7 @@ export const asyncRoutes = [
   {
     path: '/timetable',
     component: Layout,
-    redirect: '/timetable/create',
+    redirect: 'timetable/create',
     meta: {title: 'TimeTable', bootstrapIcon: 'clock-fill', noCache: true, permissions: ['view menu timetabel']},
     children: [
       {
@@ -428,7 +459,7 @@ export const asyncRoutes = [
   {
     path: '/profile',
     component: Layout,
-    redirect: '/profile/edit',
+    redirect: 'profile/edit',
     children: [
       {
         path: 'edit',
