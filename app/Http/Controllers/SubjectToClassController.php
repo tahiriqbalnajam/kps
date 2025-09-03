@@ -25,7 +25,8 @@ class SubjectToClassController extends Controller
         $limit = Arr::get($searchParams, 'limit', static::ITEM_PER_PAGE);
         $subjects =  QueryBuilder::for(Classes::class)->with('subjects')
         ->allowedFilters([
-            'id','title'
+            AllowedFilter::exact('id'),
+            'title'
         ])
         ->paginate($limit)
         ->appends(request()->query());

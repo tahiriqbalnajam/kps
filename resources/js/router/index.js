@@ -323,6 +323,24 @@ export const asyncRoutes = [
             name: 'Fee Types',
             meta: { title: 'Fee Types', bootstrapIcon: 'currency-exchange', noCache: true },
           },
+          {
+            path: 'feevoucher',
+            component: () => import('@/views/fee/FeeVoucher.vue'),
+            name: 'Fee Voucher',
+            meta: { title: 'Fee Voucher', bootstrapIcon: 'file-earmark-text', noCache: true },
+          },
+          {
+            path: 'vouchertracking',
+            component: () => import('@/views/fee/FeeVoucherTracking.vue'),
+            name: 'Voucher Tracking',
+            meta: { title: 'Voucher Tracking', bootstrapIcon: 'list-check', noCache: true },
+          },
+          {
+            path: 'voucherreminders',
+            component: () => import('@/views/fee/VoucherReminders.vue'),
+            name: 'Voucher Reminders',
+            meta: { title: 'Voucher Reminders', bootstrapIcon: 'bell', noCache: true },
+          },
         ],
       },
       {

@@ -45,6 +45,25 @@ Route::apiResource('feetypes', 'FeeTypeController');
 Route::apiResource('fee', 'FeeController');
 Route::apiResource('pendingfee', 'PendingFeeController');
 
+// Fee Voucher Routes
+Route::prefix('fee/voucher')->group(function () {
+    Route::get('students', 'FeeVoucherController@getStudents');
+    Route::post('generate', 'FeeVoucherController@generateVouchers');
+    Route::post('check-existing', 'FeeVoucherController@checkExistingVouchers');
+    Route::get('list', 'FeeVoucherController@getVouchers');
+    Route::get('statistics', 'FeeVoucherController@getStatistics');
+    Route::get('outstanding', 'FeeVoucherController@getOutstandingVouchers');
+    Route::get('settings', 'FeeVoucherController@getSettings');
+    Route::post('settings', 'FeeVoucherController@saveSettings');
+    Route::post('print', 'FeeVoucherController@printVouchers');
+    Route::post('remind', 'FeeVoucherController@sendReminders');
+    Route::get('{id}', 'FeeVoucherController@getVoucherDetails');
+    Route::put('{id}/status', 'FeeVoucherController@updateStatus');
+    Route::delete('{id}', 'FeeVoucherController@deleteVoucher');
+    Route::post('{id}/reprint', 'FeeVoucherController@reprintVoucher');
+});
+Route::apiResource('pendingfee', 'PendingFeeController');
+
 //Route::apiResource('settings', 'SettingController');
 Route::apiResource('settings', 'SettingsController');
 Route::apiResource('smsqueue', 'SmsQueueController');

@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class ClassSubject extends Model
 {
-    protected $table = 'class_subject';
+    protected $table = 'subject_to_classes';
 
     public function subject()
     {
