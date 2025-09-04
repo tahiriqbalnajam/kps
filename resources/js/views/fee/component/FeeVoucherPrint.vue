@@ -238,131 +238,6 @@
         </div>
       </div>
     </div>
-          <div class="voucher-header">
-            <div class="school-info">
-              <div class="school-logo">
-                <el-image
-                  :src="`/${settings.school_logo || 'images/default-logo.png'}`"
-                  fit="contain"
-                  style="height: 80px; width: 80px;"
-                />
-              </div>
-              <div class="school-details">
-                <h2 class="school-name">{{ settings.school_name || 'School Name' }}</h2>
-                <p v-if="settings.school_tagline" class="school-tagline">{{ settings.school_tagline }}</p>
-                <p class="school-address">{{ settings.school_address || 'School Address' }}</p>
-                <p class="school-contact">Phone: {{ settings.school_phone || 'Phone Number' }}</p>
-                <p v-if="settings.school_website" class="school-website">{{ settings.school_website }}</p>
-              </div>
-            </div>
-            <div class="voucher-info">
-              <h3 class="voucher-title">FEE VOUCHER</h3>
-              <div class="voucher-number">Voucher #: {{ voucher.voucher_number || 'TEMP-' + (index + 1) }}</div>
-              <div class="copy-label">Student Copy</div>
-              <div class="print-date">Print Date: {{ formatDate(new Date()) }}</div>
-            </div>
-          </div>
-
-          <div class="voucher-body">
-            <table class="info-table">
-              <tr>
-                <td class="label">Student Name:</td>
-                <td class="value">{{ voucher.student_name }}</td>
-                <td class="label">Admission No:</td>
-                <td class="value">{{ voucher.admission_number }}</td>
-              </tr>
-              <tr>
-                <td class="label">Father Name:</td>
-                <td class="value">{{ voucher.parent_name }}</td>
-                <td class="label">Class:</td>
-                <td class="value">{{ voucher.class_name }}</td>
-              </tr>
-              <tr>
-                <td class="label">Due Date:</td>
-                <td class="value due-date">{{ formatDate(voucher.due_date) }}</td>
-                <td class="label">Voucher Type:</td>
-                <td class="value">{{ voucher.voucher_type === 'monthly' ? 'Monthly Fee' : 'Custom Fee' }}</td>
-              </tr>
-            </table>
-
-            <div class="fee-section">
-              <table class="fee-table">
-                <thead>
-                  <tr>
-                    <th>Description</th>
-                    <th class="amount-col">Amount (Rs.)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <!-- Show fee breakdown if available (for multiple fee types) -->
-                  <template v-if="voucher.fee_breakdown && voucher.fee_breakdown.length > 0">
-                    <tr v-for="(feeItem, feeIndex) in voucher.fee_breakdown" :key="feeIndex">
-                      <td>{{ feeItem.fee_type }}</td>
-                      <td class="amount">{{ feeItem.amount }}</td>
-                    </tr>
-                  </template>
-                  <!-- Fallback for single fee (monthly/custom) -->
-                  <template v-else>
-                    <tr>
-                      <td>{{ getFeeDescription(voucher.voucher_type) }}</td>
-                      <td class="amount">{{ voucher.fee_amount }}</td>
-                    </tr>
-                  </template>
-                  
-                  <tr v-if="voucher.fine_amount > 0" class="fine-row">
-                    <td>Fine (After Due Date)</td>
-                    <td class="amount">{{ voucher.fine_amount }}</td>
-                  </tr>
-                  <tr class="total-row">
-                    <td><strong>Total Amount (With Fine)</strong></td>
-                    <td class="amount"><strong>{{ voucher.total_with_fine }}</strong></td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            <div class="payment-info" v-if="voucher.notes">
-              <div class="notes-section">
-                <strong>Notes:</strong>
-                <p>{{ voucher.notes }}</p>
-              </div>
-            </div>
-
-            <div class="payment-instructions">
-              <p><strong>Payment Instructions:</strong></p>
-              <ul>
-                <li>Fee must be paid before the due date to avoid fine</li>
-                <li>Fine of Rs. {{ voucher.fine_amount }} will be charged after due date</li>
-                <li>Keep this voucher as payment receipt</li>
-                <li>For any queries, contact school office</li>
-              </ul>
-            </div>
-
-            <div class="voucher-footer">
-              <div class="signature-section">
-                <div class="signature-box">
-                  <span>Received By:</span>
-                  <div class="signature-line">_________________</div>
-                  <span>Date: ___________</span>
-                </div>
-                <div class="signature-box">
-                  <span>Authorized Signature:</span>
-                  <div class="signature-line">_________________</div>
-                </div>
-              </div>
-              
-              <div class="footer-text" v-if="settings.invoice_footer">
-                <div v-html="settings.invoice_footer"></div>
-              </div>
-              
-              <div class="developer-credit">
-                Developed by IDLBridge - 03457050405
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
   </el-dialog>
 </template>
 
@@ -440,30 +315,272 @@ export default {
       const printContent = document.getElementById('printVouchers')
       const originalContent = document.body.innerHTML
 
-      // Create print styles
+      // Create comprehensive print styles
       const printStyles = `
         <style>
-          @media print {
-            @page { 
-              size: A4; 
-              margin: 0.5cm; 
-            }
-            body { 
-              font-family: Arial, sans-serif; 
-              font-size: 12px; 
-              line-height: 1.4;
-              margin: 0;
-              padding: 0;
-            }
-            .page-break { 
-              page-break-before: always; 
-            }
-            .voucher-copy { 
-              margin-bottom: 2cm; 
-            }
-            .voucher-copy:last-child { 
-              margin-bottom: 0; 
-            }
+          @page { 
+            size: A4 portrait; 
+            margin: 10mm;
+            orientation: portrait;
+          }
+          
+          * {
+            box-sizing: border-box;
+          }
+          
+          body { 
+            font-family: Arial, sans-serif; 
+            font-size: 12px; 
+            line-height: 1.4;
+            margin: 0;
+            padding: 0;
+            background: white !important;
+          }
+          
+          .print-container {
+            background: white;
+            min-height: auto;
+            padding: 0;
+          }
+          
+          .voucher-page {
+            background: white;
+            margin: 0;
+            padding: 0;
+            page-break-after: always;
+          }
+          
+          .voucher-row {
+            display: flex;
+            gap: 10mm;
+            width: 100%;
+          }
+          
+          .voucher-column {
+            flex: 1;
+            width: 48%;
+          }
+          
+          .voucher-copy {
+            background: white;
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 8mm;
+            margin: 0;
+            box-shadow: none;
+            page-break-inside: avoid;
+          }
+          
+          .student-copy {
+            border-color: #67c23a;
+          }
+          
+          .office-copy {
+            border-color: #409eff;
+          }
+          
+          .voucher-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+          }
+          
+          .school-info {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex: 1;
+          }
+          
+          .school-logo img {
+            height: 50px;
+            width: 50px;
+            object-fit: contain;
+          }
+          
+          .school-details h2 {
+            margin: 0 0 4px 0;
+            color: #303133;
+            font-size: 16px;
+            font-weight: bold;
+          }
+          
+          .school-details p {
+            margin: 2px 0;
+            color: #606266;
+            font-size: 11px;
+          }
+          
+          .school-tagline {
+            font-style: italic;
+            color: #409eff !important;
+            font-weight: 500;
+          }
+          
+          .school-website {
+            color: #67c23a !important;
+            font-size: 10px;
+          }
+          
+          .voucher-info {
+            text-align: right;
+            flex-shrink: 0;
+          }
+          
+          .voucher-title {
+            margin: 0;
+            color: #409eff;
+            font-size: 18px;
+            font-weight: bold;
+          }
+          
+          .voucher-number {
+            background: #f5f7fa;
+            color: #303133;
+            padding: 3px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: 600;
+            margin: 3px 0;
+            display: inline-block;
+            border: 1px solid #ddd;
+            font-family: 'Courier New', monospace;
+          }
+          
+          .copy-label {
+            color: white;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: 600;
+            margin: 6px 0;
+            display: inline-block;
+          }
+          
+          .student-copy .copy-label {
+            background: #67c23a;
+          }
+          
+          .office-copy .copy-label {
+            background: #409eff;
+          }
+          
+          .print-date {
+            color: #909399;
+            font-size: 10px;
+          }
+          
+          .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+          }
+          
+          .info-table td {
+            padding: 6px 8px;
+            border: 1px solid #ddd;
+            font-size: 11px;
+          }
+          
+          .info-table .label {
+            background: #f5f7fa;
+            font-weight: 600;
+            width: 35%;
+          }
+          
+          .info-table .value {
+            background: white;
+          }
+          
+          .due-date {
+            color: #e6a23c;
+            font-weight: 600;
+          }
+          
+          .fee-section {
+            margin: 15px 0;
+          }
+          
+          .fee-table {
+            width: 100%;
+            border-collapse: collapse;
+          }
+          
+          .fee-table th,
+          .fee-table td {
+            padding: 6px 8px;
+            border: 1px solid #ddd;
+            text-align: left;
+            font-size: 11px;
+          }
+          
+          .fee-table th {
+            background: #f5f7fa;
+            font-weight: 600;
+          }
+          
+          .fee-table .amount-col,
+          .fee-table .amount {
+            text-align: right;
+            width: 25%;
+          }
+          
+          .fine-row td {
+            color: #f56c6c;
+            font-style: italic;
+          }
+          
+          .total-row td {
+            background: #f0f9ff;
+            font-weight: bold;
+            border-top: 2px solid #409eff;
+          }
+          
+          .payment-info {
+            margin: 10px 0;
+          }
+          
+          .payment-instruction {
+            font-size: 10px;
+            color: #606266;
+          }
+          
+          .payment-instruction p {
+            margin: 3px 0;
+          }
+          
+          .signatures {
+            margin-top: 15px;
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+          }
+          
+          .signature-box {
+            text-align: center;
+            font-size: 10px;
+            flex: 1;
+          }
+          
+          .signature-line {
+            border-bottom: 1px solid #333;
+            height: 25px;
+            margin: 8px 0;
+            width: 100%;
+          }
+          
+          .page-break {
+            page-break-before: always;
+          }
+          
+          /* Hide any remaining elements that shouldn't print */
+          .print-toolbar,
+          .el-dialog__header,
+          .el-dialog__footer {
+            display: none !important;
           }
         </style>
       `
@@ -804,6 +921,12 @@ export default {
 
 /* Print Specific Styles */
 @media print {
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+    orientation: portrait;
+  }
+  
   .print-toolbar {
     display: none !important;
   }
@@ -811,27 +934,29 @@ export default {
   .voucher-page {
     page-break-after: always;
     margin: 0;
-    padding: 5mm;
+    padding: 0;
   }
   
   .voucher-row {
-    display: flex;
-    gap: 5mm;
+    display: flex !important;
+    gap: 10mm !important;
     min-height: auto;
+    width: 100% !important;
   }
   
   .voucher-column {
-    flex: 1;
-    width: 48%;
+    flex: 1 !important;
+    width: 48% !important;
   }
   
   .voucher-copy {
-    margin: 0;
-    border: 1px solid #333;
-    padding: 3mm;
-    box-shadow: none;
-    min-height: auto;
-    page-break-inside: avoid;
+    margin: 0 !important;
+    border: 1px solid #333 !important;
+    padding: 8mm !important;
+    box-shadow: none !important;
+    min-height: auto !important;
+    page-break-inside: avoid !important;
+    background: white !important;
   }
   
   .page-break {
@@ -852,14 +977,48 @@ export default {
   }
   
   .info-table td {
-    padding: 4px 8px !important;
-    font-size: 12px !important;
+    padding: 6px 8px !important;
+    font-size: 11px !important;
   }
   
   .fee-table th,
   .fee-table td {
-    padding: 4px 8px !important;
-    font-size: 12px !important;
+    padding: 6px 8px !important;
+    font-size: 11px !important;
+  }
+  
+  .voucher-header {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: flex-start !important;
+    margin-bottom: 15px !important;
+    padding-bottom: 10px !important;
+    border-bottom: 1px solid #ddd !important;
+  }
+  
+  .school-info {
+    display: flex !important;
+    gap: 10px !important;
+    align-items: center !important;
+  }
+  
+  .school-logo img {
+    height: 50px !important;
+    width: 50px !important;
+  }
+  
+  .voucher-info {
+    text-align: right !important;
+  }
+  
+  .signatures {
+    display: flex !important;
+    justify-content: space-between !important;
+    gap: 20px !important;
+  }
+  
+  .signature-box {
+    flex: 1 !important;
   }
 }
 
