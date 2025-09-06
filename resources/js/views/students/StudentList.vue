@@ -159,7 +159,40 @@
         <el-table-column label="Class" prop="stdclasses.name" />
         <el-table-column label="Gender" prop="gender" />
         <el-table-column label="Fee" prop="monthly_fee" />
-        <el-table-column label="DOB">
+        <el-table-column 
+          label="DOB" 
+          prop="dob"
+        >
+          <template #header>
+            <div style="display: flex; flex-direction: column; gap: 4px; align-items: center;">
+              <span>DOB</span>
+              <div style="display: flex; gap: 4px; align-items: center;">
+                <el-date-picker
+                  v-model="dobDateRange"
+                  type="daterange"
+                  size="small"
+                  placeholder="Filter by date range"
+                  start-placeholder="From"
+                  end-placeholder="To"
+                  format="DD/MM/YYYY"
+                  value-format="YYYY-MM-DD"
+                  style="width: 160px; font-size: 11px;"
+                  @change="handleDOBFilter"
+                  clearable
+                />
+                <el-button
+                  v-if="dobDateRange && dobDateRange.length > 0"
+                  size="small"
+                  type="danger"
+                  icon="Close"
+                  circle
+                  @click="clearDOBFilter"
+                  title="Clear DOB filter"
+                  style="width: 20px; height: 20px; font-size: 10px;"
+                />
+              </div>
+            </div>
+          </template>
           <template #default="scope">
             {{ dateformat(scope.row.dob)}}
           </template>
@@ -312,6 +345,7 @@ export default {
         stdclass: '',
         morefilters: [],
       },
+      dobDateRange: null,
     };
   },
   computed: {
@@ -337,6 +371,23 @@ export default {
     },
     dateformat: (date) => {
       return (!date) ? '' : moment(date).format('DD MMM, YYYY');
+    },
+    handleDOBFilter() {
+      // Apply DOB date range filter and refresh the list
+      this.getList();
+    },
+    clearDOBFilter() {
+      // Clear the DOB date range filter
+      this.dobDateRange = null;
+      // Remove the DOB filters from query
+      if (this.query.filter['dob_from']) {
+        delete this.query.filter['dob_from'];
+      }
+      if (this.query.filter['dob_to']) {
+        delete this.query.filter['dob_to'];
+      }
+      // Refresh the list
+      this.getList();
     },
     handleCommand(command) {
       console.log(command);
@@ -415,6 +466,12 @@ export default {
           else 
             this.query.filter[filter] = 'Yes';
         });
+      }
+      
+      // Process DOB date range filter
+      if (this.dobDateRange && this.dobDateRange.length === 2) {
+        this.query.filter['dob_from'] = this.dobDateRange[0];
+        this.query.filter['dob_to'] = this.dobDateRange[1];
       }
       
       const { data } = await student.list(this.query);
@@ -564,6 +621,14 @@ export default {
             else if (filter === 'view_inactive') exportParams['filter[status]'] = 'disable'; 
           });
         }
+
+        // DOB date range filter
+        if (this.dobDateRange && this.dobDateRange.length === 2) {
+          exportParams['filter[dob_from]'] = this.dobDateRange[0];
+          exportParams['filter[dob_to]'] = this.dobDateRange[1];
+        }
+        
+        console.log('Export Parameters being sent:', exportParams); // Debug log
         
         exportStudent(exportParams) // Pass the constructed exportParams
           .then(response => {
@@ -643,6 +708,29 @@ export default {
     closeIdcard() {
       this.showIDCard = false;
       this.studentid = null;
+    },
+    handleDelete(id) {
+      this.$confirm('Are you sure you want to delete this student?', 'Warning', {
+        confirmButtonText: 'OK',
+        cancelButtonText: 'Cancel',
+        type: 'warning'
+      }).then(() => {
+        // Add delete API call here
+        student.destroy(id).then(() => {
+          this.$message({
+            type: 'success',
+            message: 'Student deleted successfully!'
+          });
+          this.getList();
+        }).catch(error => {
+          this.$message.error('Failed to delete student');
+        });
+      }).catch(() => {
+        this.$message({
+          type: 'info',
+          message: 'Delete cancelled'
+        });
+      });
     },
     addClass() {
 

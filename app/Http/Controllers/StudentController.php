@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use App\Laravue\JsonResponse;
 use App\Models\StudentAttendance;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Spatie\QueryBuilder\QueryBuilder;
 use Spatie\QueryBuilder\AllowedFilter;
 use App\Services\Contracts\StudentServiceInterface;
@@ -111,8 +112,7 @@ class StudentController extends Controller
 
     public function exportStudents(Request $request)
     {
-        $searchParams = $request->all();
-        $studentQuery = $this->studentService->listStudents($searchParams);
+        $studentQuery = $this->studentService->getStudentsQueryForExport($request);
 
         return Excel::download(new StudentsExport($studentQuery), 'students_export.csv', \Maatwebsite\Excel\Excel::CSV);
     }

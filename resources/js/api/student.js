@@ -27,5 +27,6 @@ export function exportStudent(stdData){
     url: 'students/export',
     method: 'post',
     data: stdData,
+    responseType: 'blob', // Important for file downloads
   });
 }
