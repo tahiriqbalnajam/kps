@@ -372,11 +372,11 @@ export default {
           }
           
           .student-copy {
-            border-color: #67c23a;
+            border-color: #666;
           }
           
           .office-copy {
-            border-color: #409eff;
+            border-color: #333;
           }
           
           .voucher-header {
@@ -416,12 +416,12 @@ export default {
           
           .school-tagline {
             font-style: italic;
-            color: #409eff !important;
+            color: #555 !important;
             font-weight: 500;
           }
           
           .school-website {
-            color: #67c23a !important;
+            color: #666 !important;
             font-size: 10px;
           }
           
@@ -432,7 +432,7 @@ export default {
           
           .voucher-title {
             margin: 0;
-            color: #409eff;
+            color: #333;
             font-size: 18px;
             font-weight: bold;
           }
@@ -461,11 +461,11 @@ export default {
           }
           
           .student-copy .copy-label {
-            background: #67c23a;
+            background: #666;
           }
           
           .office-copy .copy-label {
-            background: #409eff;
+            background: #333;
           }
           
           .print-date {
@@ -496,7 +496,7 @@ export default {
           }
           
           .due-date {
-            color: #e6a23c;
+            color: #555;
             font-weight: 600;
           }
           
@@ -529,14 +529,14 @@ export default {
           }
           
           .fine-row td {
-            color: #f56c6c;
+            color: #555;
             font-style: italic;
           }
           
           .total-row td {
-            background: #f0f9ff;
+            background: #f0f0f0;
             font-weight: bold;
-            border-top: 2px solid #409eff;
+            border-top: 2px solid #333;
           }
           
           .payment-info {
@@ -682,8 +682,8 @@ export default {
 }
 
 .office-copy {
-  border-color: #409eff;
-  background: #fafbff;
+  border-color: #333;
+  background: #f8f8f8;
 }
 
 .voucher-header {
@@ -715,12 +715,12 @@ export default {
 
 .school-tagline {
   font-style: italic;
-  color: #409eff !important;
+  color: #555 !important;
   font-weight: 500;
 }
 
 .school-website {
-  color: #67c23a !important;
+  color: #666 !important;
   font-size: 12px;
 }
 
@@ -730,7 +730,7 @@ export default {
 
 .voucher-title {
   margin: 0;
-  color: #409eff;
+  color: #333;
   font-size: 24px;
   font-weight: bold;
 }
@@ -749,7 +749,7 @@ export default {
 }
 
 .copy-label {
-  background: #67c23a;
+  background: #666;
   color: white;
   padding: 4px 12px;
   border-radius: 4px;
@@ -760,7 +760,7 @@ export default {
 }
 
 .office-label {
-  background: #409eff;
+  background: #333;
 }
 
 .print-date {
@@ -794,7 +794,7 @@ export default {
 }
 
 .due-date {
-  color: #e6a23c;
+  color: #555;
   font-weight: 700;
 }
 
@@ -829,24 +829,24 @@ export default {
 }
 
 .fine-row {
-  color: #f56c6c;
+  color: #555;
 }
 
 .total-row {
-  background: #f0f9ff;
-  border-top: 2px solid #303133;
+  background: #f0f0f0;
+  border-top: 2px solid #333;
 }
 
 .total-row td {
   font-size: 16px;
-  color: #409eff;
+  color: #333;
 }
 
 .notes-section {
   margin: 15px 0;
   padding: 12px;
-  background: #fef7e0;
-  border-left: 4px solid #e6a23c;
+  background: #f5f5f5;
+  border-left: 4px solid #666;
   border-radius: 4px;
 }
 
@@ -858,15 +858,15 @@ export default {
 .payment-instructions {
   margin: 20px 0;
   padding: 15px;
-  background: #f0f9ff;
+  background: #f0f0f0;
   border-radius: 6px;
-  border: 1px solid #b3d8ff;
+  border: 1px solid #ccc;
 }
 
 .payment-instructions p {
   margin: 0 0 8px 0;
   font-weight: 600;
-  color: #409eff;
+  color: #333;
 }
 
 .payment-instructions ul {
