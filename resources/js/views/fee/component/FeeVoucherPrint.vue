@@ -319,9 +319,9 @@ export default {
       const printStyles = `
         <style>
           @page { 
-            size: A4 portrait; 
+            size: A4 landscape; 
             margin: 10mm;
-            orientation: portrait;
+            orientation: landscape;
           }
           
           * {
@@ -922,9 +922,9 @@ export default {
 /* Print Specific Styles */
 @media print {
   @page {
-    size: A4 portrait;
+    size: A4 landscape;
     margin: 10mm;
-    orientation: portrait;
+    orientation: landscape;
   }
   
   .print-toolbar {
