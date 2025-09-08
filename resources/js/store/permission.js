@@ -39,6 +39,8 @@ function canAccess(roles, permissions, route) {
 function filterAsyncRoutes(routes, roles, permissions) {
   const res = [];
 
+  console.log(routes, roles, permissions)
+
   routes.forEach(route => {
     const tmp = { ...route };
     if (canAccess(roles, permissions, tmp)) {

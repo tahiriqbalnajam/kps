@@ -57,7 +57,7 @@ export const asyncRoutes = [
     path: '/students',
     component: Layout,
     redirect: 'students/list',
-    meta: { title: 'Students', bootstrapIcon: 'mortarboard-fill', noCache: true },
+    meta: { title: 'Students', bootstrapIcon: 'mortarboard-fill', noCache: true, permissions: ['manage user'] },
     children: [
       {
         path: 'list',
@@ -260,10 +260,10 @@ export const asyncRoutes = [
             path: 'attendance-graph',
             component: () => import('@/views/attendance/DailyAttendanceGraph.vue'),
             name: 'AttendanceGraph',
-            meta: { 
+            meta: {
               title: 'Daily Graph',
               bootstrapIcon: 'bar-chart-line-fill',
-              permissions: ['view menu attendance'] 
+              permissions: ['view menu attendance']
             }
           },
           {
