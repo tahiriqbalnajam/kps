@@ -9,10 +9,9 @@ use Maatwebsite\Excel\Concerns\WithMapping;
 use Illuminate\Support\Carbon;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Query\Builder as QueryBuilderInterface;
-use Maatwebsite\Excel\Concerns\FromCollection;
 
 
-class StudentsExport implements FromCollection
+class StudentsExport implements FromQuery, WithHeadings, WithMapping
 {
     protected $query;
 
@@ -24,20 +23,13 @@ class StudentsExport implements FromCollection
         $this->query = $query;
     }
 
-    public function collection()
-    {
-        return Student::all();
-    }
-
     /**
     * @return EloquentBuilder|QueryBuilderInterface
     */
     public function query()
     {
-        // Ensure relationships needed for mapping are eager loaded by the query passed in
-        // e.g., $this->query->with(['parents', 'stdclasses']);
-        // This should ideally be handled by the StudentService when it prepares the query.
-        return $this->query;
+        // Return the filtered query with necessary relationships
+        return $this->query->with(['parents', 'stdclasses']);
     }
 
     public function headings(): array

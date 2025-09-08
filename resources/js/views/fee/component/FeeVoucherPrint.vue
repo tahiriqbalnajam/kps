@@ -335,48 +335,28 @@
                     </tr>
                     </tbody>
                 </table>
-            </div>
 
-            <div v-if="voucher.notes" class="payment-info">
-                <div class="notes-section">
-                    <strong>Notes:</strong>
-                    <p>{{ voucher.notes }}</p>
+              </div>
+
+              <div class="payment-info">
+                <div class="payment-instruction">
+                  <strong>Payment Instructions:</strong>
+                  <p>Please pay before the due date to avoid fine charges.</p>
                 </div>
-            </div>
+              </div>
 
-            <div class="payment-instructions">
-                <p><strong>Payment Instructions:</strong></p>
-                <ul>
-                    <li>Fee must be paid before the due date to avoid fine</li>
-                    <li>Fine of Rs. {{ voucher.fine_amount }} will be charged after due date</li>
-                    <li>Keep this voucher as payment receipt</li>
-                    <li>For any queries, contact school office</li>
-                </ul>
-            </div>
-
-            <div class="voucher-footer">
-                <div class="signature-section">
-                    <div class="signature-box">
-                        <span>Received By:</span>
-                        <div class="signature-line">_________________</div>
-                        <span>Date: ___________</span>
-                    </div>
-                    <div class="signature-box">
-                        <span>Authorized Signature:</span>
-                        <div class="signature-line">_________________</div>
-                    </div>
+              <div class="signatures">
+                <div class="signature-box">
+                  <span>Authorized Signature:</span>
+                  <div class="signature-line">___________</div>
                 </div>
-
-                <div v-if="settings.invoice_footer" class="footer-text">
-                    <div v-html="settings.invoice_footer"></div>
-                </div>
-
-                <div class="developer-credit">
-                    Developed by IDLBridge - 03457050405
-                </div>
+              </div>
             </div>
+          </div>
         </div>
-    </el-dialog>
+      </div>
+    </div>
+  </el-dialog>
 </template>
 
 <script>
@@ -453,30 +433,272 @@ export default {
             const printContent = document.getElementById('printVouchers')
             const originalContent = document.body.innerHTML
 
-            // Create print styles
-            const printStyles = `
+      // Create comprehensive print styles
+      const printStyles = `
         <style>
-          @media print {
-            @page {
-              size: A4;
-              margin: 0.5cm;
-            }
-            body {
-              font-family: Arial, sans-serif;
-              font-size: 12px;
-              line-height: 1.4;
-              margin: 0;
-              padding: 0;
-            }
-            .page-break {
-              page-break-before: always;
-            }
-            .voucher-copy {
-              margin-bottom: 2cm;
-            }
-            .voucher-copy:last-child {
-              margin-bottom: 0;
-            }
+          @page { 
+            size: A4 landscape; 
+            margin: 10mm;
+            orientation: landscape;
+          }
+          
+          * {
+            box-sizing: border-box;
+          }
+          
+          body { 
+            font-family: Arial, sans-serif; 
+            font-size: 12px; 
+            line-height: 1.4;
+            margin: 0;
+            padding: 0;
+            background: white !important;
+          }
+          
+          .print-container {
+            background: white;
+            min-height: auto;
+            padding: 0;
+          }
+          
+          .voucher-page {
+            background: white;
+            margin: 0;
+            padding: 0;
+            page-break-after: always;
+          }
+          
+          .voucher-row {
+            display: flex;
+            gap: 10mm;
+            width: 100%;
+          }
+          
+          .voucher-column {
+            flex: 1;
+            width: 48%;
+          }
+          
+          .voucher-copy {
+            background: white;
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 8mm;
+            margin: 0;
+            box-shadow: none;
+            page-break-inside: avoid;
+          }
+          
+          .student-copy {
+            border-color: #666;
+          }
+          
+          .office-copy {
+            border-color: #333;
+          }
+          
+          .voucher-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+          }
+          
+          .school-info {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex: 1;
+          }
+          
+          .school-logo img {
+            height: 50px;
+            width: 50px;
+            object-fit: contain;
+          }
+          
+          .school-details h2 {
+            margin: 0 0 4px 0;
+            color: #303133;
+            font-size: 16px;
+            font-weight: bold;
+          }
+          
+          .school-details p {
+            margin: 2px 0;
+            color: #606266;
+            font-size: 11px;
+          }
+          
+          .school-tagline {
+            font-style: italic;
+            color: #555 !important;
+            font-weight: 500;
+          }
+          
+          .school-website {
+            color: #666 !important;
+            font-size: 10px;
+          }
+          
+          .voucher-info {
+            text-align: right;
+            flex-shrink: 0;
+          }
+          
+          .voucher-title {
+            margin: 0;
+            color: #333;
+            font-size: 18px;
+            font-weight: bold;
+          }
+          
+          .voucher-number {
+            background: #f5f7fa;
+            color: #303133;
+            padding: 3px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: 600;
+            margin: 3px 0;
+            display: inline-block;
+            border: 1px solid #ddd;
+            font-family: 'Courier New', monospace;
+          }
+          
+          .copy-label {
+            color: white;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: 600;
+            margin: 6px 0;
+            display: inline-block;
+          }
+          
+          .student-copy .copy-label {
+            background: #666;
+          }
+          
+          .office-copy .copy-label {
+            background: #333;
+          }
+          
+          .print-date {
+            color: #909399;
+            font-size: 10px;
+          }
+          
+          .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+          }
+          
+          .info-table td {
+            padding: 6px 8px;
+            border: 1px solid #ddd;
+            font-size: 11px;
+          }
+          
+          .info-table .label {
+            background: #f5f7fa;
+            font-weight: 600;
+            width: 35%;
+          }
+          
+          .info-table .value {
+            background: white;
+          }
+          
+          .due-date {
+            color: #555;
+            font-weight: 600;
+          }
+          
+          .fee-section {
+            margin: 15px 0;
+          }
+          
+          .fee-table {
+            width: 100%;
+            border-collapse: collapse;
+          }
+          
+          .fee-table th,
+          .fee-table td {
+            padding: 6px 8px;
+            border: 1px solid #ddd;
+            text-align: left;
+            font-size: 11px;
+          }
+          
+          .fee-table th {
+            background: #f5f7fa;
+            font-weight: 600;
+          }
+          
+          .fee-table .amount-col,
+          .fee-table .amount {
+            text-align: right;
+            width: 25%;
+          }
+          
+          .fine-row td {
+            color: #555;
+            font-style: italic;
+          }
+          
+          .total-row td {
+            background: #f0f0f0;
+            font-weight: bold;
+            border-top: 2px solid #333;
+          }
+          
+          .payment-info {
+            margin: 10px 0;
+          }
+          
+          .payment-instruction {
+            font-size: 10px;
+            color: #606266;
+          }
+          
+          .payment-instruction p {
+            margin: 3px 0;
+          }
+          
+          .signatures {
+            margin-top: 15px;
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+          }
+          
+          .signature-box {
+            text-align: center;
+            font-size: 10px;
+            flex: 1;
+          }
+          
+          .signature-line {
+            border-bottom: 1px solid #333;
+            height: 25px;
+            margin: 8px 0;
+            width: 100%;
+          }
+          
+          .page-break {
+            page-break-before: always;
+          }
+          
+          /* Hide any remaining elements that shouldn't print */
+          .print-toolbar,
+          .el-dialog__header,
+          .el-dialog__footer {
+            display: none !important;
           }
         </style>
       `
@@ -578,8 +800,8 @@ export default {
 }
 
 .office-copy {
-    border-color: #409eff;
-    background: #fafbff;
+  border-color: #333;
+  background: #f8f8f8;
 }
 
 .voucher-header {
@@ -610,14 +832,14 @@ export default {
 }
 
 .school-tagline {
-    font-style: italic;
-    color: #409eff !important;
-    font-weight: 500;
+  font-style: italic;
+  color: #555 !important;
+  font-weight: 500;
 }
 
 .school-website {
-    color: #67c23a !important;
-    font-size: 12px;
+  color: #666 !important;
+  font-size: 12px;
 }
 
 .voucher-info {
@@ -625,10 +847,10 @@ export default {
 }
 
 .voucher-title {
-    margin: 0;
-    color: #409eff;
-    font-size: 24px;
-    font-weight: bold;
+  margin: 0;
+  color: #333;
+  font-size: 24px;
+  font-weight: bold;
 }
 
 .voucher-number {
@@ -645,18 +867,18 @@ export default {
 }
 
 .copy-label {
-    background: #67c23a;
-    color: white;
-    padding: 4px 12px;
-    border-radius: 4px;
-    font-size: 12px;
-    font-weight: 600;
-    margin: 8px 0;
-    display: inline-block;
+  background: #666;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  margin: 8px 0;
+  display: inline-block;
 }
 
 .office-label {
-    background: #409eff;
+  background: #333;
 }
 
 .print-date {
@@ -690,8 +912,8 @@ export default {
 }
 
 .due-date {
-    color: #e6a23c;
-    font-weight: 700;
+  color: #555;
+  font-weight: 700;
 }
 
 .fee-section {
@@ -725,25 +947,25 @@ export default {
 }
 
 .fine-row {
-    color: #f56c6c;
+  color: #555;
 }
 
 .total-row {
-    background: #f0f9ff;
-    border-top: 2px solid #303133;
+  background: #f0f0f0;
+  border-top: 2px solid #333;
 }
 
 .total-row td {
-    font-size: 16px;
-    color: #409eff;
+  font-size: 16px;
+  color: #333;
 }
 
 .notes-section {
-    margin: 15px 0;
-    padding: 12px;
-    background: #fef7e0;
-    border-left: 4px solid #e6a23c;
-    border-radius: 4px;
+  margin: 15px 0;
+  padding: 12px;
+  background: #f5f5f5;
+  border-left: 4px solid #666;
+  border-radius: 4px;
 }
 
 .notes-section p {
@@ -752,17 +974,17 @@ export default {
 }
 
 .payment-instructions {
-    margin: 20px 0;
-    padding: 15px;
-    background: #f0f9ff;
-    border-radius: 6px;
-    border: 1px solid #b3d8ff;
+  margin: 20px 0;
+  padding: 15px;
+  background: #f0f0f0;
+  border-radius: 6px;
+  border: 1px solid #ccc;
 }
 
 .payment-instructions p {
-    margin: 0 0 8px 0;
-    font-weight: 600;
-    color: #409eff;
+  margin: 0 0 8px 0;
+  font-weight: 600;
+  color: #333;
 }
 
 .payment-instructions ul {
@@ -817,63 +1039,105 @@ export default {
 
 /* Print Specific Styles */
 @media print {
-    .print-toolbar {
-        display: none !important;
-    }
-
-    .voucher-page {
-        page-break-after: always;
-        margin: 0;
-        padding: 5mm;
-    }
-
-    .voucher-row {
-        display: flex;
-        gap: 5mm;
-        min-height: auto;
-    }
-
-    .voucher-column {
-        flex: 1;
-        width: 48%;
-    }
-
-    .voucher-copy {
-        margin: 0;
-        border: 1px solid #333;
-        padding: 3mm;
-        box-shadow: none;
-        min-height: auto;
-        page-break-inside: avoid;
-    }
-
-    .page-break {
-        page-break-before: always;
-    }
-
-    body {
-        background: white !important;
-    }
-
-    /* Adjust font sizes for print */
-    .school-name {
-        font-size: 16px !important;
-    }
-
-    .voucher-title {
-        font-size: 18px !important;
-    }
-
-    .info-table td {
-        padding: 4px 8px !important;
-        font-size: 12px !important;
-    }
-
-    .fee-table th,
-    .fee-table td {
-        padding: 4px 8px !important;
-        font-size: 12px !important;
-    }
+  @page {
+    size: A4 landscape;
+    margin: 10mm;
+    orientation: landscape;
+  }
+  
+  .print-toolbar {
+    display: none !important;
+  }
+  
+  .voucher-page {
+    page-break-after: always;
+    margin: 0;
+    padding: 0;
+  }
+  
+  .voucher-row {
+    display: flex !important;
+    gap: 10mm !important;
+    min-height: auto;
+    width: 100% !important;
+  }
+  
+  .voucher-column {
+    flex: 1 !important;
+    width: 48% !important;
+  }
+  
+  .voucher-copy {
+    margin: 0 !important;
+    border: 1px solid #333 !important;
+    padding: 8mm !important;
+    box-shadow: none !important;
+    min-height: auto !important;
+    page-break-inside: avoid !important;
+    background: white !important;
+  }
+  
+  .page-break {
+    page-break-before: always;
+  }
+  
+  body {
+    background: white !important;
+  }
+  
+  /* Adjust font sizes for print */
+  .school-name {
+    font-size: 16px !important;
+  }
+  
+  .voucher-title {
+    font-size: 18px !important;
+  }
+  
+  .info-table td {
+    padding: 6px 8px !important;
+    font-size: 11px !important;
+  }
+  
+  .fee-table th,
+  .fee-table td {
+    padding: 6px 8px !important;
+    font-size: 11px !important;
+  }
+  
+  .voucher-header {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: flex-start !important;
+    margin-bottom: 15px !important;
+    padding-bottom: 10px !important;
+    border-bottom: 1px solid #ddd !important;
+  }
+  
+  .school-info {
+    display: flex !important;
+    gap: 10px !important;
+    align-items: center !important;
+  }
+  
+  .school-logo img {
+    height: 50px !important;
+    width: 50px !important;
+  }
+  
+  .voucher-info {
+    text-align: right !important;
+  }
+  
+  .signatures {
+    display: flex !important;
+    justify-content: space-between !important;
+    gap: 20px !important;
+  }
+  
+  .signature-box {
+    flex: 1 !important;
+  }
 }
 
 /* Responsive Design */

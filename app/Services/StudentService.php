@@ -8,10 +8,12 @@ use App\Models\TestResult;
 use Illuminate\Support\Arr;
 use App\Models\StudentAttendance;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Spatie\QueryBuilder\QueryBuilder;
 use Spatie\QueryBuilder\AllowedFilter;
 use App\Services\Contracts\StudentServiceInterface;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 
 class StudentService implements StudentServiceInterface
 {
@@ -35,27 +37,137 @@ class StudentService implements StudentServiceInterface
                 AllowedFilter::partial('parent_name', 'parents.name'),
                 AllowedFilter::exact('stdclass', 'stdclasses.id'),
                 AllowedFilter::exact('section_id', 'section_id'),
+                // Add 'all' filter for searching across multiple fields
+                AllowedFilter::callback('all', function ($query, $value) {
+                    $query->where(function ($q) use ($value) {
+                        $q->where('name', 'LIKE', "%{$value}%")
+                          ->orWhere('adminssion_number', 'LIKE', "%{$value}%")
+                          ->orWhere('roll_no', 'LIKE', "%{$value}%")
+                          ->orWhere('b_form', 'LIKE', "%{$value}%")
+                          ->orWhereHas('parents', function ($parentQuery) use ($value) {
+                              $parentQuery->where('name', 'LIKE', "%{$value}%")
+                                          ->orWhere('phone', 'LIKE', "%{$value}%");
+                          });
+                    });
+                }),
                 // Add custom age filter
                 AllowedFilter::callback('age_less_than', function ($query, $value) {
                     $query->whereRaw('TIMESTAMPDIFF(YEAR, dob, CURDATE()) < ?', [$value]);
                 }),
                 AllowedFilter::callback('age_greater_than', function ($query, $value) {
                     $query->whereRaw('TIMESTAMPDIFF(YEAR, dob, CURDATE()) > ?', [$value]);
+                }),
+                // Add DOB date range filters
+                AllowedFilter::callback('dob_from', function ($query, $value) {
+                    $query->where('dob', '>=', $value);
+                }),
+                AllowedFilter::callback('dob_to', function ($query, $value) {
+                    $query->where('dob', '<=', $value);
+                }),
+                // Add NADRA B-Form verification filter
+                AllowedFilter::callback('nadra_b_form_verified', function ($query, $value) {
+                    if ($value === 'No') {
+                        $query->where(function ($q) {
+                            $q->whereNull('b_form')
+                              ->orWhere('b_form', '')
+                              ->orWhere('b_form', 'N/A');
+                        });
+                    } else {
+                        $query->where('b_form', '!=', '')
+                              ->whereNotNull('b_form')
+                              ->where('b_form', '!=', 'N/A');
+                    }
                 })
             ]);
 
         // Add default status filter if no status filter is provided
         if (!request()->has('filter.status')) {
-            if (request()->has('filter.status') && request('filter.status') === 'true') {
-                $query->where('status', 'disable');
-            } else {
-                $query->where('status', 'enable');
-            }
+            $query->where('status', 'enable');
         }
-        //return $query->toSql();
 
         return $query->paginate($limit)
             ->appends(request()->query());
+    }
+
+    public function getStudentsQueryForExport(Request $request)
+    {
+        // Convert the flat filter parameters to nested format that QueryBuilder expects
+        $requestData = $request->all();
+        $filterData = [];
+        
+        foreach ($requestData as $key => $value) {
+            if (preg_match('/^filter\[(.+)\]$/', $key, $matches)) {
+                $filterData[$matches[1]] = $value;
+            }
+        }
+        
+        // Create a properly formatted request for QueryBuilder
+        $formattedRequest = new Request(['filter' => $filterData]);
+        
+        // Create QueryBuilder with the formatted request
+        $query = QueryBuilder::for(Student::class, $formattedRequest)
+            ->allowedFields(['id','user_id','roll_no','name','adminssion_number','parent_id',
+                'class_id','session_id','dob','doa','b_form','gender',
+                'is_orphan','cast','previous_school','monthly_fee','sibling','religion',
+                'pef_admission','nadra_pending','action_required','action_details','status',
+                'parents.id','parents.name','parent.phone','stdclasses.id','stdclasses.name'])
+            ->with('parents', 'stdclasses', 'class_session')
+            ->allowedFilters([
+                'id', 'name', 'roll_no', 'adminssion_number', 'is_orphan', 
+                'pef_admission', 'nadra_pending', 'gender', 'status',
+                AllowedFilter::partial('parent_phone', 'parents.phone'),
+                AllowedFilter::partial('parent_name', 'parents.name'),
+                AllowedFilter::exact('stdclass', 'stdclasses.id'),
+                AllowedFilter::exact('section_id', 'section_id'),
+                // Add 'all' filter for searching across multiple fields
+                AllowedFilter::callback('all', function ($query, $value) {
+                    $query->where(function ($q) use ($value) {
+                        $q->where('name', 'LIKE', "%{$value}%")
+                          ->orWhere('adminssion_number', 'LIKE', "%{$value}%")
+                          ->orWhere('roll_no', 'LIKE', "%{$value}%")
+                          ->orWhere('b_form', 'LIKE', "%{$value}%")
+                          ->orWhereHas('parents', function ($parentQuery) use ($value) {
+                              $parentQuery->where('name', 'LIKE', "%{$value}%")
+                                          ->orWhere('phone', 'LIKE', "%{$value}%");
+                          });
+                    });
+                }),
+                // Add custom age filter
+                AllowedFilter::callback('age_less_than', function ($query, $value) {
+                    $query->whereRaw('TIMESTAMPDIFF(YEAR, dob, CURDATE()) < ?', [$value]);
+                }),
+                AllowedFilter::callback('age_greater_than', function ($query, $value) {
+                    $query->whereRaw('TIMESTAMPDIFF(YEAR, dob, CURDATE()) > ?', [$value]);
+                }),
+                // Add DOB date range filters
+                AllowedFilter::callback('dob_from', function ($query, $value) {
+                    $query->where('dob', '>=', $value);
+                }),
+                AllowedFilter::callback('dob_to', function ($query, $value) {
+                    $query->where('dob', '<=', $value);
+                }),
+                // Add NADRA B-Form verification filter
+                AllowedFilter::callback('nadra_b_form_verified', function ($query, $value) {
+                    if ($value === 'No') {
+                        $query->where(function ($q) {
+                            $q->whereNull('b_form')
+                              ->orWhere('b_form', '')
+                              ->orWhere('b_form', 'N/A');
+                        });
+                    } else {
+                        $query->where('b_form', '!=', '')
+                              ->whereNotNull('b_form')
+                              ->where('b_form', '!=', 'N/A');
+                    }
+                })
+            ]);
+
+        // Add default status filter if no status filter is provided
+        if (!isset($filterData['status'])) {
+            $query->where('status', 'enable');
+        }
+
+        return $query;
     }
 
     public function storeStudent(array $data)
@@ -119,7 +231,7 @@ class StudentService implements StudentServiceInterface
             'tests.date as test_date',
             'tests.total_marks',
             'test_results.score',
-            \DB::raw('(test_results.score / tests.total_marks) * 100 as percentage')
+            DB::raw('(test_results.score / tests.total_marks) * 100 as percentage')
         )
         ->get()
         ->groupBy('subject'); // Group results by subject
