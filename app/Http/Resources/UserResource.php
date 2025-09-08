@@ -14,7 +14,7 @@ class UserResource extends JsonResource
      */
     public function toArray($request)
     {
-        return [
+        $data = [
             'id' => $this->id,
             'name' => $this->name,
             'email' => $this->email,
@@ -38,5 +38,18 @@ class UserResource extends JsonResource
                 $this->getAllPermissions()->toArray()
             )
         ];
+
+        // Add student information if user has student role
+        if ($this->hasRole('student')) {
+            $data['student'] = $this->when($this->student, [
+                'student_id' => $this->student->id ?? null,
+                'roll_no' => $this->student->roll_no ?? null,
+                'name' => $this->student->name ?? null,
+                'grade' => $this->student->grade ?? null,
+                'enrollment_date' => $this->student->enrollment_date ?? null,
+            ]);
+        }
+
+        return $data;
     }
 }
