@@ -24,9 +24,19 @@
           </el-select>
         </el-form-item>
       </el-form>
+      
+      <div v-if="conflictMessage" class="conflict-warning">
+        <el-alert
+          :title="conflictMessage"
+          type="warning"
+          :closable="false"
+          show-icon>
+        </el-alert>
+      </div>
+      
       <span slot="footer" class="dialog-footer">
         <el-button @click="handleClose">Cancel</el-button>
-        <el-button type="primary" @click="handleSave">Save</el-button>
+        <el-button type="primary" @click="handleSave" :disabled="hasConflict">Save</el-button>
       </span>
     </el-dialog>
   </template>
@@ -37,16 +47,53 @@
       teachers: Array,
       subjects: Array,
       disabledTeachers: Array,
-      disabledSubjects: Array
+      disabledSubjects: Array,
+      selectedSlotData: Object
     },
     data() {
       return {
         visible: true,
         selectedTeacher: null,
-        selectedSubject: null
+        selectedSubject: null,
+        conflictMessage: ''
       };
     },
+    computed: {
+      hasConflict() {
+        return this.conflictMessage !== '';
+      }
+    },
+    watch: {
+      selectedTeacher() {
+        this.checkConflicts();
+      },
+      selectedSubject() {
+        this.checkConflicts();
+      },
+      selectedSlotData: {
+        handler(newVal) {
+          if (newVal) {
+            this.selectedTeacher = newVal.teacher || null;
+            this.selectedSubject = newVal.subject || null;
+          }
+        },
+        immediate: true
+      }
+    },
     methods: {
+      checkConflicts() {
+        this.conflictMessage = '';
+        
+        if (this.selectedTeacher && this.disabledTeachers.includes(this.selectedTeacher)) {
+          this.conflictMessage = 'This teacher is already assigned to another class during this period.';
+          return;
+        }
+        
+        if (this.selectedSubject && this.disabledSubjects.includes(this.selectedSubject)) {
+          this.conflictMessage = 'This subject is already assigned to this class/section for today.';
+          return;
+        }
+      },
       handleClose() {
         this.$emit('close');
       },
@@ -54,7 +101,11 @@
         if (!this.selectedTeacher || !this.selectedSubject) {
           this.$message.error('Please select a teacher and subject.');
           return;
+        }
 
+        if (this.hasConflict) {
+          this.$message.error('Please resolve conflicts before saving.');
+          return;
         }
 
         this.$emit('save', {
@@ -66,3 +117,8 @@
   };
   </script>
   
+  <style scoped>
+  .conflict-warning {
+    margin: 15px 0;
+  }
+  </style>

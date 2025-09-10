@@ -617,8 +617,19 @@ export default {
         // the response IS the data object
         if (response && response.success) {
           // Format the voucher data for the print component
-          this.voucherToPrint = [response.voucher]
+          const voucherData = response.voucher
+          
+          // Validate voucher data
+          if (!voucherData || typeof voucherData !== 'object') {
+            console.error('Invalid voucher data received:', voucherData)
+            this.$message.error('Invalid voucher data received')
+            return
+          }
+          
+          this.voucherToPrint = [voucherData]
           this.showPrintDialog = true
+          console.log('Reprint: Opening print dialog with voucher:', voucherData)
+          console.log('Reprint: showPrintDialog state:', this.showPrintDialog)
           this.$message.success('Voucher ready for printing')
         } else {
           this.$message.error(response?.message || 'Failed to get voucher data')

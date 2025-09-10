@@ -10,4 +10,12 @@ class Period extends Model
     use HasFactory;
     public $timestamps = false;
     protected $fillable = ['title','start','end'];
+
+    /**
+     * Get the timetable slots for the period
+     */
+    public function timetableSlots()
+    {
+        return $this->hasMany(TimetableSlot::class);
+    }
 }

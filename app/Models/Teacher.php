@@ -90,6 +90,14 @@ class Teacher extends Model {
             return false;
     }
 
+    /**
+     * Get the timetable slots for the teacher
+     */
+    public function timetableSlots()
+    {
+        return $this->hasMany(TimetableSlot::class);
+    }
+
     public function setOnlineAttendance() {
         $currentDateTime = Carbon::now();
 

@@ -855,11 +855,27 @@ export default {
         // Store generated vouchers for printing
         this.generatedVouchers = vouchers
 
-        this.$message.success(`${vouchers.length} vouchers generated and saved successfully!`)
+        // Validate voucher data before showing print dialog
+        const validVouchers = vouchers.filter(voucher => 
+          voucher && 
+          typeof voucher === 'object' && 
+          voucher.student_name
+        )
+        
+        if (validVouchers.length !== vouchers.length) {
+          console.warn(`${vouchers.length - validVouchers.length} invalid vouchers filtered out`)
+          this.generatedVouchers = validVouchers
+        }
+
+        this.$message.success(`${validVouchers.length} vouchers generated and saved successfully!`)
         
         // Close generation dialog and open print dialog
         this.showVoucherDialog = false
         this.showPrintDialog = true
+        
+        console.log('Opening print dialog with vouchers:', validVouchers.length)
+        console.log('showPrintDialog state:', this.showPrintDialog)
+        console.log('Generated vouchers data:', this.generatedVouchers)
 
       } catch (error) {
         console.error('Error generating vouchers:', error)

@@ -45,6 +45,7 @@ const subjectRes = new Resource('subjects');
 const periodRes = new Resource('periods');
 const ttRes = new Resource('timetable');
 const sectionRes = new Resource('sections');
+const timetableSlotRes = new Resource('timetable-slots');
 
 export default {
   name: 'TimeTable',
@@ -73,7 +74,7 @@ export default {
     this.getSections();
   },
   mounted() {
-    this.getTimeTable();
+    // Table initialization will happen through watchers when data is ready
   },
   watch: {
     classes() {
@@ -164,6 +165,9 @@ export default {
       
       this.tableData = tableData;
       
+      console.log('Table data prepared:', this.tableData.length, 'rows');
+      console.log('Periods available:', this.periods.length);
+      
       // Initialize timetable after preparing tableData
       if (this.tableData.length && this.periods.length) {
         this.setTimeTable();
@@ -172,7 +176,11 @@ export default {
     setTimeTable() {
       // Initialize with empty objects to prevent undefined errors
       if (this.tableData.length > 0 && this.periods.length > 0) {
+        console.log('Setting up timetable matrix:', this.tableData.length, 'x', this.periods.length);
         this.timetable = this.tableData.map(() => this.periods.map(() => ({})));
+        // Load slots after timetable structure is ready
+        console.log('Loading timetable slots now...');
+        this.loadTimetableSlots();
       }
     },
     getSummaries(param) {
@@ -197,39 +205,201 @@ export default {
       this.selectedSlot = null;
       this.selectedSlotData = null;
     },
-    saveSlot(data) {
+    async saveSlot(data) {
       const { rowIndex, columnIndex } = this.selectedSlot;
-      this.timetable[rowIndex][columnIndex] = data;
-      this.closePopup();
-      this.saveTimetable();
+      const currentRow = this.tableData[rowIndex];
+      const currentPeriod = this.periods[columnIndex];
+      
+      // Prepare slot data for API
+      const requestData = {
+        class_id: currentRow.classId,
+        section_id: currentRow.sectionId,
+        period_id: currentPeriod.id,
+        subject_id: data.subject,
+        teacher_id: data.teacher,
+        day_of_week: 'monday' // For now, using Monday. You might want to add day selection
+      };
+
+      try {
+        let response;
+        
+        // Check if slot already exists
+        const existingSlot = this.timetable[rowIndex] && this.timetable[rowIndex][columnIndex];
+        
+        if (existingSlot && existingSlot.id) {
+          // Update existing slot
+          response = await timetableSlotRes.update(existingSlot.id, requestData);
+          console.log('Updated slot response:', response);
+        } else {
+          // Create new slot
+          response = await timetableSlotRes.store(requestData);
+          console.log('Created slot response:', response);
+        }
+        
+        // Ensure timetable structure exists
+        if (!this.timetable[rowIndex]) {
+          this.timetable[rowIndex] = [];
+        }
+        
+        // Update local timetable with the response data
+        // Handle different response structures
+        const slotData = response.slot || response.data?.slot;
+        console.log('Slot data to save:', slotData);
+        console.log('Saving to position:', { rowIndex, columnIndex });
+        
+        this.timetable[rowIndex][columnIndex] = {
+          id: slotData.id,
+          subject: data.subject,
+          teacher: data.teacher,
+          subject_id: data.subject,
+          teacher_id: data.teacher,
+          class_id: currentRow.classId,
+          section_id: currentRow.sectionId,
+          period_id: currentPeriod.id,
+          day_of_week: 'monday'
+        };
+        
+        console.log('Updated timetable[' + rowIndex + '][' + columnIndex + ']:', this.timetable[rowIndex][columnIndex]);
+        
+        // Force reactivity update
+        this.$forceUpdate();
+        
+        // Close popup and show success message
+        this.closePopup();
+        this.saveTimetable(); // Save for backward compatibility
+        
+        this.$message.success('Timetable slot saved successfully');
+      } catch (error) {
+        console.error('Error saving slot:', error);
+        this.$message.error('Failed to save timetable slot');
+      }
     },
     async getTimeTable() {
       try {
+        // Try to load from new timetable_slots structure first
+        await this.loadTimetableSlots();
+        
+        // Fallback to old structure if needed
         const data = await ttRes.list();
-        await new Promise(resolve => setTimeout(resolve, 500)); // Add a half-second pause
         
         if (data && data.timetable && data.timetable.timetable) {
           const parsedData = JSON.parse(data.timetable.timetable);
           
-          // Ensure timetable structure matches current tableData and periods
-          if (Array.isArray(parsedData) && parsedData.length > 0) {
-            // If timetable structure doesn't match current tableData/periods, reinitialize
+          // Only use old data if new structure is empty
+          if (this.isTimetableEmpty() && Array.isArray(parsedData) && parsedData.length > 0) {
             if (parsedData.length !== this.tableData.length || 
                 (parsedData[0] && parsedData[0].length !== this.periods.length)) {
               this.setTimeTable();
             } else {
               this.timetable = parsedData;
             }
-          } else {
-            this.setTimeTable();
           }
-        } else {
+        } else if (this.isTimetableEmpty()) {
           this.setTimeTable();
         }
       } catch (error) {
         console.error("Error loading timetable:", error);
         this.setTimeTable();
       }
+    },
+    
+    async loadTimetableSlots() {
+      try {
+        // Validate that table structure is ready
+        if (!this.tableData || this.tableData.length === 0) {
+          console.log('TableData not ready, skipping slot loading');
+          return;
+        }
+        
+        if (!this.periods || this.periods.length === 0) {
+          console.log('Periods not ready, skipping slot loading');
+          return;
+        }
+        
+        console.log('Loading slots with tableData:', this.tableData.length, 'periods:', this.periods.length);
+        
+        // Load all timetable slots
+        const response = await timetableSlotRes.list();
+        console.log('Timetable slots response:', response); // Debug log
+        
+        // Handle different possible response structures
+        let slots = [];
+        console.log('Full response structure:', response); // More detailed debug
+        
+        if (response && response.slots) {
+          slots = response.slots;
+          console.log('Found slots in response.slots');
+        } else if (response && response.data && response.data.slots) {
+          slots = response.data.slots;
+          console.log('Found slots in response.data.slots');
+        } else if (response && response.data && Array.isArray(response.data)) {
+          slots = response.data;
+          console.log('Found slots in response.data (array)');
+        } else {
+          console.log('No slots found in expected locations');
+        }
+        
+        console.log('Processed slots:', slots); // Debug log
+        console.log('Current tableData:', this.tableData); // Debug log
+        console.log('Current periods:', this.periods); // Debug log
+        
+        // Populate the timetable matrix with the loaded slots
+        slots.forEach((slot, index) => {
+          console.log(`Processing slot ${index}:`, slot); // Debug each slot
+          
+          // Find the row index for this class/section
+          const rowIndex = this.tableData.findIndex(row => {
+            if (slot.section_id) {
+              const match = row.type === 'section' && row.sectionId === slot.section_id;
+              console.log(`Checking section match for slot ${index}: row.sectionId=${row.sectionId}, slot.section_id=${slot.section_id}, match=${match}`);
+              return match;
+            } else {
+              const match = row.type === 'class' && row.classId === slot.class_id && !row.sectionId;
+              console.log(`Checking class match for slot ${index}: row.classId=${row.classId}, slot.class_id=${slot.class_id}, match=${match}`);
+              return match;
+            }
+          });
+          
+          // Find the column index for this period
+          const columnIndex = this.periods.findIndex(period => period.id === slot.period_id);
+          
+          console.log(`Slot ${index} mapping: rowIndex=${rowIndex}, columnIndex=${columnIndex}`);
+          
+          if (rowIndex !== -1 && columnIndex !== -1) {
+            console.log(`Setting timetable[${rowIndex}][${columnIndex}] with slot:`, slot);
+            this.timetable[rowIndex][columnIndex] = {
+              id: slot.id,
+              subject: slot.subject_id,
+              teacher: slot.teacher_id,
+              subject_id: slot.subject_id,
+              teacher_id: slot.teacher_id,
+              class_id: slot.class_id,
+              section_id: slot.section_id,
+              period_id: slot.period_id,
+              day_of_week: slot.day_of_week
+            };
+          } else {
+            console.log(`Slot ${index} not mapped: rowIndex=${rowIndex}, columnIndex=${columnIndex}`);
+          }
+        });
+      } catch (error) {
+        console.error("Error loading timetable slots:", error);
+      }
+    },
+    
+    isTimetableEmpty() {
+      if (!this.timetable || this.timetable.length === 0) return true;
+      
+      for (let row of this.timetable) {
+        if (row && Array.isArray(row)) {
+          for (let slot of row) {
+            if (slot && (slot.subject || slot.teacher)) {
+              return false;
+            }
+          }
+        }
+      }
+      return true;
     },
     saveTimetable() {
       ttRes.update('1',{timetable: this.timetable});
@@ -274,21 +444,34 @@ export default {
       
       const selectedTeachers = [];
       const selectedSubjects = [];
+      const currentRow = this.tableData[rowIndex];
 
-      // Check the current day (columnIndex) only
-      for (let i = 0; i < this.classes.length; i++) {
-        // Don't disable the currently selected teacher
+      // Check horizontally: if a teacher is already assigned for this period
+      for (let i = 0; i < this.tableData.length; i++) {
+        // Don't disable the currently selected teacher for the same row
         if (i !== rowIndex && this.timetable[i] && this.timetable[i][columnIndex]) {
           const period = this.timetable[i][columnIndex];
           if (period && period.teacher) selectedTeachers.push(period.teacher);
         }
       }
       
+      // Check vertically: if a subject is already assigned to this class/section for the day
+      // Only check within the same class/section combination
       for (let i = 0; i < this.periods.length; i++) {
-        // Don't disable the currently selected subject
+        // Don't disable the currently selected subject for the same slot
         if (i !== columnIndex && this.timetable[rowIndex] && this.timetable[rowIndex][i]) {
-          const clas = this.timetable[rowIndex][i];
-          if (clas && clas.subject) selectedSubjects.push(clas.subject);
+          const slot = this.timetable[rowIndex][i];
+          if (slot && slot.subject) {
+            // Check if this is the same class/section combination
+            const currentSlot = this.timetable[rowIndex][columnIndex];
+            const isSameClassSection = currentRow.type === 'section' 
+              ? (slot.section_id === currentRow.sectionId && slot.class_id === currentRow.classId)
+              : (slot.class_id === currentRow.classId && !slot.section_id);
+            
+            if (isSameClassSection) {
+              selectedSubjects.push(slot.subject);
+            }
+          }
         }
       }
 

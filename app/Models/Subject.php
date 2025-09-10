@@ -17,4 +17,12 @@ class Subject extends Model
     {
         return $this->hasMany(Chapter::class);
     }
+
+    /**
+     * Get the timetable slots for the subject
+     */
+    public function timetableSlots()
+    {
+        return $this->hasMany(TimetableSlot::class);
+    }
 }

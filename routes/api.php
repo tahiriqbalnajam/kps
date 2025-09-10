@@ -40,6 +40,16 @@ Route::apiResource('questions', 'QuestionController');
 Route::apiResource('periods', 'PeriodController');
 //timetable
 Route::apiResource('timetable', 'TimetableController');
+// New improved timetable routes
+Route::get('timetable-slots', 'TimetableController@indexSlots');
+Route::post('timetable-slots', 'TimetableController@storeSlot');
+Route::put('timetable-slots/{id}', 'TimetableController@updateSlot');
+Route::delete('timetable-slots/{id}', 'TimetableController@destroySlot');
+Route::get('timetable/class-section/{classId}/{sectionId?}', 'TimetableController@getTimetableForClassSection');
+Route::get('timetable/available/teachers', 'TimetableController@getAvailableTeachers');
+Route::get('timetable/available/subjects', 'TimetableController@getAvailableSubjects');
+Route::get('timetable/full', 'TimetableController@getFullTimetable');
+// Timetable slots management
 //fee
 Route::apiResource('feetypes', 'FeeTypeController');
 Route::apiResource('fee', 'FeeController');

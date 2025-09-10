@@ -13,13 +13,13 @@
         <item :meta="item.meta" />
         <span>{{ generateTitle(item.meta.title) }}</span>
       </template>
-<!--      <SidebarItem-->
-<!--        v-for="child in item.children"-->
-<!--        :key="child.path"-->
-<!--        :is-nest="true"-->
-<!--        :item="child"-->
-<!--        :base-path="resolvePath(child.path)"-->
-<!--      />-->
+      <SidebarItem
+        v-for="child in item.children"
+        :key="child.path"
+        :is-nest="true"
+        :item="child"
+        :base-path="resolvePath(child.path)"
+      />
     </el-sub-menu>
   </template>
 </template>
