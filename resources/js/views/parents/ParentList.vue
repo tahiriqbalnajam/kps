@@ -55,7 +55,17 @@
         <template #default="scope">
           <el-table :data=" scope.row.students" size="small">
             <el-table-column type="index"/>
-            <el-table-column property="name" label="Name" />
+            <el-table-column property="name" label="Name">
+              <template #default="studentScope">
+                <router-link 
+                  :to="`/students/report/${studentScope.row.id}`"
+                  class="student-link"
+                >
+                  {{ studentScope.row.name }}
+                </router-link>
+              </template>
+            </el-table-column>
+            <el-table-column property="stdclasses.name" label="Class" />
           </el-table>
         </template>
       </el-table-column>
@@ -244,6 +254,23 @@ export default {
     flex-direction: column;
     height: 100%;
     padding: 20px;
+  }
+  
+  /* Student name link styling */
+  .student-link {
+    color: #409eff;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s ease;
+  }
+  
+  .student-link:hover {
+    color: #66b1ff;
+    text-decoration: underline;
+  }
+  
+  .student-link:active {
+    color: #3a8ee6;
   }
 </style>
 <style>

@@ -3,45 +3,52 @@
     <el-form style="width: 100%" :inline="true" :model="test" class="demo-form-inline" ref="addtestform">
       <el-row :gutter="10">
         <el-col :span="4">
-          <el-form-item label="Test Name">
-            <el-input v-model="test.title" placeholder="Test title" clearable prop="title" size="small"/>
+          <el-form-item label="Test Name" prop="title">
+            <el-input v-model="test.title" placeholder="Test title" clearable size="small"/>
           </el-form-item>
         </el-col>
         <el-col :span="3">
-          <el-form-item label="Teacher" style="width: 100%;">
-            <el-select v-model="test.teacher_id" placeholder="Select Class" clearable prop="teacher_id" size="small">
+          <el-form-item label="Teacher" prop="teacher_id" style="width: 100%;">
+            <el-select v-model="test.teacher_id" placeholder="Select Teacher" clearable size="small">
               <el-option v-for="item in teachers" :key="item.id" :label="item.name" :value="item.id"/>
             </el-select>
           </el-form-item>
         </el-col>
         <el-col :span="3">
-          <el-form-item label="Class" style="width: 100%;">
-            <el-select v-model="test.class_id" placeholder="Select Class" clearable @change="getstudents()" prop="class_id" size="small">
+          <el-form-item label="Class" prop="class_id" style="width: 100%;">
+            <el-select v-model="test.class_id" placeholder="Select Class" clearable @change="getstudents()" size="small">
               <el-option v-for="item in classes" :key="item.id" :label="item.name" :value="item.id"/>
             </el-select>
           </el-form-item>
         </el-col>
         <el-col :span="3">
-          <el-form-item label="Subject"  style="width: 100%;">
+          <el-form-item label="Subject" prop="subject_id" style="width: 100%;">
             <el-select v-model="test.subject_id" placeholder="Select Subject" clearable size="small">
               <el-option v-for="item in subjects" :key="item.id" :label="item.title" :value="item.id" />
             </el-select>
           </el-form-item>
         </el-col>
         <el-col :span="5">
-          <el-form-item label="Date">
-            <el-date-picker v-model="test.date" type="test.date" placeholder="Pick a date" format="DD MMM, YYYY"
+          <el-form-item label="Date" prop="date">
+            <el-date-picker v-model="test.date" type="date" placeholder="Pick a date" format="DD MMM, YYYY"
               value-format="YYYY-MM-DD" :default-value="new Date()" size="small"/>
           </el-form-item>
         </el-col>
         <el-col :span="4">
-          <el-form-item label="Total Marks">
-            <el-input-number v-model="test.total_marks" size="small"/>
+          <el-form-item label="Total Marks" prop="total_marks">
+            <el-input-number v-model="test.total_marks" size="small" :min="1"/>
           </el-form-item>
         </el-col>
         <el-col :span="2">
           <el-form-item>
-            <el-button type="primary" @click="addTest('addtestform')" :disabled="!test?.students?.length">Save</el-button>
+            <el-button 
+              type="primary" 
+              @click="addTest('addtestform')" 
+              :loading="saving"
+              :disabled="saving || !test?.students?.length || !test.title?.trim()"
+            >
+              {{ saving ? 'Saving...' : 'Save' }}
+            </el-button>
           </el-form-item>
         </el-col>
       </el-row>
@@ -130,15 +137,18 @@ export default {
     };
     return {
       listloading: false,
-      classes: null,
-      subjects: null,
+      saving: false,
+      classes: [],
+      subjects: [],
+      teachers: [],
       test: {
+        title: '',
         teacher_id: '',
         subject_id: '',
         class_id: '',
         total_marks: 0,
         date: new Date(),
-        students: {},
+        students: [],
       },
       search:'',
       query: {
@@ -155,10 +165,26 @@ export default {
         filter: {},
       },
       rules: {
-        title: [{ validator: title, trigger: 'blur' }],
-        class_id: [{ validator: class_id, trigger: 'blur' }],
-        subject_id: [{ validator: subject_id, trigger: 'blur' }],
-        total_marks: [{ validator: total_marks, trigger: 'blur' }],
+        title: [
+          { required: true, message: 'Please enter the test title', trigger: 'blur' },
+          { validator: title, trigger: 'blur' }
+        ],
+        class_id: [
+          { required: true, message: 'Please select a class', trigger: 'change' },
+          { validator: class_id, trigger: 'change' }
+        ],
+        subject_id: [
+          { required: true, message: 'Please select a subject', trigger: 'change' },
+          { validator: subject_id, trigger: 'change' }
+        ],
+        total_marks: [
+          { required: true, message: 'Please enter total marks', trigger: 'blur' },
+          { type: 'number', min: 1, message: 'Total marks must be greater than 0', trigger: 'blur' },
+          { validator: total_marks, trigger: 'blur' }
+        ],
+        date: [
+          { required: true, message: 'Please select a date', trigger: 'change' }
+        ],
       },
     };
   },
@@ -227,43 +253,79 @@ export default {
       this.teachers = data.teachers.data;
     },
     async addTest(formName) {
+      // Start validation first, before setting loading state
       this.$refs[formName].validate(
         async (valid) => {
           if (valid) {
-            this.listloading = true;
-            if (this.editid) {
-              const { data } = await tests.update(this.editid, this.test);
-              this.listloading = false;
+            // Only set loading state after validation passes
+            this.saving = true;
+            
+            try {
+              if (this.editid) {
+                const { data } = await tests.update(this.editid, this.test);
+                this.$message({
+                  message: 'Test updated successfully',
+                  type: 'success',
+                });
+                this.handleClose();
+              } else {
+                const { data } = await tests.store(this.test);
+                this.$message({
+                  message: 'Test added successfully',
+                  type: 'success',
+                });
+                // Reset form after successful save
+                this.resetForm();
+                this.handleClose();
+              }
+            } catch (error) {
+              console.error('Error saving test:', error);
               this.$message({
-                message: 'Test updated successfully',
-                type: 'success',
+                message: error.response?.data?.message || 'Error saving test. Please try again.',
+                type: 'error',
               });
-              this.handleClose();
-            } else {
-              const { data } = await tests.store(this.test);
-              this.listloading = false;
-              this.$message({
-                message: 'Test added successfully',
-                type: 'success',
-              });
-              this.test = {
-                teacher_id: '',
-                subject_id: '',
-                class_id: '',
-                total_marks: 0,
-                date: new Date(),
-                students: {},
-              };
-            this.handleClose();
+            } finally {
+              // Always reset saving state
+              this.saving = false;
+            }
+          } else {
+            // Validation failed - show error message
+            this.$message({
+              message: 'Please fill in all required fields correctly',
+              type: 'error',
+            });
+            return false;
           }
         }
-      }
       );
-
+    },
+    
+    resetForm() {
+      this.test = {
+        title: '',
+        teacher_id: '',
+        subject_id: '',
+        class_id: '',
+        total_marks: 0,
+        date: new Date(),
+        students: [],
+      };
+      this.subjects = [];
+      // Reset form validation
+      if (this.$refs.addtestform) {
+        this.$refs.addtestform.resetFields();
+      }
     },
     handleClose() {
-      //this.addedittestprop = false;
-      //this.editid = null;
+      // Reset loading states
+      this.saving = false;
+      this.listloading = false;
+      
+      // Reset form if not editing
+      if (!this.editid) {
+        this.resetForm();
+      }
+      
       console.log('close child called');
       this.$emit('popupClosed', 'yes');
     },

@@ -52,7 +52,9 @@ class Parents extends Model
 
     public function students()
     {
-        return $this->hasMany(Student::class, 'parent_id', 'id')->select(['id','name','parent_id']);
+        return $this->hasMany(Student::class, 'parent_id', 'id')
+            ->select(['id','name','parent_id','class_id'])
+            ->with('stdclasses:id,name');
     }
 
     public function user()
