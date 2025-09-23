@@ -28,9 +28,25 @@
       :stripe="true"
       :border="true"
       empty-text="Select a class first!"
+      :row-class-name="tableRowClassName"
     >
+      <el-table-column label="Overwrite" width="100" align="center">
+        <template #default="scope">
+          <el-checkbox 
+            v-model="scope.row.overwrite"
+            :disabled="!scope.row.hasExistingAttendance"
+          />
+          <el-tooltip 
+            v-if="scope.row.hasExistingAttendance" 
+            content="This teacher already has attendance marked for this date" 
+            placement="top"
+          >
+            <el-icon class="existing-attendance-icon"><Warning /></el-icon>
+          </el-tooltip>
+        </template>
+      </el-table-column>
       <el-table-column label="Teacher Name" prop="name" />
-      <el-table-column>
+      <el-table-column label="Attendance">
         <template #default="scope">
           <el-radio-group v-model="scope.row.attendance" size="small" text-color="" :fill="(scope.row.attendance == 'present') ? '#67c23a' : (scope.row.attendance == 'absent') ? '#f56c6c' : '#909399'">
             <el-radio-button label="present" />
@@ -47,6 +63,7 @@
 import Pagination from '@/components/Pagination/index.vue';
 import HeadControls from '@/components/HeadControls.vue';
 import Resource from '@/api/resource';
+import { Warning } from '@element-plus/icons-vue';
 const teachersPro = new Resource('teachers');
 const attendPro = new Resource('teacher_attendance');
 import { debounce } from 'lodash';
@@ -54,7 +71,11 @@ const resourcePro = new Resource('resource');
 export default {
   name: 'TeacherAttendance',
   props: [],
-  components: { Pagination, HeadControls },
+  components: { 
+    Pagination, 
+    HeadControls,
+    Warning
+  },
   directives: { },
   data() {
     return {
@@ -68,6 +89,7 @@ export default {
       editnow: false,
       formLabelWidth: 250,
       already_attendance: [],
+      teachers_list: [],
       attendance: {
         teachers: [],
         date: this.todayDate(),
@@ -83,36 +105,63 @@ export default {
   computed: {
   },
   created() {
-    this.getAttendance();
-    this.getTeachers();
+    this.loadInitialData();
   },
   methods: {
-    debounceInput: debounce(function (e) {
-      this.getTeachers();
-    }, 500),
-    async getAttendanceByDate() {
-      this.attendance.date = this.query.date;
-      this.getAttendance();
-      this.getTeachers();
+    async loadInitialData() {
+      // Load both data sets
+      await Promise.all([
+        this.getAttendance(),
+        this.loadTeachersList()
+      ]);
+      // Then merge the data
+      this.mergeAttendanceWithTeachers();
     },
-    async getTeachers() {
+    async loadTeachersList() {
       const { data } = await teachersPro.list(this.classquery);
-      this.attendance.teachers = data.teachers.data.map(teacher => {
-        let already = this.already_attendance.find((tech) => tech.teacher_id == teacher.id);
+      this.teachers_list = data.teachers.data;
+    },
+    mergeAttendanceWithTeachers() {
+      this.attendance.teachers = this.teachers_list.map(teacher => {
+        let already = this.already_attendance.find((tech) => 
+          parseInt(tech.teacher_id) === parseInt(teacher.id)
+        );
+        
         if(already) {
-          return { ...teacher, 'attendance': already.status };
+          return { 
+            ...teacher, 
+            'attendance': already.status,
+            'hasExistingAttendance': true,
+            'overwrite': false 
+          };
         } else {  
-          return { ...teacher, 'attendance': 'present' };
+          return { 
+            ...teacher, 
+            'attendance': 'present',
+            'hasExistingAttendance': false,
+            'overwrite': false 
+          };
         }
       });
     },
+    debounceInput: debounce(function (e) {
+      this.mergeAttendanceWithTeachers();
+    }, 500),
+    async getAttendanceByDate() {
+      this.attendance.date = this.query.date;
+      await this.getAttendance();
+      this.mergeAttendanceWithTeachers();
+    },
+    async getTeachers() {
+      await this.loadTeachersList();
+      this.mergeAttendanceWithTeachers();
+    },
     async getAttendance() {
       const { data } = await attendPro.list(this.query);
-      if(data.attendace.length <= 0 ) {
+      this.already_attendance = data.attendace || [];
+      if(this.already_attendance.length <= 0 ) {
         this.$message.info('Attendance is pending for this day.');
       }
-      this.already_attendance = data.attendace;
-
     },
     todayDate() {
       var today = new Date();
@@ -142,16 +191,30 @@ export default {
       }
     },
     async submitAttendance(){
-      await attendPro.store(this.attendance);
-      this.$message.success('Attendance added successfully.');
-      this.attendance.students = [];
-      this.studentclass = '';
+      this.loading = true;
+      try {
+        await attendPro.store(this.attendance);
+        this.$message.success('Attendance added successfully.');
+        // Refresh data to show updated status
+        await this.getAttendance();
+        this.mergeAttendanceWithTeachers();
+      } catch (error) {
+        console.error('Error submitting attendance:', error);
+        this.$message.error('Error submitting attendance. Please try again.');
+      }
+      this.loading = false;
+    },
+    tableRowClassName({row, rowIndex}) {
+      if (row.hasExistingAttendance) {
+        return 'has-existing-attendance';
+      }
+      return '';
     },
   },
 };
 </script>
-<style  scoped>
-.el-drawer__body {
+<style scoped>
+  .el-drawer__body {
     flex: 1;
     padding: 20px;
   }
@@ -178,5 +241,14 @@ export default {
     &.el-radio__label{
       color:#909399;
     } 
-  } 
+  }
+  
+  .existing-attendance-icon {
+    margin-left: 5px;
+    color: #e6a23c;
+  }
+  
+  .el-table .el-table__row .has-existing-attendance {
+    background-color: #fdf6ec;
+  }
 </style>

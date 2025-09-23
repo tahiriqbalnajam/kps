@@ -49,14 +49,11 @@ class AttendanceService implements AttendanceServiceInterface
                 s.id AS student_id,
                 s.name AS student_name,
                 c.date,
-                h.description as holiday_description,
                 CASE 
-                    WHEN h.holiday_date IS NOT NULL THEN COALESCE(h.description, 'Holiday')
-                    WHEN DAYOFWEEK(c.date) = 1 THEN 'Sunday'
-                    WHEN a.status = 'present' THEN 'P'
-                    WHEN a.status = 'absent' THEN 'A'
-                    WHEN a.status = 'leave' THEN 'L'
-                    WHEN a.id IS NULL THEN '-'
+                    WHEN h.holiday_date IS NOT NULL THEN h.description
+                    WHEN DAYOFWEEK(c.date) = 1 THEN 'Sun' -- 1 for Sunday in MySQL
+                    WHEN a.id IS NOT NULL THEN 'P'
+                    WHEN a.id IS NULL AND c.date <= CURRENT_DATE THEN 'A'
                     ELSE '-'
                 END AS attendance_status
             FROM
@@ -70,7 +67,6 @@ class AttendanceService implements AttendanceServiceInterface
             WHERE
                 c.date BETWEEN ? AND ?
                 AND s.class_id = ?
-                AND s.status = 'enable'
             ORDER BY
                 s.id, c.date;
         ", [$start_month, $end_month, $class_id]);

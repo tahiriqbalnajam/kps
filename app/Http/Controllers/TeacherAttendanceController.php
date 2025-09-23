@@ -137,9 +137,12 @@ class TeacherAttendanceController extends Controller
                 $opening_time = $settingsCollection['opening_time'];
                 
                 $attendance = [];
+                $updates = [];
+                
                 foreach($teachers as $data) {
                     $teacher_id = $data['id'];
                     $status = $data['attendance'];
+                    $overwrite = isset($data['overwrite']) ? $data['overwrite'] : false;
                     
                     // Check if attendance record exists for this teacher on this date
                     $existing_attendance = TeacherAttendance::where('teacher_id', $teacher_id)
@@ -147,13 +150,15 @@ class TeacherAttendanceController extends Controller
                         ->first();
                         
                     if ($existing_attendance) {
-                        // Update existing record if update_all is checked
-                        if ($update_all) {
-                            $attendance[] = [
+                        // Update existing record if update_all is checked OR individual overwrite is checked
+                        if ($update_all || $overwrite) {
+                            $updates[] = [
+                                'id' => $existing_attendance->id,
                                 'teacher_id' => $teacher_id,
                                 'status' => $status,
                                 'attendance_date' => $date,
                                 'opening_time' => $opening_time,
+                                'updated_at' => now(),
                             ];
                         }
                         // Otherwise, leave existing record untouched
@@ -164,6 +169,8 @@ class TeacherAttendanceController extends Controller
                             'status' => $status,
                             'attendance_date' => $date,
                             'opening_time' => $opening_time,
+                            'created_at' => now(),
+                            'updated_at' => now(),
                         ];
                     }
 
@@ -176,9 +183,17 @@ class TeacherAttendanceController extends Controller
                     }
                 }
                 
-                // Only insert if there are records to insert
+                // Insert new attendance records
                 if (!empty($attendance)) {
                     TeacherAttendance::insert($attendance);
+                }
+                
+                // Update existing attendance records individually
+                foreach ($updates as $update) {
+                    TeacherAttendance::where('id', $update['id'])->update([
+                        'status' => $update['status'],
+                        'updated_at' => $update['updated_at'],
+                    ]);
                 }
 
                 DB::commit();
