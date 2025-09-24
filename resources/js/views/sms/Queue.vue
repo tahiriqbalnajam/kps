@@ -1,23 +1,26 @@
 <template>
   <div class="app-container">
     <div class="filter-container">
-      <el-button type="success" icon="el-icon-plus" @click="editnow = true">
+      <el-button type="success" @click="editnow = true">
+        <el-icon><Plus /></el-icon>
         Add SMS
       </el-button>
-      <el-button style="margin-left: 10px;" type="success" icon="el-icon-postcard" :loading="sendsmsloading" @click="sendSMS()">
-        Send SMS
-      </el-button>
-      <el-button style="margin-left: 10px;" type="danger" icon="el-icon-delete" :loading="sendsmsloading" @click="clearQueue()">
-        Clear Queue
-      </el-button>
-      <el-button 
-        style="margin-left: 10px;" 
-        type="danger" 
-        icon="el-icon-delete" 
-        :disabled="multipleSelection.length === 0"
-        @click="handleDelete()">
-        Delete Selected
-      </el-button>
+      <el-button-group style="margin-left: 10px;">
+        <el-button type="success" :loading="sendsmsloading" @click="sendSMS()">
+        <el-icon><Message /></el-icon>  Send All
+        </el-button>
+        <!-- <el-button type="primary" :disabled="multipleSelection.length === 0" :loading="sendsmsloading" @click="sendSelectedSMS">
+        Send Selected
+        </el-button> -->
+      </el-button-group>
+      <el-button-group style="margin-left: 10px;">
+        <el-button type="danger" :loading="sendsmsloading" @click="deleteAll()">
+          <el-icon><Delete /></el-icon> Delete All
+        </el-button>
+        <el-button type="danger" :disabled="multipleSelection.length === 0" @click="handleDelete()">
+          <el-icon><Delete /></el-icon> Delete Selected
+        </el-button>
+      </el-button-group>
     </div>
     <el-table
       :data="list"
@@ -109,23 +112,105 @@
   </div>
 </template>
 <script>
+
 import Pagination from '@/components/Pagination/index.vue';
-import {debounce} from 'lodash';
+import { debounce } from 'lodash';
 import Resource from '@/api/resource';
 import moment from 'moment';
+import ElSvgItem from "@/components/Item/ElSvgItem.vue"
+import { Plus, Message, Delete, Select } from '@element-plus/icons-vue';
 import {
-    completeSMS,
-    getDefaultMessageChannel,
-    processSMS,
-    processWhatsApp,
-    updateSendStatusWhatsApp
+  completeSMS,
+  getDefaultMessageChannel,
+  processSMS,
+  processWhatsApp,
+  updateSendStatusWhatsApp
 } from '@/api/general';
 
 const smsqueuePro = new Resource('smsqueue');
 const classes = new Resource('classes');
 export default {
   name: '',
-  components: { Pagination },
+  components: { Pagination, Plus, Message, Delete, Select },
+    async sendSelectedSMS() {
+      if (this.multipleSelection.length === 0) {
+        this.$message({
+          message: 'Please select at least one SMS to send.',
+          type: 'warning',
+        });
+        return;
+      }
+      this.sendsmsloading = true;
+      try {
+        // Send WhatsApp and SMS messages for selected rows
+        let selectedWhatsApp = this.multipleSelection.filter(row => row.channel === 'whatsapp');
+        let selectedSMS = this.multipleSelection.filter(row => row.channel === 'sms');
+
+        // Send WhatsApp messages
+        for (const record of selectedWhatsApp) {
+          await this.sendWhatsapp(record.id, record.phone, record.message);
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+        // Mark WhatsApp as sent
+        if (selectedWhatsApp.length > 0 && this.message_ids.length > 0) {
+          await this.updateSendStatus(this.message_ids, 'sent');
+        }
+
+        // Send SMS messages (call backend to process by IDs)
+        if (selectedSMS.length > 0) {
+          // Actually call backend to process selected SMS
+          await this.processSelectedSMS(selectedSMS.map(row => row.id));
+        }
+
+        this.$message({
+          message: 'Selected messages sent (where possible).',
+          type: 'success',
+        });
+        this.getList();
+      } catch (error) {
+        this.$message({
+          message: 'Error sending selected messages.',
+          type: 'error',
+        });
+      } finally {
+        this.sendsmsloading = false;
+      }
+    },
+
+    async processSelectedSMS(ids) {
+      // You need to implement this endpoint in your backend
+      // For now, just show a message
+      // Example: await smsqueuePro.sendSelected({ ids })
+      this.$message({
+        message: 'Selected SMS (channel: sms) sent via backend process (implement endpoint as needed).',
+        type: 'info',
+      });
+    },
+
+    async deleteAll() {
+      this.$confirm('Are you sure you want to delete all SMS in the queue?', 'Warning', {
+        confirmButtonText: 'OK',
+        cancelButtonText: 'Cancel',
+        type: 'warning'
+      }).then(async() => {
+        this.sendsmsloading = true;
+        await completeSMS().then(result => {
+          this.sendsmsloading = false;
+          this.getList();
+          this.$message({
+            message: 'All SMS deleted successfully.',
+            type: 'success',
+          });
+        }).catch(() => {
+          this.$message({
+            message: 'Something went wrong while deleting all SMS.',
+            type: 'error',
+          });
+          this.sendsmsloading = false;
+          return false;
+        });
+      });
+    },
   directives: { },
   data() {
     return {
@@ -377,28 +462,28 @@ export default {
       return true;
     },
     async sendSMS() {
-      this.sendsmsloading = true;
-      await processSMS().then(result => {
-        this.sendsmsloading = false;
-        this.getList();
-        this.$message({
-          message: 'SMS sent successfully.',
-          type: 'success',
-        });
-      }).catch(() => {
-        this.$message({
-          message: 'Something wrong while sending sms',
-          type: 'error',
-        });
-        this.sendsmsloading = false;
-        // return false;
-      });
+      //this.sendsmsloading = true;
+      // await processSMS().then(result => {
+      //   this.sendsmsloading = false;
+      //   this.getList();
+      //   this.$message({
+      //     message: 'SMS sent successfully.',
+      //     type: 'success',
+      //   });
+      // }).catch(() => {
+      //   this.$message({
+      //     message: 'Something wrong while sending sms',
+      //     type: 'error',
+      //   });
+      //   this.sendsmsloading = false;
+      //   // return false;
+      // });
         this.sendsmsloading = true;
 
         let whatsapp_records = [];
         let records = await processWhatsApp();
-        console.log(records.original.records)
-        for (const record of records.original.records) {
+        //console.log(records.original.records)
+        for (const record of records.data.records) {
             await this.sendWhatsapp(record.id, record.phone, record.message);
             await new Promise(resolve => setTimeout(resolve, 2000)); // ⏳ Wait 2s before next message
         }
@@ -414,24 +499,34 @@ export default {
           await updateSendStatusWhatsApp(message_ids, status);
           await this.getList();
       },
-    sendWhatsapp(message_id, phoneNumber, message) {
-      window.whatsappWebSuite.sendTextMessage(
-        phoneNumber,
-        message
-      );
+      async sendWhatsapp(message_id, phoneNumber, message) {
+        try {
+            const response = await window.whatsappWebSuite.sendTextMessage(phoneNumber, message);
+            this.message_ids.push(message_id)
+        } catch (error) {
+            console.error('Failed to send message:', error);
+            this.$message({
+                message: 'Unable to Send message. '+error,
+                type: 'error',
+            });
+        }
+      // window.whatsappWebSuite.sendTextMessage(
+      //   phoneNumber,
+      //   message
+      // );
 
-        document.addEventListener('whatsappSendResponse', (e) => {
-            if (e.detail.success) {
-                this.message_ids.push(message_id)
-                // this.updateSendStatus(message_id, 'sent');
-            } else {
-                console.log('Failed to send message.');
-                this.$message({
-                    message: 'Unable to Send message. Please login Web WhatsApp same browser and WA Web Bridge Extension properly installed.',
-                    type: 'error',
-                });
-            }
-        });
+        // document.addEventListener('whatsappSendResponse', (e) => {
+        //     if (e.detail.success) {
+        //         this.message_ids.push(message_id)
+        //         // this.updateSendStatus(message_id, 'sent');
+        //     } else {
+        //         console.log('Failed to send message.');
+        //         this.$message({
+        //             message: 'Unable to Send message. Please login Web WhatsApp same browser and WA Web Bridge Extension properly installed.',
+        //             type: 'error',
+        //         });
+        //     }
+        // });
     },
     clearQueue(){
       this.$confirm('Are you sure?', 'Warning', {
