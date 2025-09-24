@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Exception;
 use App\Models\Student;
 use App\Models\Settings;
 use App\Models\SmsQueue;
@@ -10,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use App\Models\SmsQueue as SMS;
 use Illuminate\Http\JsonResponse;
+use App\Laravue\JsonResponse as LaravueJsonResponse;
 
 class SmsQueueController extends Controller
 {
@@ -33,7 +35,7 @@ class SmsQueueController extends Controller
                     })
                     ->where('status','pending')
                     ->paginate($limit);
-        return response()->json(new JsonResponse(['smsqueue' => $smsqueue]));
+        return response()->json(new LaravueJsonResponse(['smsqueue' => $smsqueue]));
     }
 
     /**
@@ -46,25 +48,90 @@ class SmsQueueController extends Controller
     {
         try {
             if($request->get('smstype') == 'Single'){
+                // Validate required fields for single SMS
+                if (!$request->phone || !$request->message) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Phone number and message are required.'
+                    ], 422);
+                }
+                
+                if (!$request->channel) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Message channel is required.'
+                    ], 422);
+                }
+                
                 $sms = new SMS();
                 $sms->message = $request->message;
                 $sms->channel = $request->channel;
                 $sms->phone = $this->format_phone($request->phone);
                 $sms->save();
-                return response()->json(new JsonResponse(['sms' => $sms]));
+                
+                return response()->json([
+                    'success' => true,
+                    'message' => 'SMS added to queue successfully.',
+                    'data' => ['sms' => $sms]
+                ]);
+                
              } elseif($request->get('smstype') == 'Multiple') {
+                // Validate required fields for multiple SMS
+                if (!$request->message) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Message is required.'
+                    ], 422);
+                }
+                
+                if (!$request->classes || empty($request->classes)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'At least one class must be selected.'
+                    ], 422);
+                }
+                
+                if (!$request->channel) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Message channel is required.'
+                    ], 422);
+                }
                  $classes = $request->classes;
                  $message = $request->message;
                  $data = array();
+                 $studentCount = 0;
+                 
                  foreach($classes as $sclass) {
                      $students = Student::with('parents')->where('class_id', $sclass)->where('status', 'enable')->get();
                      foreach($students as $student) {
                          $phone = isset($student->parents->phone) ? $this->format_phone($student->parents->phone) : null;
-                         $data[] = array('student_id' => $student->id, 'message' => $message, 
-                                            'phone' => $phone, 'channel' => $request->channel);
+                         if ($phone) { // Only add if phone number exists
+                             $data[] = array(
+                                 'student_id' => $student->id, 
+                                 'message' => $message, 
+                                 'phone' => $phone, 
+                                 'channel' => $request->channel
+                             );
+                             $studentCount++;
+                         }
                      }
                  }
+                 
+                 if (empty($data)) {
+                     return response()->json([
+                         'success' => false,
+                         'message' => 'No students with valid phone numbers found in selected classes.'
+                     ], 422);
+                 }
+                 
                  SMS::insert($data);
+                 
+                 return response()->json([
+                     'success' => true,
+                     'message' => "SMS added to queue for {$studentCount} students successfully.",
+                     'data' => ['count' => $studentCount]
+                 ]);
              } else {
                 $settingsCollection = Settings::where('setting_key', [
                     'school_name', 
@@ -104,11 +171,18 @@ class SmsQueueController extends Controller
                         SmsQueue::create($sms);
                     }
                  }
-                 return response()->json(new JsonResponse(['sms' => true]));
+                 return response()->json([
+                     'success' => true,
+                     'message' => 'Bulk SMS added to queue successfully.',
+                     'data' => ['sms' => true]
+                 ]);
              }
         }
         catch(Exception $e) {
-            return response()->json(new JsonResponse(['error' => $e->getMessage()]));
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred: ' . $e->getMessage()
+            ], 500);
         }
 
 
@@ -132,7 +206,7 @@ class SmsQueueController extends Controller
     public function show($id)
     {
         $sms = SMS::find($id);
-        return response()->json(new JsonResponse(['sms' => $sms]));
+        return response()->json(new LaravueJsonResponse(['sms' => $sms]));
     }
 
     /**
@@ -147,8 +221,14 @@ class SmsQueueController extends Controller
         $sms = SMS::find($id);
         $sms->message = $request->message;
         $sms->phone = $request->phone;
+        $sms->channel = $request->channel;
         $sms->save();
-        return response()->json(new JsonResponse(['sms' => $sms]));
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'SMS updated successfully.',
+            'data' => ['sms' => $sms]
+        ]);
     }
 
     /**
@@ -159,15 +239,17 @@ class SmsQueueController extends Controller
      */
     public function destroy($id)
     {
-
         SMS::destroy($id);
-        return response()->json(new JsonResponse(['msg' => 'Deleted successfully.']));
+        return response()->json([
+            'success' => true,
+            'message' => 'SMS deleted successfully.'
+        ]);
     }
 
     public function sendWhatsapp()
     {
         $records = SMS::select(['id', 'message', 'phone'])->where('status', 'pending')->where('channel', 'whatsapp')->get()->take(50);
-        return response()->json(new JsonResponse(['records' => $records]));
+        return response()->json(new LaravueJsonResponse(['records' => $records]));
     }
     public function sendsms() {
         if($this->check_internet_connection())
@@ -201,9 +283,9 @@ class SmsQueueController extends Controller
                 }
                 //$smsz->each->update(['status' => 'sent']);
             }, $column = 'id');
-            return response()->json(new JsonResponse(['sms' => 'Sent successfully.']));
+            return response()->json(new LaravueJsonResponse(['sms' => 'Sent successfully.']));
         } else {
-            return response()->json(new JsonResponse(['sms' => 'Sorry no internet connection.']));
+            return response()->json(new LaravueJsonResponse(['sms' => 'Sorry no internet connection.']));
         }
 
 
@@ -214,16 +296,15 @@ class SmsQueueController extends Controller
 		return (bool) @fsockopen($sCheckHost, 80, $iErrno, $sErrStr, 5);
 	}
     function change_status(Request $request){
-       // echo "<pre>";
-       // print_r($request->all());
         SMS::where('status','pending')->update(['status' => 'Sent']);
-        return response()->json(new JsonResponse(['sms' => 'Status Changed successfully.']));
+        return response()->json(new LaravueJsonResponse(['sms' => 'Status Changed successfully.']));
     }
+    
     function changeWhatsAppStatus(Request $request) {
         if ($request->has('message_ids')) {
             if ($request->status == 'sent')
                 SMS::whereIn('id', $request->message_ids)->where('status','pending')->update(['status' => 'Sent']);
-            return response()->json(new JsonResponse(['sms' => 'Status Changed successfully.']));
+            return response()->json(new LaravueJsonResponse(['sms' => 'Status Changed successfully.']));
         }
     }
 }

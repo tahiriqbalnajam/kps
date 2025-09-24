@@ -188,9 +188,16 @@ export default {
       this.getList();
     }, 500),
     async getList() {
-      const { original } = await smsqueuePro.list(this.query);
-      this.list = original.smsqueue.data;
-      this.total = original.smsqueue.total;
+      const response = await smsqueuePro.list(this.query);
+      // Support both old and new response formats
+      let data = response.original || response.data || response;
+      if (data && data.smsqueue) {
+        this.list = data.smsqueue.data || [];
+        this.total = data.smsqueue.total || 0;
+      } else {
+        this.list = [];
+        this.total = 0;
+      }
     },
     async getClasses() {
       const{ data } = await classes.list();
@@ -251,36 +258,123 @@ export default {
       });
     },
     async onSubmit() {
+      // Frontend validation
+      if (!this.validateForm()) {
+        return;
+      }
+
       this.loading = true;
-      if(this.sms.id != '') {
-        await smsqueuePro.update(this.sms.id, this.sms);
-        this.editnow = false;
-        this.loading = false;
-        this.resetSMS();
-        this.getList();
-          this.defaultMessageChannel();
-      } else {
-        await smsqueuePro.store(this.sms).then(result => {
-          this.editnow = false;
-          this.loading = false;
-          this.resetSMS();
-          this.getList();
-            this.defaultMessageChannel();
-            this.$message({
-            message: 'Fee added successfully.',
+      
+      try {
+        if(this.sms.id != '') {
+          // Update existing SMS
+          const result = await smsqueuePro.update(this.sms.id, this.sms);
+          this.$message({
+            message: 'SMS updated successfully.',
             type: 'success',
           });
-          return;
-        }).catch(() => {
+        } else {
+          // Create new SMS
+          const result = await smsqueuePro.store(this.sms);
+          
+          if (this.sms.smstype === 'Single') {
+            this.$message({
+              message: 'SMS added to queue successfully.',
+              type: 'success',
+            });
+          } else {
+            this.$message({
+              message: 'Multiple SMS added to queue successfully.',
+              type: 'success',
+            });
+          }
+        }
+        
+        // Reset form and refresh data
+        this.editnow = false;
+        this.resetSMS();
+        this.getList();
+        this.defaultMessageChannel();
+        
+      } catch (error) {
+        console.error('SMS submission error:', error);
+        
+        // Handle different types of errors
+        let errorMessage = 'An error occurred while submitting SMS.';
+        
+        if (error.response && error.response.data) {
+          if (error.response.data.message) {
+            errorMessage = error.response.data.message;
+          } else if (error.response.data.error) {
+            errorMessage = error.response.data.error;
+          } else if (error.response.status === 422) {
+            errorMessage = 'Validation failed. Please check your input data.';
+          } else if (error.response.status === 500) {
+            errorMessage = 'Server error occurred. Please try again.';
+          }
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+        
+        this.$message({
+          message: errorMessage,
+          type: 'error',
+        });
+      } finally {
+        this.loading = false;
+        this.defaultMessageChannel();
+      }
+    },
+
+    validateForm() {
+      // Validate message
+      if (!this.sms.message || this.sms.message.trim() === '') {
+        this.$message({
+          message: 'Please enter a message.',
+          type: 'error',
+        });
+        return false;
+      }
+
+      // Validate channel
+      if (!this.sms.channel) {
+        this.$message({
+          message: 'Please select a message channel.',
+          type: 'error',
+        });
+        return false;
+      }
+
+      // Validate based on SMS type
+      if (this.sms.smstype === 'Single') {
+        if (!this.sms.phone || this.sms.phone.trim() === '') {
           this.$message({
-            message: 'Enter phone and message.',
+            message: 'Please enter a phone number.',
             type: 'error',
           });
-            this.defaultMessageChannel();
-          this.loading = false;
           return false;
-        });
+        }
+        
+        // Basic phone number validation
+        const phoneRegex = /^[0-9+\-\s()]{10,15}$/;
+        if (!phoneRegex.test(this.sms.phone.trim())) {
+          this.$message({
+            message: 'Please enter a valid phone number.',
+            type: 'error',
+          });
+          return false;
+        }
+      } else if (this.sms.smstype === 'Multiple') {
+        if (!this.sms.classes || this.sms.classes.length === 0) {
+          this.$message({
+            message: 'Please select at least one class.',
+            type: 'error',
+          });
+          return false;
+        }
       }
+
+      return true;
     },
     async sendSMS() {
       this.sendsmsloading = true;
