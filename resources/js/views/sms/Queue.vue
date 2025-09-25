@@ -501,6 +501,11 @@ export default {
       },
       async sendWhatsapp(message_id, phoneNumber, message) {
         try {
+            // Check if WhatsApp Web Suite is available
+            if (!window.whatsappWebSuite || typeof window.whatsappWebSuite.sendTextMessage !== 'function') {
+                throw new Error('WhatsApp Web Suite is not available. Please ensure the extension is installed and running.');
+            }
+            
             const response = await window.whatsappWebSuite.sendTextMessage(phoneNumber, message);
             this.message_ids.push(message_id)
         } catch (error) {
