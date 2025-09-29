@@ -6,6 +6,8 @@ use Exception;
 use App\Models\Student;
 use App\Models\Settings;
 use App\Models\SmsQueue;
+use App\Models\Test;
+use App\Models\TestResult;
 use Illuminate\Support\Arr;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -305,6 +307,127 @@ class SmsQueueController extends Controller
             if ($request->status == 'sent')
                 SMS::whereIn('id', $request->message_ids)->where('status','pending')->update(['status' => 'Sent']);
             return response()->json(new LaravueJsonResponse(['sms' => 'Status Changed successfully.']));
+        }
+    }
+
+    /**
+     * Store bulk test SMS for multiple students in one operation
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function storeBulkTestSMS(Request $request)
+    {
+        try {
+            // Validate required fields
+            if (!$request->test_id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Test ID is required.'
+                ], 422);
+            }
+
+            // Get test data with all necessary relationships
+            $test = Test::with(['class', 'subject', 'testResults.student.parents'])
+                       ->find($request->test_id);
+
+            if (!$test) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Test not found.'
+                ], 404);
+            }
+
+            // Get SMS template from settings
+            $settings = Settings::where('setting_key', ['test_sms_template', 'school_name', 'message_channel'])
+                               ->pluck('setting_value', 'setting_key');
+
+            $template = $settings->get('test_sms_template');
+            if (!$template) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Test SMS template not configured. Please set it in Settings > Message Settings.'
+                ], 422);
+            }
+
+            // Get test results and filter out absent students
+            $testResults = $test->testResults->filter(function ($result) {
+                return $result->absent !== 'yes' && $result->score !== null && $result->score !== '';
+            })->sortByDesc(function ($result) {
+                return (float) $result->score;
+            });
+
+            if ($testResults->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No valid test results found (all students are absent or have no marks).'
+                ], 422);
+            }
+
+            // Default channel to WhatsApp
+            $channel = $settings->get('message_channel', 'whatsapp');
+            $schoolName = $settings->get('school_name', 'Your School');
+
+            $smsData = [];
+            $validCount = 0;
+
+            foreach ($testResults as $index => $result) {
+                // Skip if no parent phone number
+                if (!$result->student || !$result->student->parents || !$result->student->parents->phone) {
+                    continue;
+                }
+
+                $position = $index + 1;
+
+                // Prepare SMS content with template replacement
+                $smsContent = str_replace(
+                    ['[[parent_name]]', '[[student_name]]', '[[class_title]]', '[[test_title]]', '[[obtained_marks]]', '[[total_marks]]', '[[position]]', '[[school_name]]'],
+                    [
+                        $result->student->parents->name ?: '',
+                        $result->student->name ?: '',
+                        $test->class->name ?: '',
+                        $test->title ?: '',
+                        $result->score ?: '0',
+                        $test->total_marks ?: '',
+                        (string) $position,
+                        $schoolName
+                    ],
+                    $template
+                );
+
+                $smsData[] = [
+                    'student_id' => $result->student->id,
+                    'message' => $smsContent,
+                    'phone' => $this->format_phone($result->student->parents->phone),
+                    'channel' => $channel,
+                    'created_at' => now(),
+                    'updated_at' => now()
+                ];
+
+                $validCount++;
+            }
+
+            if (empty($smsData)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No students with valid phone numbers found.'
+                ], 422);
+            }
+
+            // Insert all SMS records in one batch operation
+            SMS::insert($smsData);
+
+            return response()->json([
+                'success' => true,
+                'message' => "Bulk test SMS added to queue for {$validCount} students successfully.",
+                'data' => ['count' => $validCount]
+            ]);
+
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred: ' . $e->getMessage()
+            ], 500);
         }
     }
 }
