@@ -82,6 +82,7 @@ Route::get('default/message/channel', 'SettingsController@defaultMessageChannel'
 Route::get('send/whatsapp', 'SmsQueueController@sendWhatsapp');
 Route::post('update/whatsapp/status', 'SmsQueueController@changeWhatsAppStatus');
 Route::post('change_status', 'SmsQueueController@change_status');
+Route::post('smsqueue/bulk-test-sms', 'SmsQueueController@storeBulkTestSMS');
 Route::apiResource('dashboard', 'DashboardController');
 //student attendance
 Route::apiResource('has_student_attendance', 'StudentAttendanceController@has_student_attendance');

@@ -2,20 +2,24 @@
   import HeadControls from '@/components/HeadControls.vue';
   import AddTest from '@/views/exam/AddTest.vue';
   import Resource from '@/api/resource.js';
+  import request from '@/utils/request';
   import Pagination from '@/components/Pagination/index.vue';
   import { ElNotification, ElMessage, ElMessageBox } from 'element-plus'
   import moment from 'moment';
+  import { Message } from '@element-plus/icons-vue';
   const tests = new Resource('tests');
   const test_result = new Resource('tests-result');
   const classes = new Resource('classes');
   const subjectsPro = new Resource('subjects');
   const teachersPro = new Resource('teachers');
+  const settings = new Resource('settings');
   export default {
     name: 'TestList',
     components: {
       HeadControls,
       AddTest,
       Pagination,
+      Message,
     },
     data() {
       return {
@@ -193,7 +197,42 @@
     })
     .catch(() => {
     })
-    }
+    },
+    async sendBulkTestSMS(test) {
+      try {
+        // Set loading state for this test
+        test.bulkSmsLoading = true;
+
+        // Send bulk SMS request with just the test ID
+        const response = await request({
+          url: '/smsqueue/bulk-test-sms',
+          method: 'post',
+          data: { test_id: test.id },
+        });
+
+        if (response.success) {
+          ElMessage({
+            type: 'success',
+            message: `Successfully added SMS to queue for ${response.data.count} students.`,
+          });
+        } else {
+          ElMessage({
+            type: 'error',
+            message: response.message || 'Failed to send bulk SMS.',
+          });
+        }
+
+      } catch (error) {
+        console.error('Error sending bulk test SMS:', error);
+        ElMessage({
+          type: 'error',
+          message: 'Failed to send bulk SMS. Please try again.',
+        });
+      } finally {
+        // Remove loading state
+        test.bulkSmsLoading = false;
+      }
+    },
   }
  }
 
@@ -247,6 +286,15 @@
         <el-table-column>
           <template #default="scope">
             <el-button-group>
+              <el-tooltip content="Send all students results to Queue" placement="top">
+                <el-button
+                  type="success"
+                  :loading="scope.row.bulkSmsLoading"
+                  @click="sendBulkTestSMS(scope.row)"
+                >
+                  <el-icon><Message /></el-icon>
+                </el-button>
+              </el-tooltip>
               <el-tooltip content="Show Result" placement="top">
                 <el-button color="#626aef" :dark="isDark" @click="[getResultClaswise(scope.row.id, scope.row.class.name),showTestStudentList = true]">
                   <el-icon><ScaleToOriginal /></el-icon>

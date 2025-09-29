@@ -192,6 +192,18 @@
                     </div>
                   </el-form-item>
 
+                  <el-form-item label="Test SMS Template">
+                    <el-input
+                      v-model="message.test_sms_template"
+                      type="textarea"
+                      :rows="5"
+                      placeholder="Enter your custom SMS template for test results."
+                    />
+                    <div class="mt-2 text-gray-500 text-sm">
+                      Available placeholders: '[[parent_name]]', '[[student_name]]', '[[class_title]]', '[[test_title]]', '[[obtained_marks]]', '[[total_marks]]', '[[position]]', '[[school_name]]'
+                    </div>
+                  </el-form-item>
+
                   <el-form-item>
                     <el-button type="primary" @click="saveMessageSettings()" :loading="form_element.updating">Save</el-button>
                   </el-form-item>
@@ -232,6 +244,7 @@ export default {
           message_channel: '',
           absent_sms_template: '',
           fee_sms_template: '', // Add fee_sms_template property
+          test_sms_template: '',
       },
       school_form: {
         school_name: '',
