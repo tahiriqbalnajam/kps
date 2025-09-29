@@ -307,6 +307,7 @@ export default {
       this.message.message_channel = settings.message_channel || '';
       this.message.absent_sms_template = settings.absent_sms_template || '';
       this.message.fee_sms_template = settings.fee_sms_template || ''; // Load fee_sms_template
+      this.message.test_sms_template = settings.test_sms_template || ''; // Load test_sms_template
     },
     handleLogoUpload(file) {
       if (file && file.raw) {
