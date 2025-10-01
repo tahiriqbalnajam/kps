@@ -88,9 +88,14 @@ class FeeVoucher extends Model
         return $query->where('status', 'unpaid');
     }
 
+    public function scopePartiallyPaid($query)
+    {
+        return $query->where('status', 'partially_paid');
+    }
+
     public function scopeOverdue($query)
     {
-        return $query->where('status', 'unpaid')
+        return $query->whereIn('status', ['unpaid', 'partially_paid'])
                     ->where('due_date', '<', now()->toDateString());
     }
 
@@ -107,7 +112,7 @@ class FeeVoucher extends Model
     // Accessors
     public function getIsOverdueAttribute()
     {
-        return $this->status === 'unpaid' && $this->due_date < now()->toDateString();
+        return in_array($this->status, ['unpaid', 'partially_paid']) && $this->due_date < now()->toDateString();
     }
 
     public function getDaysOverdueAttribute()

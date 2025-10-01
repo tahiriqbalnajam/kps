@@ -12,6 +12,7 @@
         >
           <el-option label="All Vouchers" value="" />
           <el-option label="Unpaid" value="unpaid" />
+          <el-option label="Partially Paid" value="partially_paid" />
           <el-option label="Paid" value="paid" />
           <el-option label="Overdue" value="overdue" />
           <el-option label="Cancelled" value="cancelled" />
@@ -170,7 +171,7 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="Amount" width="120" align="right">
+        <el-table-column label="Amount" width="150" align="right">
           <template #default="scope">
             <div class="amount-info">
               <div class="fee-amount">Rs. {{ scope.row.fee_amount }}</div>
@@ -179,6 +180,12 @@
               </div>
               <div class="total-amount">
                 <strong>Rs. {{ scope.row.total_with_fine }}</strong>
+              </div>
+              <div v-if="scope.row.status === 'partially_paid'" class="paid-info">
+                <div class="paid-amount">Paid: Rs. {{ scope.row.paid_amount || 0 }}</div>
+                <div class="remaining-amount">
+                  <strong style="color: #f56c6c;">Remaining: Rs. {{ getRemainingAmount(scope.row) }}</strong>
+                </div>
               </div>
             </div>
           </template>
@@ -208,13 +215,13 @@
           <template #default="scope">
             <div class="action-buttons">
               <el-button 
-                v-if="scope.row.status === 'unpaid'"
+                v-if="scope.row.status === 'unpaid' || scope.row.status === 'partially_paid'"
                 type="success" 
                 size="small"
                 @click.stop="markAsPaid(scope.row)"
               >
                 <el-icon><Money /></el-icon>
-                Mark Paid
+                {{ scope.row.status === 'partially_paid' ? 'Pay Remaining' : 'Mark Paid' }}
               </el-button>
               
               <el-button 
@@ -227,7 +234,7 @@
               </el-button>
               
               <el-button 
-                v-if="scope.row.status === 'unpaid'"
+                v-if="scope.row.status === 'unpaid' || scope.row.status === 'partially_paid'"
                 type="danger" 
                 size="small"
                 @click.stop="cancelVoucher(scope.row)"
@@ -272,11 +279,11 @@
           <el-input :value="selectedVoucher?.student_name" disabled />
         </el-form-item>
         
-        <el-form-item label="Total Amount">
+        <el-form-item :label="selectedVoucher?.status === 'partially_paid' ? 'Remaining Amount' : 'Total Amount'">
           <el-input :value="displayTotalAmount" disabled />
         </el-form-item>
         
-        <el-form-item label="Paid Amount" required>
+        <el-form-item :label="selectedVoucher?.status === 'partially_paid' ? 'Pay Amount' : 'Paid Amount'" required>
           <el-input-number
             v-model="paymentForm.paidAmount"
             :min="0"
@@ -439,13 +446,14 @@ export default {
       
       const today = new Date()
       const dueDate = new Date(this.selectedVoucher.due_date)
+      const paidAmount = parseFloat(this.selectedVoucher.paid_amount || 0)
       
       // If today is before or equal to due date, don't include fine
       if (today <= dueDate) {
-        return parseFloat(this.selectedVoucher.fee_amount)
+        return parseFloat(this.selectedVoucher.fee_amount) - paidAmount
       } else {
         // If overdue, include fine
-        return parseFloat(this.selectedVoucher.total_with_fine)
+        return parseFloat(this.selectedVoucher.total_with_fine) - paidAmount
       }
     },
     
@@ -455,10 +463,22 @@ export default {
       
       const today = new Date()
       const dueDate = new Date(this.selectedVoucher.due_date)
+      const paidAmount = parseFloat(this.selectedVoucher.paid_amount || 0)
+      const isPartiallyPaid = this.selectedVoucher.status === 'partially_paid'
       
       if (today <= dueDate) {
+        const totalAmount = parseFloat(this.selectedVoucher.fee_amount)
+        const remainingAmount = totalAmount - paidAmount
+        if (isPartiallyPaid) {
+          return `Rs. ${remainingAmount} remaining (Rs. ${paidAmount} already paid)`
+        }
         return `Rs. ${this.selectedVoucher.fee_amount} (No fine - paid before due date)`
       } else {
+        const totalAmount = parseFloat(this.selectedVoucher.total_with_fine)
+        const remainingAmount = totalAmount - paidAmount
+        if (isPartiallyPaid) {
+          return `Rs. ${remainingAmount} remaining (Rs. ${paidAmount} already paid, including Rs. ${this.selectedVoucher.fine_amount} fine)`
+        }
         return `Rs. ${this.selectedVoucher.total_with_fine} (Including Rs. ${this.selectedVoucher.fine_amount} fine)`
       }
     }
@@ -574,13 +594,16 @@ export default {
       // Calculate correct amount based on current date vs due date
       const today = new Date()
       const dueDate = new Date(voucher.due_date)
+      const paidAmount = parseFloat(voucher.paid_amount || 0)
       
       if (today <= dueDate) {
         // If paying before or on due date, don't include fine
-        this.paymentForm.paidAmount = parseFloat(voucher.fee_amount)
+        // For partially paid, only show remaining amount
+        this.paymentForm.paidAmount = parseFloat(voucher.fee_amount) - paidAmount
       } else {
         // If paying after due date, include fine
-        this.paymentForm.paidAmount = parseFloat(voucher.total_with_fine)
+        // For partially paid, only show remaining amount
+        this.paymentForm.paidAmount = parseFloat(voucher.total_with_fine) - paidAmount
       }
       
       this.paymentForm.paymentDate = new Date()
@@ -590,11 +613,22 @@ export default {
     async confirmPayment() {
       this.paymentLoading = true
       try {
+        // Extract pending voucher IDs from fee_breakdown if present
+        const pendingVoucherIds = []
+        if (this.selectedVoucher.fee_breakdown && Array.isArray(this.selectedVoucher.fee_breakdown)) {
+          this.selectedVoucher.fee_breakdown.forEach(item => {
+            if (item.pending_voucher_id) {
+              pendingVoucherIds.push(item.pending_voucher_id)
+            }
+          })
+        }
+
         await updateFeeVoucherStatus(
           this.selectedVoucher.id,
           'paid',
           this.paymentForm.paidAmount,
-          this.paymentForm.paymentDate
+          moment(this.paymentForm.paymentDate).format('YYYY-MM-DD HH:mm:ss'),
+          pendingVoucherIds.length > 0 ? pendingVoucherIds : null
         )
         
         this.$message.success('Voucher marked as paid successfully!')
@@ -677,12 +711,19 @@ export default {
       return parseFloat(amount || 0).toLocaleString()
     },
 
+    getRemainingAmount(voucher) {
+      const totalAmount = parseFloat(voucher.total_with_fine || 0)
+      const paidAmount = parseFloat(voucher.paid_amount || 0)
+      return (totalAmount - paidAmount).toFixed(2)
+    },
+
     isOverdue(voucher) {
-      return voucher.status === 'unpaid' && moment(voucher.due_date).isBefore(moment())
+      return (voucher.status === 'unpaid' || voucher.status === 'partially_paid') && moment(voucher.due_date).isBefore(moment())
     },
 
     getStatusTagType(voucher) {
       if (voucher.status === 'paid') return 'success'
+      if (voucher.status === 'partially_paid') return 'warning'
       if (voucher.status === 'cancelled') return 'info'
       if (this.isOverdue(voucher)) return 'danger'
       return 'warning'
@@ -691,6 +732,9 @@ export default {
     getStatusLabel(voucher) {
       if (voucher.status === 'paid') return 'Paid'
       if (voucher.status === 'cancelled') return 'Cancelled'
+      if (voucher.status === 'partially_paid') {
+        return this.isOverdue(voucher) ? 'Overdue (Partial)' : 'Partially Paid'
+      }
       if (this.isOverdue(voucher)) return 'Overdue'
       return 'Unpaid'
     },
@@ -884,6 +928,24 @@ export default {
   color: #27ae60;
   font-weight: 600;
   font-family: 'Courier New', monospace;
+}
+
+.paid-info {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed #e4e7ed;
+}
+
+.paid-amount {
+  color: #67c23a;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.remaining-amount {
+  color: #f56c6c;
+  font-weight: 600;
+  font-size: 13px;
 }
 
 .due-date {

@@ -36,14 +36,15 @@ export function getFeeVoucherDetails(voucherId) {
 }
 
 // Update fee voucher status (paid/unpaid)
-export function updateFeeVoucherStatus(voucherId, status, paidAmount = null, paymentDate = null) {
+export function updateFeeVoucherStatus(voucherId, status, paidAmount = null, paymentDate = null, pendingVoucherIds = null) {
   return request({
     url: `/fee/voucher/${voucherId}/status`,
     method: 'put',
     data: {
       status,
       paid_amount: paidAmount,
-      payment_date: paymentDate
+      payment_date: paymentDate,
+      pending_voucher_ids: pendingVoucherIds
     }
   })
 }

@@ -286,6 +286,43 @@
             </div>
           </el-form-item>
 
+          <el-form-item label="Include Pending">
+            <el-checkbox
+              v-model="voucherForm.includePending"
+              @change="handleIncludePendingChange"
+            >
+              Include previous pending/overdue vouchers
+            </el-checkbox>
+            <div v-if="voucherForm.includePending" class="pending-warning">
+              <el-alert
+                v-if="selectedStudents.length === 0"
+                title="Select Students First"
+                type="warning"
+                :closable="false"
+                show-icon
+              >
+                <template #default>
+                  <span>Please select students first to check for pending vouchers.</span>
+                </template>
+              </el-alert>
+              <el-alert
+                v-else
+                title="Pending Vouchers"
+                type="info"
+                :closable="false"
+                show-icon
+              >
+                <template #default>
+                  <span v-if="loadingPending">Loading pending vouchers...</span>
+                  <span v-else-if="pendingVouchers.length > 0">
+                    {{ pendingVouchers.length }} pending voucher(s) will be added to the new voucher on generation.
+                  </span>
+                  <span v-else>No pending vouchers found for selected students.</span>
+                </template>
+              </el-alert>
+            </div>
+          </el-form-item>
+
           <el-form-item label="Additional Notes">
             <el-input
               v-model="voucherForm.notes"
@@ -318,9 +355,28 @@
             <span>Fine Amount:</span>
             <span class="value">Rs. {{ voucherForm.fineAmount || 0 }}</span>
           </div>
+
+          <!-- Pending Vouchers Section -->
+          <div v-if="voucherForm.includePending && pendingVouchers.length > 0" class="pending-vouchers-section">
+            <div class="summary-item">
+              <span>Pending Vouchers:</span>
+              <span class="value">{{ pendingVouchers.length }} voucher(s)</span>
+            </div>
+            <div class="pending-voucher-details">
+              <div v-for="pending in pendingVouchers" :key="pending.id" class="pending-voucher-item">
+                <span class="voucher-number">{{ pending.voucher_number }}</span>
+                <span class="voucher-amount">Rs. {{ getPendingVoucherAmount(pending) }}</span>
+              </div>
+            </div>
+            <div class="summary-item">
+              <span>Total Pending Amount:</span>
+              <span class="value pending-amount">Rs. {{ calculateTotalPendingAmount() }}</span>
+            </div>
+          </div>
+
           <div class="summary-item total-summary">
             <span>Total per Student:</span>
-            <span class="value">Rs. {{ calculateTotalFeeAmount() + (voucherForm.fineAmount || 0) }}</span>
+            <span class="value">Rs. {{ calculateTotalAmount() }}</span>
           </div>
         </div>
 
@@ -403,7 +459,7 @@ import {
 import moment from 'moment'
 import { debounce } from 'lodash'
 import Resource from '@/api/resource'
-import { getFeeVoucherStudents, generateFeeVouchers, checkExistingVouchers } from '@/api/fee'
+import { getFeeVoucherStudents, generateFeeVouchers, checkExistingVouchers, getOutstandingVouchers } from '@/api/fee'
 import FeeVoucherPrint from './component/FeeVoucherPrint.vue'
 
 const studentsResource = new Resource('students')
@@ -450,8 +506,11 @@ export default {
         customAmount: 0,
         selectedFeeTypes: [],
         feeTypeAmounts: {}, // Store custom amounts for each fee type
-        notes: ''
-      }
+        notes: '',
+        includePending: false
+      },
+      pendingVouchers: [],
+      loadingPending: false
     }
   },
   computed: {
@@ -558,6 +617,11 @@ export default {
       this.selectedStudents = selection
       // Reset duplicate warning when selection changes
       this.duplicateWarning.show = false
+      
+      // Fetch pending vouchers if include pending is enabled
+      if (this.voucherForm.includePending && selection.length > 0) {
+        this.fetchPendingVouchers()
+      }
     },
 
     async handleSizeChange(val) {
@@ -618,8 +682,10 @@ export default {
         customAmount: 0,
         selectedFeeTypes: [],
         feeTypeAmounts: {},
-        notes: ''
+        notes: '',
+        includePending: false
       }
+      this.pendingVouchers = []
       this.duplicateWarning.show = false
     },
 
@@ -636,6 +702,47 @@ export default {
         this.voucherForm.feeTypeAmounts = {}
       }
       this.duplicateWarning.show = false
+    },
+
+    async handleIncludePendingChange(checked) {
+      if (checked) {
+        if (this.selectedStudents.length === 0) {
+          this.$message.info('Please select students first to check for pending vouchers')
+          return
+        }
+        await this.fetchPendingVouchers()
+      } else {
+        this.pendingVouchers = []
+      }
+    },
+
+    async fetchPendingVouchers() {
+      if (this.selectedStudents.length === 0) {
+        this.pendingVouchers = []
+        return
+      }
+
+      this.loadingPending = true
+      try {
+        const studentIds = this.selectedStudents.map(s => s.id)
+        // Use the outstanding vouchers API function with student_ids filter
+        const data = await getOutstandingVouchers({
+          student_ids: studentIds.join(',')
+        })
+
+        // The response interceptor already unwraps response.data
+        if (data && data.success && data.vouchers) {
+          this.pendingVouchers = data.vouchers
+        } else {
+          this.pendingVouchers = []
+        }
+      } catch (error) {
+        console.error('Error fetching pending vouchers:', error)
+        this.$message.warning('Failed to load pending vouchers')
+        this.pendingVouchers = []
+      } finally {
+        this.loadingPending = false
+      }
     },
 
     isSelectedFeeType(feeTypeId) {
@@ -699,6 +806,47 @@ export default {
         }
         return 0
       }
+    },
+
+    calculateTotalPendingAmount() {
+      return this.pendingVouchers.reduce((total, voucher) => {
+        const amount = this.getPendingVoucherAmount(voucher)
+        return total + parseFloat(amount || 0)
+      }, 0)
+    },
+
+    getPendingVoucherAmount(voucher) {
+      // Try different amount fields in order of preference
+      if (voucher.total_amount_with_fine) {
+        return voucher.total_amount_with_fine
+      }
+      if (voucher.total_with_fine) {
+        return voucher.total_with_fine
+      }
+      if (voucher.amount) {
+        return voucher.amount
+      }
+      if (voucher.fee_amount) {
+        // Calculate with fine if overdue
+        const feeAmount = parseFloat(voucher.fee_amount || 0)
+        const fineAmount = parseFloat(voucher.fine_amount || 0)
+        const today = new Date()
+        const dueDate = new Date(voucher.due_date)
+        
+        // Include fine if overdue
+        if (today > dueDate) {
+          return feeAmount + fineAmount
+        }
+        return feeAmount
+      }
+      return 0
+    },
+
+    calculateTotalAmount() {
+      const feeAmount = this.calculateTotalFeeAmount()
+      const fineAmount = this.voucherForm.fineAmount || 0
+      const pendingAmount = this.voucherForm.includePending ? this.calculateTotalPendingAmount() : 0
+      return feeAmount + fineAmount + pendingAmount
     },
 
     async checkForDuplicates() {
@@ -801,6 +949,21 @@ export default {
               fee_type: 'Monthly Fee',
               amount: baseFee
             }]
+          }
+
+          // Include pending vouchers in fee breakdown if enabled
+          if (this.voucherForm.includePending) {
+            // Filter pending vouchers for this student
+            const studentPendingVouchers = this.pendingVouchers.filter(pv => pv.student_id === student.id)
+            studentPendingVouchers.forEach(pv => {
+              const pendingAmount = this.getPendingVoucherAmount(pv)
+              baseFee += parseFloat(pendingAmount) // Add to base fee
+              feeBreakdown.push({
+                fee_type: `Pending: ${pv.voucher_number}`,
+                amount: parseFloat(pendingAmount),
+                pending_voucher_id: pv.id
+              })
+            })
           }
 
           return {
@@ -1269,6 +1432,57 @@ export default {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+/* Pending Vouchers Styles */
+.pending-warning {
+  margin-top: 8px;
+}
+
+.pending-warning :deep(.el-alert) {
+  margin-top: 8px;
+}
+
+.pending-vouchers-section {
+  margin: 12px 0;
+  padding: 12px;
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 6px;
+}
+
+.pending-voucher-details {
+  margin: 8px 0;
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.pending-voucher-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 8px;
+  margin-bottom: 4px;
+  background: #fff;
+  border-radius: 4px;
+  border: 1px solid #e4e7ed;
+  font-size: 13px;
+}
+
+.voucher-number {
+  font-weight: 600;
+  color: #e6a23c;
+  font-family: 'Courier New', monospace;
+}
+
+.voucher-amount {
+  font-weight: 600;
+  color: #f56c6c;
+}
+
+.pending-amount {
+  color: #f56c6c !important;
+  font-weight: 600;
 }
 
 /* Responsive Design */

@@ -263,26 +263,73 @@ class FeeVoucherController extends Controller
     {
         try {
             $request->validate([
-                'status' => 'required|in:paid,unpaid,cancelled',
+                'status' => 'required|in:paid,unpaid,partially_paid,cancelled',
                 'paid_amount' => 'nullable|numeric|min:0',
-                'payment_date' => 'nullable|date'
+                'payment_date' => 'nullable|date',
+                'pending_voucher_ids' => 'nullable|array'
             ]);
 
             $voucher = FeeVoucher::findOrFail($id);
             
-            $voucher->update([
-                'status' => $request->status,
-                'paid_amount' => $request->paid_amount,
-                'payment_date' => $request->payment_date,
-                'updated_by' => Auth::id() ?? 1,
-                'updated_at' => now()
-            ]);
+            // Start a database transaction
+            DB::beginTransaction();
             
-            return response()->json([
-                'success' => true,
-                'message' => 'Voucher status updated successfully',
-                'voucher' => $voucher
-            ]);
+            try {
+                $paidAmount = $request->paid_amount ?? 0;
+                $totalAmount = $voucher->total_with_fine;
+                $status = $request->status;
+                
+                // Automatically determine status based on paid amount
+                if ($status === 'paid' || $paidAmount > 0) {
+                    if ($paidAmount >= $totalAmount) {
+                        $status = 'paid';
+                    } elseif ($paidAmount > 0 && $paidAmount < $totalAmount) {
+                        $status = 'partially_paid';
+                    } else {
+                        $status = 'unpaid';
+                    }
+                }
+                
+                // Update main voucher status
+                $voucher->update([
+                    'status' => $status,
+                    'paid_amount' => $request->paid_amount,
+                    'payment_date' => $request->payment_date,
+                    'updated_by' => Auth::id() ?? 1,
+                    'updated_at' => now()
+                ]);
+                
+                // If fully paid and there are pending vouchers included, mark them as paid too
+                if ($status === 'paid' && $request->has('pending_voucher_ids')) {
+                    $pendingVoucherIds = $request->pending_voucher_ids;
+                    
+                    // Update all pending vouchers to paid
+                    FeeVoucher::whereIn('id', $pendingVoucherIds)
+                        ->where('status', '!=', 'paid')
+                        ->update([
+                            'status' => 'paid',
+                            'payment_date' => $request->payment_date ?? now(),
+                            'updated_by' => Auth::id() ?? 1,
+                            'updated_at' => now()
+                        ]);
+                }
+                
+                DB::commit();
+                
+                $statusMessage = $status === 'partially_paid' 
+                    ? 'Voucher marked as partially paid' 
+                    : 'Voucher status updated successfully';
+                
+                return response()->json([
+                    'success' => true,
+                    'message' => $statusMessage,
+                    'voucher' => $voucher
+                ]);
+                
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
             
         } catch (\Exception $e) {
             return response()->json([
@@ -329,7 +376,14 @@ class FeeVoucherController extends Controller
     public function getOutstandingVouchers(Request $request)
     {
         try {
-            $query = FeeVoucher::where('status', 'unpaid');
+            // Include both unpaid and partially_paid vouchers as outstanding
+            $query = FeeVoucher::whereIn('status', ['unpaid', 'partially_paid']);
+
+            // Filter by specific student IDs if provided
+            if ($request->filled('student_ids')) {
+                $studentIds = explode(',', $request->student_ids);
+                $query->whereIn('student_id', $studentIds);
+            }
             
             // Apply filters
             if ($request->filled('urgency')) {
@@ -374,6 +428,28 @@ class FeeVoucherController extends Controller
             $vouchers = $vouchers->map(function($voucher) {
                 $voucher->parent_phone = $voucher->parent_phone ?? '';
                 $voucher->parent_email = $voucher->parent_email ?? '';
+                
+                // Calculate total amount with fine for display
+                // Check if voucher is overdue
+                $isOverdue = $voucher->due_date < now()->toDateString();
+                
+                // Calculate remaining amount for partially paid vouchers
+                $paidAmount = floatval($voucher->paid_amount ?? 0);
+                $feeAmount = floatval($voucher->fee_amount);
+                $fineAmount = floatval($voucher->fine_amount);
+                
+                if ($isOverdue) {
+                    // If overdue, include fine
+                    $totalAmount = $feeAmount + $fineAmount;
+                    $voucher->total_amount_with_fine = $totalAmount - $paidAmount;
+                } else {
+                    // If not overdue, just the fee amount minus what's paid
+                    $voucher->total_amount_with_fine = $feeAmount - $paidAmount;
+                }
+                
+                // Also set the amount field for backward compatibility
+                $voucher->amount = $voucher->fee_amount;
+                
                 return $voucher;
             });
             
