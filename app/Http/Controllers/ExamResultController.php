@@ -13,7 +13,7 @@ class ExamResultController extends Controller
             'results' => 'required|array',
             'results.*.exam_subject_id' => 'required|exists:exam_subjects,id',
             'results.*.student_id' => 'required|exists:students,id',
-            'results.*.obtained_marks' => 'required|integer',
+            'results.*.obtained_marks' => 'required|numeric|min:0',
         ]);
 
         foreach ($request->results as $result) {

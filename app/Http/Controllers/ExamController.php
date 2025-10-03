@@ -111,7 +111,7 @@ class ExamController extends Controller
             'exam_id' => 'required|exists:exams,id',
             'marks' => 'required|array',
             'marks.*' => 'required|array',
-            'marks.*.*' => 'required|integer|min:0',
+            'marks.*.*' => 'required|numeric|min:0',
         ]);
 
         $params = $request->all();
