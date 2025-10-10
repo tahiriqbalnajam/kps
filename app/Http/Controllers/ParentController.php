@@ -79,17 +79,30 @@ class ParentController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required',
-            'phone' => 'required',
-            'password' => 'required',
-            'address' => 'required',
-            'profession' => 'required',
-            'cnic' => 'required',
+            'name' => 'required|string|max:255',
+            'phone' => 'required|string|max:20',
+            'password' => 'required|string|min:6',
+            'address' => 'required|string',
+            'profession' => 'required|string|max:255',
+            'cnic' => 'required|string|max:15',
         ]);
         
-        $parent = $this->parentService->createParent($validated);
-        
-        return response()->json(new JsonResponse(['parent' => $parent]));
+        try {
+            $parent = $this->parentService->createParent($validated);
+            
+            return response()->json(new JsonResponse(['parent' => $parent]));
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create parent: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -123,9 +136,31 @@ class ParentController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $parent = $this->parentService->updateParent($id, $request->all());
+        $request->validate([
+            'name' => 'sometimes|required|string|max:255',
+            'phone' => 'sometimes|required|string|max:20',
+            'password' => 'sometimes|nullable|string|min:6',
+            'address' => 'sometimes|required|string',
+            'profession' => 'sometimes|required|string|max:255',
+            'cnic' => 'sometimes|required|string|max:20',
+        ]);
         
-        return response()->json(new JsonResponse(['parent' => $parent]));
+        try {
+            $parent = $this->parentService->updateParent($id, $request->all());
+            
+            return response()->json(new JsonResponse(['parent' => $parent]));
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update parent: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /**

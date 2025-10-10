@@ -35,16 +35,21 @@ service.interceptors.response.use(
     return response.data;
   },
   error => {
-    let message = error.message;
-    if (error.response.data && error.response.data.message) {
-      message = error.response.data.message;
-    }
+    // Skip showing generic error for validation errors (422)
+    // Let components handle validation errors specifically
+    if (error.response && error.response.status !== 422) {
+      let message = error.message;
+      if (error.response.data && error.response.data.message) {
+        message = error.response.data.message;
+      }
 
-    ElMessage({
-      message: message,
-      type: 'error',
-      duration: 5 * 1000,
-    });
+      ElMessage({
+        message: message,
+        type: 'error',
+        duration: 5 * 1000,
+      });
+    }
+    
     return Promise.reject(error);
   }
 );

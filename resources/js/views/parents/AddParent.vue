@@ -143,31 +143,69 @@ export default {
       this.$refs[formName].validate(
         async (valid) => {
           if (valid) {
-            if(this.parent.id != '') {
-              await parentsPro.update(this.parent.id, this.parent);
-              this.cancelAddParent();
-            } else {
-              this.loading = true;
-              await parentsPro.store(this.parent)
-                .then(response => {
-                  this.$message({
-                    type: 'success',
-                    message: 'Parent '+ this.parent.name + ' added successfully'
+            try {
+              if(this.parent.id != '') {
+                // Update existing parent
+                await parentsPro.update(this.parent.id, this.parent);
+                this.$message({
+                  type: 'success',
+                  message: 'Parent ' + this.parent.name + ' updated successfully'
+                });
+                this.cancelAddParent();
+              } else {
+                // Create new parent
+                await parentsPro.store(this.parent);
+                this.$message({
+                  type: 'success',
+                  message: 'Parent ' + this.parent.name + ' added successfully'
+                });
+                this.cancelAddParent();
+              }
+            } catch (error) {
+              console.error('Error submitting parent:', error);
+              
+              // Handle validation errors (422)
+              if (error.response && error.response.status === 422) {
+                const errors = error.response.data.errors;
+                if (errors) {
+                  // Display all validation errors
+                  Object.keys(errors).forEach(field => {
+                    const errorMessages = errors[field];
+                    if (Array.isArray(errorMessages) && errorMessages.length > 0) {
+                      this.$message({
+                        type: 'error',
+                        message: `${field}: ${errorMessages[0]}`,
+                        duration: 5000
+                      });
+                    }
                   });
-                  this.loading = false;
-                  this.cancelAddParent();
-                })
-                .catch(error => {
+                } else if (error.response.data.message) {
                   this.$message({
                     type: 'error',
-                    message: 'Something wrong while adding parent' + error,
+                    message: error.response.data.message,
+                    duration: 5000
                   });
-                  this.loading = false;
-                })
-                .finally(() => {
-                  this.loading = false;
+                }
+              } else if (error.response && error.response.data && error.response.data.message) {
+                // Handle other errors with message
+                this.$message({
+                  type: 'error',
+                  message: error.response.data.message,
+                  duration: 5000
                 });
+              } else {
+                // Generic error
+                this.$message({
+                  type: 'error',
+                  message: 'Something went wrong while saving parent. Please try again.',
+                  duration: 5000
+                });
+              }
+            } finally {
+              this.loading = false;
             }
+          } else {
+            this.loading = false;
           }
         }
       );
