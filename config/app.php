@@ -161,7 +161,7 @@ return [
         Illuminate\Translation\TranslationServiceProvider::class,
         Illuminate\Validation\ValidationServiceProvider::class,
         Illuminate\View\ViewServiceProvider::class,
-        
+
         /*
          * Package Service Providers...
          */
@@ -178,6 +178,7 @@ return [
         App\Providers\AttendanceServiceProvider::class,
         App\Providers\ExamServiceProvider::class,
         App\Providers\ParentServiceProvider::class,
+        Berkayk\OneSignal\OneSignalServiceProvider::class
 
     ],
 
@@ -233,6 +234,7 @@ return [
         'URL' => Illuminate\Support\Facades\URL::class,
         'Validator' => Illuminate\Support\Facades\Validator::class,
         'View' => Illuminate\Support\Facades\View::class,
+        'OneSignal' => Berkayk\OneSignal\OneSignalFacade::class
 
     ],
 

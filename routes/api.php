@@ -18,6 +18,10 @@ use Illuminate\Contracts\Routing\Registrar as RouteContract;
 | is assigned the "api" middleware group. Enjoy building your API!
 |
 */
+//OneSignal Notification
+Route::post('save-onesignal-id', [\App\Http\Controllers\NotificationController::class, 'saveOneSignalId']);
+
+
 //students
 Route::apiResource('students', 'StudentController');
 Route::post('students/export', 'StudentController@exportStudents'); // New route for export
