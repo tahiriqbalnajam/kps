@@ -52,8 +52,7 @@ class AttendanceService implements AttendanceServiceInterface
                 CASE 
                     WHEN h.holiday_date IS NOT NULL THEN h.description
                     WHEN DAYOFWEEK(c.date) = 1 THEN 'Sun' -- 1 for Sunday in MySQL
-                    WHEN a.id IS NOT NULL THEN 'P'
-                    WHEN a.id IS NULL AND c.date <= CURRENT_DATE THEN 'A'
+                    WHEN a.id IS NOT NULL AND a.status IS NOT NULL AND a.status != '' THEN a.status
                     ELSE '-'
                 END AS attendance_status
             FROM
@@ -67,6 +66,7 @@ class AttendanceService implements AttendanceServiceInterface
             WHERE
                 c.date BETWEEN ? AND ?
                 AND s.class_id = ?
+                AND s.status = 'enable'
             ORDER BY
                 s.id, c.date;
         ", [$start_month, $end_month, $class_id]);

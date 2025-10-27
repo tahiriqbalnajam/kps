@@ -50,7 +50,18 @@
         </tr>
         <tr v-for="student in attendance.students" :key="student.id">
           <td>{{ student.name }}</td>
-          <td v-for="att in student.attendances" :key="att.id" :class="{'absent': (att == 'A')}">{{att}}</td>
+          <td v-for="att in student.attendances" 
+              :key="att.id" 
+              :class="{
+                'absent': (att === 'absent' || att === 'A'),
+                'present': (att === 'present' || att === 'P'),
+                'leave': (att === 'leave' || att === 'L'),
+                'sunday': (att === 'Sun'),
+                'not-marked': (att === '-'),
+                'holiday': isHoliday(formatAttendance(att))
+              }">
+            {{ formatAttendance(att) }}
+          </td>
         </tr>
       </table>
     </el-scrollbar>
@@ -73,12 +84,6 @@ export default {
     dateformat: (date) => {
       return (!date) ? '' : moment(date).format('DD MMM, YYYY');
     },
-    attend(att) {
-      if(att === 'absent') return 'A';
-      if(att === 'present') return 'P';
-      if(att === 'leave') return 'L';
-      return att;
-    },
   },
   data() {
     return {
@@ -96,7 +101,7 @@ export default {
       },
       query: {
         page: 1,
-        limit: 15,
+        limit: 100,
         class: '',
         month: '',
       },
@@ -104,6 +109,36 @@ export default {
         stdclass: '',
       },
     };
+  },
+  computed: {
+    dayHeaders() {
+      if (!this.query.month) return [];
+      
+      const month = moment(this.query.month);
+      const daysInMonth = month.daysInMonth();
+      const headers = [];
+      
+      for (let day = 1; day <= daysInMonth; day++) {
+        const currentDate = month.clone().date(day);
+        const dayOfWeek = currentDate.day(); // 0 = Sunday, 1 = Monday, etc.
+        
+        if (dayOfWeek === 0) {
+          headers.push({
+            type: 'sunday',
+            day: day,
+            name: 'Sunday'
+          });
+        } else {
+          headers.push({
+            type: 'regular',
+            day: day,
+            name: currentDate.format('ddd')
+          });
+        }
+      }
+      
+      return headers;
+    }
   },
   created() {
     this.getList();
@@ -119,6 +154,12 @@ export default {
     async getReport() {
       const { data } = await studentAttMonthlyReport(this.query);
       this.attendance.students = data.students;
+    },
+    formatAttendance(att) {
+      if(att === 'absent') return 'A';
+      if(att === 'present') return 'P';
+      if(att === 'leave') return 'L';
+      return att;
     },
     isHoliday(formattedAtt) {
       // Check if it's a holiday (not a standard attendance status or special day)
@@ -188,22 +229,74 @@ export default {
   .tblwdborder {
   border-collapse: collapse;
   width: 100%;
+  font-size: 12px;
 }
 .tblwdborder th {
-  text-align: left;	
+  text-align: center;	
   border: 1px solid #0000001a;
-  padding: 3px;
+  padding: 5px 3px;
+  background-color: #f5f7fa;
+  font-weight: bold;
+  min-width: 25px;
 }
-.tblwdborder tr td, .tblwdborder tr  th {
+.tblwdborder tr td, .tblwdborder tr th {
   border: 1px solid #0000001a;
   padding: 3px;
+  text-align: center;
 }
 .tblwdborder tr:nth-child(odd) {
    background-color: #e1e0e061;
 }
+.tblwdborder tr td:first-child {
+  text-align: left;
+  padding-left: 8px;
+  font-weight: 500;
+  min-width: 150px;
+}
+.sunday-header {
+  background-color: #fef0f0 !important;
+  color: #f56c6c;
+}
+.holiday-header {
+  background-color: #f0f2ff !important;
+  color: #722ed1;
+}
+.vertical-text {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  white-space: nowrap;
+  font-size: 10px;
+}
 .absent {
-  background: red;
-  color:#fff;
+  background: #ff4d4f;
+  color: #fff;
+  font-weight: bold;
+}
+.present {
+  background: #52c41a;
+  color: #fff;
+  font-weight: bold;
+}
+.leave {
+  background: #faad14;
+  color: #fff;
+  font-weight: bold;
+}
+.sunday {
+  background: #d9d9d9;
+  color: #666;
+  font-style: italic;
+}
+.not-marked {
+  background: #f5f5f5;
+  color: #999;
+  font-style: italic;
+}
+.holiday {
+  background: #722ed1;
+  color: #fff;
+  font-size: 11px;
+  font-weight: bold;
 }
 </style>
 
