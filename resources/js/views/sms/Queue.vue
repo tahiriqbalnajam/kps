@@ -121,6 +121,7 @@ import ElSvgItem from "@/components/Item/ElSvgItem.vue"
 import { Plus, Message, Delete, Select } from '@element-plus/icons-vue';
 import {
   completeSMS,
+  deleteAllSMS,
   getDefaultMessageChannel,
   processSMS,
   processWhatsApp,
@@ -187,30 +188,7 @@ export default {
       });
     },
 
-    async deleteAll() {
-      this.$confirm('Are you sure you want to delete all SMS in the queue?', 'Warning', {
-        confirmButtonText: 'OK',
-        cancelButtonText: 'Cancel',
-        type: 'warning'
-      }).then(async() => {
-        this.sendsmsloading = true;
-        await completeSMS().then(result => {
-          this.sendsmsloading = false;
-          this.getList();
-          this.$message({
-            message: 'All SMS deleted successfully.',
-            type: 'success',
-          });
-        }).catch(() => {
-          this.$message({
-            message: 'Something went wrong while deleting all SMS.',
-            type: 'error',
-          });
-          this.sendsmsloading = false;
-          return false;
-        });
-      });
-    },
+    
   directives: { },
   data() {
     return {
@@ -253,6 +231,30 @@ export default {
 
     formatDate(date) {
       return moment(date).format('DD/MM/YYYY');
+    },
+    async deleteAll() {
+      this.$confirm('Are you sure you want to delete all SMS in the queue?', 'Warning', {
+        confirmButtonText: 'OK',
+        cancelButtonText: 'Cancel',
+        type: 'warning'
+      }).then(async() => {
+        this.sendsmsloading = true;
+        await deleteAllSMS().then(result => {
+          this.sendsmsloading = false;
+          this.getList();
+          this.$message({
+            message: 'All SMS deleted successfully.',
+            type: 'success',
+          });
+        }).catch(() => {
+          this.$message({
+            message: 'Something went wrong while deleting all SMS.',
+            type: 'error',
+          });
+          this.sendsmsloading = false;
+          return false;
+        });
+      });
     },
     // Add this method to handle table selection changes
     handleSelectionChange(val) {
@@ -319,27 +321,45 @@ export default {
         cancelButtonText: 'Cancel',
         type: 'warning'
       }).then(async() => {
-        if (isMultiDelete) {
-          // Multiple delete
-          if (this.multipleSelection.length === 0) return;
+        try {
+          this.loading = true;
           
-          const deletePromises = this.multipleSelection.map(item => smsqueuePro.destroy(item.id));
-          await Promise.all(deletePromises);
+          if (isMultiDelete) {
+            // Multiple delete
+            if (this.multipleSelection.length === 0) {
+              this.loading = false;
+              return;
+            }
+            
+            const count = this.multipleSelection.length;
+            const deletePromises = this.multipleSelection.map(item => smsqueuePro.destroy(item.id));
+            await Promise.all(deletePromises);
+            
+            this.$message({
+              type: 'success',
+              message: `${count} record(s) deleted successfully`
+            });
+            this.multipleSelection = [];
+          } else {
+            // Single delete
+            await smsqueuePro.destroy(id);
+            this.$message({
+              type: 'success',
+              message: name + ' deleted successfully'
+            });
+          }
           
+          await this.getList();
+          this.loading = false;
+        } catch (error) {
+          this.loading = false;
           this.$message({
-            type: 'success',
-            message: `${this.multipleSelection.length} records deleted successfully`
-          });
-          this.multipleSelection = [];
-        } else {
-          // Single delete
-          await smsqueuePro.destroy(id);
-          this.$message({
-            type: 'success',
-            message: name + ' deleted successfully'
+            type: 'error',
+            message: 'Error deleting SMS: ' + (error.message || 'Unknown error')
           });
         }
-        this.getList();
+      }).catch(() => {
+        // User cancelled
       });
     },
     async onSubmit() {

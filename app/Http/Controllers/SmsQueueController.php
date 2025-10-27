@@ -11,6 +11,7 @@ use App\Models\TestResult;
 use Illuminate\Support\Arr;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use App\Models\SmsQueue as SMS;
 use Illuminate\Http\JsonResponse;
 use App\Laravue\JsonResponse as LaravueJsonResponse;
@@ -339,7 +340,7 @@ class SmsQueueController extends Controller
             }
 
             // Get SMS template from settings
-            $settings = Settings::where('setting_key', ['test_sms_template', 'school_name', 'message_channel'])
+            $settings = Settings::whereIn('setting_key', ['test_sms_template', 'school_name', 'message_channel'])
                                ->pluck('setting_value', 'setting_key');
 
             $template = $settings->get('test_sms_template');
@@ -427,6 +428,49 @@ class SmsQueueController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'An error occurred: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Delete all SMS records from the queue
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function deleteAll()
+    {
+        try {
+            // Get count before deleting
+            $deletedCount = SMS::count();
+            
+            if ($deletedCount === 0) {
+                return response()->json([
+                    'success' => true,
+                    'message' => "No SMS records to delete."
+                ]);
+            }
+            
+            // Use delete() instead of truncate() to respect foreign keys and model events
+            // If you want to use truncate, you need to disable foreign key checks first
+            DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+            SMS::truncate();
+            DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+            
+            return response()->json([
+                'success' => true,
+                'message' => "All {$deletedCount} SMS record(s) deleted successfully."
+            ]);
+        } catch (Exception $e) {
+            // Re-enable foreign key checks in case of error
+            try {
+                DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+            } catch (Exception $ex) {
+                // Ignore if this fails
+            }
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while deleting SMS records: ' . $e->getMessage()
             ], 500);
         }
     }

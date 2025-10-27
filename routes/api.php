@@ -76,6 +76,7 @@ Route::apiResource('pendingfee', 'PendingFeeController');
 
 //Route::apiResource('settings', 'SettingController');
 Route::apiResource('settings', 'SettingsController');
+Route::delete('smsqueue/delete-all', 'SmsQueueController@deleteAll');
 Route::apiResource('smsqueue', 'SmsQueueController');
 Route::get('sendsms', 'SmsQueueController@sendsms');
 Route::get('default/message/channel', 'SettingsController@defaultMessageChannel');

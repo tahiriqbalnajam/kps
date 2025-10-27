@@ -40,6 +40,12 @@ class Resource {
       method: 'delete',
     });
   }
+  deleteAll() {
+    return request({
+      url: '/' + this.uri + '/delete-all',
+      method: 'delete',
+    });
+  }
 }
 
 export { Resource as default };

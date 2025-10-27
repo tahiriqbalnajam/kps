@@ -35,3 +35,10 @@ export function completeSMS() {
     method: 'post',
   });
 }
+
+export function deleteAllSMS() {
+  return request({
+    url: '/smsqueue/delete-all',
+    method: 'delete',
+  });
+}
