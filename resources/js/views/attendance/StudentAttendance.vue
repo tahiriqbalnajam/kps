@@ -28,7 +28,7 @@
             <el-button 
               type="primary" 
               :loading="loading" 
-              :disabled="attendance.students.length <= 0" 
+              :disabled="attendance.students.length <= 0 || isSelectedDateSunday" 
               @click="submitAttendance"
             >
               {{ loading ? 'Submitting ...' : attendanceAlreadyMarked ? 'Update Attendance' : 'Save Attendance' }}
@@ -36,6 +36,18 @@
           </el-col>
         </el-row>
       </head-controls>
+    </div>
+    
+    <!-- Sunday Warning Message -->
+    <div v-if="isSelectedDateSunday" class="sunday-warning">
+      <el-alert
+        title="Sunday Selected"
+        type="warning"
+        description="Attendance cannot be taken on Sundays. Please select a different date."
+        show-icon
+        :closable="false"
+        style="margin-bottom: 20px;"
+      />
     </div>
     
     <!-- Attendance Summary when already marked -->
@@ -177,6 +189,12 @@ export default {
       )
     },
     
+    isSelectedDateSunday() {
+      if (!this.attendance.date) return false;
+      const selectedDate = new Date(this.attendance.date);
+      return selectedDate.getDay() === 0; // 0 = Sunday
+    },
+    
     getPresentCount() {
       return this.attendance.students.filter(student => 
         student.previousAttendance === 'present'
@@ -254,6 +272,19 @@ export default {
       
       if (!this.query.stdclass) {
         // Clear students if no class is selected
+        this.attendance.students = [];
+        this.attendance.stdclass = '';
+        return;
+      }
+      
+      // Check if selected date is Sunday
+      if(this.isSelectedDateSunday) {
+        this.$notify({
+          title: 'Sunday Selected',
+          message: 'Attendance cannot be taken on Sundays. Please select a different date.',
+          type: 'warning',
+          duration: 5000
+        });
         this.attendance.students = [];
         this.attendance.stdclass = '';
         return;
@@ -393,6 +424,12 @@ export default {
       
       if(!this.attendance.stdclass) {
         this.$message.error('Class ID is missing. Please reselect the class.');
+        return;
+      }
+      
+      // Check if selected date is Sunday
+      if(this.isSelectedDateSunday) {
+        this.$message.error('Attendance cannot be taken on Sundays. Please select a different date.');
         return;
       }
 

@@ -109,6 +109,20 @@ class TeacherAttendanceController extends Controller
         $date = $request->date;
         $teachers = $request->teachers;
         $type = $request->type;
+        
+        // Check if the date is Sunday (only for regular attendance, not generatepay)
+        if($type !== 'generatepay' && $date) {
+            $dayOfWeek = Carbon::parse($date)->dayOfWeek;
+            if ($dayOfWeek === Carbon::SUNDAY) {
+                return response()->json([
+                    'message' => 'Attendance cannot be taken on Sundays.',
+                    'errors' => [
+                        'date' => ['Attendance is not allowed on Sundays.']
+                    ]
+                ], 422);
+            }
+        }
+        
         if($type == 'generatepay'){
             $teachers_salary = $request->resource;
             print_r($teachers_salary);

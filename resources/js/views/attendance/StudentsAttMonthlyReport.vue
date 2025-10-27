@@ -5,15 +5,15 @@
         <el-row :gutter="20">
           <el-col :span="5">
             <el-form-item>
-              <el-select v-model="query.class" placeholder="Select class">
-                <el-option
-                  v-for="stdclass in classes"
-                  :key="stdclass.id"
-                  :label="stdclass.name"
-                  :value="stdclass.id"
-                />
-              </el-select>
-              </el-form-item>
+              <el-tree-select 
+                check-strictly
+                v-model="query.class" 
+                :data="classes"
+                placeholder="Select class/group..." 
+                clearable 
+                class="filter-item"
+              />
+            </el-form-item>
           </el-col>
           <el-col :span="5">
             <el-form-item>
@@ -27,7 +27,7 @@
              </el-form-item>
           </el-col>
           <el-col :span="5">
-            <el-button type="primary" :loading="loading"  @click="getReport()">
+            <el-button type="primary" :loading="loading" :disabled="!query.class || !query.month" @click="getReport()">
               {{ loading ? 'Submitting ...' : 'get report' }}
             </el-button>
           </el-col>
@@ -148,12 +148,90 @@ export default {
       this.getList();
     }, 500),
     async getList() {
-      const { data } = await classPro.list(this.query);
-      this.classes = data.classes.data;
+      let query = {
+        include: 'sections'
+      };
+      const{ data } = await classPro.list(query);
+      // Transform the classes data to include class and section hierarchy for tree select
+      this.classes = data.classes.data.map(classItem => {
+        // Create the parent class node
+        const classNode = {
+          value: `class_${classItem.id}`,
+          label: `${classItem.name}`,
+          id: classItem.id,
+          type: 'class',
+          name: classItem.name,
+          students_count: classItem.students_count,
+          males_count: classItem.males_count,
+          females_count: classItem.females_count
+        };
+        
+        // Add children if there are sections
+        if (classItem.sections && classItem.sections.length > 0) {
+          classNode.children = classItem.sections.map(section => ({
+            value: `section_${section.id}`,
+            label: `${section.name}`,
+            id: section.id,
+            type: 'section',
+            class_id: classItem.id,
+            name: section.name,
+            students_count: section.students_count,
+            males_count: section.males_count,
+            females_count: section.females_count
+          }));
+        }
+        
+        return classNode;
+      });
     },
     async getReport() {
-      const { data } = await studentAttMonthlyReport(this.query);
-      this.attendance.students = data.students;
+      this.loading = true;
+      
+      try {
+        // Parse the selected class/section value
+        let reportQuery = {
+          month: this.query.month
+        };
+        
+        const selectedValue = this.query.class.toString();
+        
+        if (selectedValue.startsWith('class_')) {
+          // Extract class ID from class_X format
+          const classId = selectedValue.split('_')[1];
+          reportQuery.class = classId;
+        } else if (selectedValue.startsWith('section_')) {
+          // Extract section ID from section_X format  
+          const sectionId = selectedValue.split('_')[1];
+          reportQuery.section_id = sectionId;
+          
+          // Find the class ID for this section
+          const selectedSection = this.findSectionById(sectionId);
+          if (selectedSection) {
+            reportQuery.class = selectedSection.class_id;
+          }
+        }
+        
+        const { data } = await studentAttMonthlyReport(reportQuery);
+        this.attendance.students = data.students;
+      } catch (error) {
+        console.error('Error fetching attendance report:', error);
+        this.$message.error('Error fetching attendance report. Please try again.');
+      }
+      
+      this.loading = false;
+    },
+    
+    // Helper method to find section by ID and get its class_id
+    findSectionById(sectionId) {
+      for (const classItem of this.classes) {
+        if (classItem.children) {
+          const section = classItem.children.find(section => section.id == sectionId);
+          if (section) {
+            return section;
+          }
+        }
+      }
+      return null;
     },
     formatAttendance(att) {
       if(att === 'absent') return 'A';

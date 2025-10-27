@@ -43,6 +43,20 @@ class AttendanceService implements AttendanceServiceInterface
         $start_month = Carbon::createFromFormat('Y-m-d', $request['month'])->firstOfMonth()->format('Y-m-d');
         $end_month = Carbon::createFromFormat('Y-m-d', $request['month'])->lastOfMonth()->format('Y-m-d');
         $class_id = $request['class'];
+        
+        // Build the WHERE clause based on whether section_id is provided
+        $whereClause = "c.date BETWEEN ? AND ? AND s.status = 'enable'";
+        $params = [$start_month, $end_month];
+        
+        if (isset($request['section_id']) && !empty($request['section_id'])) {
+            // Filter by specific section
+            $whereClause .= " AND s.section_id = ?";
+            $params[] = $request['section_id'];
+        } else {
+            // Filter by class (all sections in the class)
+            $whereClause .= " AND s.class_id = ?";
+            $params[] = $class_id;
+        }
 
         $attendance = DB::select("
           SELECT
@@ -64,12 +78,10 @@ class AttendanceService implements AttendanceServiceInterface
             LEFT JOIN
                 holidays h ON c.date = h.holiday_date
             WHERE
-                c.date BETWEEN ? AND ?
-                AND s.class_id = ?
-                AND s.status = 'enable'
+                {$whereClause}
             ORDER BY
                 s.id, c.date;
-        ", [$start_month, $end_month, $class_id]);
+        ", $params);
 
         foreach($attendance as $attend) {
             $students[$attend->student_id]['name'] = $attend->student_name;

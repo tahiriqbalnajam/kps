@@ -15,13 +15,25 @@
             </el-form-item>
           </el-col>
           <el-col :span="5">
-            <el-button type="primary" :loading="loading" :disabled="attendance.teachers.length <= 0" @click="submitAttendance">
+            <el-button type="primary" :loading="loading" :disabled="attendance.teachers.length <= 0 || isSelectedDateSunday" @click="submitAttendance">
               {{ loading ? 'Submitting ...' : 'Save Attendance' }}
             </el-button>
           </el-col>
         </el-row>
       </head-controls>
       </div>
+    
+    <!-- Sunday Warning Message -->
+    <div v-if="isSelectedDateSunday" class="sunday-warning">
+      <el-alert
+        title="Sunday Selected"
+        type="warning"
+        description="Attendance cannot be taken on Sundays. Please select a different date."
+        show-icon
+        :closable="false"
+        style="margin-bottom: 20px;"
+      />
+    </div>
     <el-table
       :data="attendance.teachers"
       style="width: 100%"
@@ -103,6 +115,11 @@ export default {
     };
   },
   computed: {
+    isSelectedDateSunday() {
+      if (!this.query.date) return false;
+      const selectedDate = new Date(this.query.date);
+      return selectedDate.getDay() === 0; // 0 = Sunday
+    }
   },
   created() {
     this.loadInitialData();
@@ -149,6 +166,19 @@ export default {
     }, 500),
     async getAttendanceByDate() {
       this.attendance.date = this.query.date;
+      
+      // Check if selected date is Sunday
+      if(this.isSelectedDateSunday) {
+        this.$notify({
+          title: 'Sunday Selected',
+          message: 'Attendance cannot be taken on Sundays. Please select a different date.',
+          type: 'warning',
+          duration: 5000
+        });
+        this.attendance.teachers = [];
+        return;
+      }
+      
       await this.getAttendance();
       this.mergeAttendanceWithTeachers();
     },
@@ -191,6 +221,12 @@ export default {
       }
     },
     async submitAttendance(){
+      // Check if selected date is Sunday
+      if(this.isSelectedDateSunday) {
+        this.$message.error('Attendance cannot be taken on Sundays. Please select a different date.');
+        return;
+      }
+      
       this.loading = true;
       try {
         await attendPro.store(this.attendance);

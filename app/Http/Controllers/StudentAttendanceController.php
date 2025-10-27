@@ -133,6 +133,17 @@ class StudentAttendanceController extends Controller
     {
         $date = $request->date;
         $stdclass = $request->stdclass;
+        
+        // Check if the date is Sunday
+        $dayOfWeek = Carbon::parse($date)->dayOfWeek;
+        if ($dayOfWeek === Carbon::SUNDAY) {
+            return response()->json([
+                'message' => 'Attendance cannot be taken on Sundays.',
+                'errors' => [
+                    'date' => ['Attendance is not allowed on Sundays.']
+                ]
+            ], 422);
+        }
         StudentAttendance::where(['attendance_date'=> $date, 'class_id' => $stdclass])->delete();
         $students = $request->students;
 
