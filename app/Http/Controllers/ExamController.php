@@ -167,4 +167,33 @@ class ExamController extends Controller
         $reportData = $this->examService->getExamReports($examId);
         return response()->json(new JsonResponse($reportData));
     }
+
+    public function getAwardList($examId)
+    {
+        try {
+            $exam = Exam::with(['classes', 'examSubjects.subject'])->findOrFail($examId);
+            
+            // Get students for this exam's class
+            $students = \App\Models\Student::with('parents')
+                ->where('class_id', $exam->class_id)
+                ->where('status', 'enable')
+                ->orderBy('roll_no')
+                ->get();
+
+            // Calculate total marks
+            $totalPossibleMarks = $exam->examSubjects->sum('total_marks');
+
+            return response()->json(new JsonResponse([
+                'exam' => $exam,
+                'students' => $students,
+                'totalPossibleMarks' => $totalPossibleMarks
+            ]));
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to get award list data',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

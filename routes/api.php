@@ -130,6 +130,7 @@ Route::get('exams/{id}/subjects', 'ExamController@getExamSubjects');
 Route::get('/exams/{id}/subjects/marks', 'ExamController@getExamById');
 Route::post('/exams/marks', 'ExamController@addExamMarks');
 Route::get('exams/{id}/reports', 'ExamController@getExamReports');
+Route::get('exams/{id}/award-list', 'ExamController@getAwardList');
 
 //test
 Route::apiResource('examstest', 'ExamTestController');

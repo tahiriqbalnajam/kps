@@ -76,28 +76,32 @@
             {{changeDate(scope.row.created_at)}}
           </template>
         </el-table-column>
-        <el-table-column label="Actions">
+        <el-table-column label="Actions" width="100" align="center">
           <template #default="scope">
-            <el-tooltip content="Edit Subjects" placement="top">
-              <el-button type="warning" size="small" @click="editExam(scope.row)">
-                <el-icon><Edit /></el-icon>
+            <el-dropdown trigger="click" @command="handleCommand($event, scope.row)">
+              <el-button type="primary" size="small">
+                Actions <el-icon class="el-icon--right"><arrow-down /></el-icon>
               </el-button>
-            </el-tooltip>
-            <el-tooltip content="Add Marks" placement="top">
-              <el-button type="primary" size="small" @click="openAddMarks(scope.row)">
-                <el-icon><DocumentAdd /></el-icon>
-              </el-button>
-            </el-tooltip>
-            <el-tooltip content="View Marks" placement="top">
-              <el-button type="info" size="small" @click="openViewMarksList(scope.row)">
-                <el-icon><List /></el-icon>
-              </el-button>
-            </el-tooltip>
-            <el-tooltip content="Print Reports" placement="top">
-              <el-button type="success" size="small" @click="openPrintReports(scope.row)">
-                <el-icon><GoldMedal /></el-icon>
-              </el-button>
-            </el-tooltip>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item command="edit">
+                    <el-icon><Edit /></el-icon> Edit Subjects
+                  </el-dropdown-item>
+                  <el-dropdown-item command="add-marks">
+                    <el-icon><DocumentAdd /></el-icon> Add Marks
+                  </el-dropdown-item>
+                  <el-dropdown-item command="view-marks">
+                    <el-icon><List /></el-icon> View Marks
+                  </el-dropdown-item>
+                  <el-dropdown-item command="print-reports">
+                    <el-icon><GoldMedal /></el-icon> Print Reports
+                  </el-dropdown-item>
+                  <el-dropdown-item command="award-list" divided>
+                    <el-icon><Document /></el-icon> Award List
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
           </template>
         </el-table-column>
       </el-table>
@@ -126,10 +130,18 @@
     <add-marks v-if="addMarksVisible" :addMarksVisible="addMarksVisible" :exam="selectedExam" :class_id="selectedExam.class_id" @close="addMarksVisible = false" />
     <view-marks-list v-if="viewMarksListVisible" :viewMarksListVisible="viewMarksListVisible" :exam="selectedExam" @close="viewMarksListVisible = false" />
     <print-reports v-if="printReportsVisible" :printReportsVisible="printReportsVisible" :exam="selectedExam" @close="printReportsVisible = false" />
+    <award-list-print 
+      v-if="awardListVisible" 
+      v-model="awardListVisible"
+      :examData="awardListData.exam" 
+      :students="awardListData.students"
+      :totalPossibleMarks="awardListData.totalPossibleMarks"
+      @close="awardListVisible = false" 
+    />
   </div>
 </template>
 <script>
-import { Edit, Plus, Download, DocumentAdd, List, GoldMedal } from '@element-plus/icons-vue';
+import { Edit, Plus, Download, DocumentAdd, List, GoldMedal, ArrowDown, Document } from '@element-plus/icons-vue';
 import { debounce } from 'lodash';  // Add this import
 import Pagination from '@/components/Pagination/index.vue';
 import HeadControls from '@/components/HeadControls.vue';
@@ -138,6 +150,7 @@ import AddExam from './components/AddExam.vue';
 import AddMarks from './components/AddMarks.vue';
 import ViewMarksList from './components/ViewMarksList.vue';
 import PrintReports from './components/PrintReports.vue';
+import AwardListPrint from './components/AwardListPrint.vue';
 import moment from 'moment';
 const examRes = new Resource('exams');
 const classRes = new Resource('classes');
@@ -151,6 +164,7 @@ export default {
         AddMarks,
         ViewMarksList,
         PrintReports,
+        AwardListPrint,
     },
     data() {
         return {
@@ -161,6 +175,12 @@ export default {
           addMarksVisible: false,
           viewMarksListVisible: false,
           printReportsVisible: false,
+          awardListVisible: false,
+          awardListData: {
+            exam: {},
+            students: [],
+            totalPossibleMarks: 0,
+          },
           selectedExam: null,
           examToEdit: null,
           classes: [],
@@ -235,6 +255,57 @@ export default {
       openPrintReports(exam) {
         this.selectedExam = exam;
         this.printReportsVisible = true;
+      },
+      handleCommand(command, exam) {
+        switch(command) {
+          case 'edit':
+            this.editExam(exam);
+            break;
+          case 'add-marks':
+            this.openAddMarks(exam);
+            break;
+          case 'view-marks':
+            this.openViewMarksList(exam);
+            break;
+          case 'print-reports':
+            this.openPrintReports(exam);
+            break;
+          case 'award-list':
+            this.downloadAwardList(exam);
+            break;
+        }
+      },
+      async downloadAwardList(exam) {
+        try {
+          this.$message.info('Loading award list...');
+          
+          const response = await fetch(`/api/exams/${exam.id}/award-list`, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`,
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+            },
+          });
+          
+          if (!response.ok) {
+            throw new Error('Failed to load award list');
+          }
+          
+          const result = await response.json();
+          
+          this.awardListData = {
+            exam: result.data.exam,
+            students: result.data.students,
+            totalPossibleMarks: result.data.totalPossibleMarks,
+          };
+          
+          this.awardListVisible = true;
+          
+        } catch (error) {
+          console.error('Error loading award list:', error);
+          this.$message.error('Failed to load award list');
+        }
       },
     },
     mounted() {

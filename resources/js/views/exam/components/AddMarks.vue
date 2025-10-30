@@ -20,7 +20,14 @@
     </div>
 
       <el-table v-loading="loading" :data="students" style="width: 100%">
-        <el-table-column prop="name" label="Student Name" width="180"/>
+        <el-table-column label="Student Name" width="220">
+          <template #default="scope">
+            <div>
+              <div style="font-weight: 500;">{{ scope.row.name }}</div>
+              <div style="font-size: 12px; color: #909399;">{{ scope.row.parents?.name || 'N/A' }}</div>
+            </div>
+          </template>
+        </el-table-column>
         <el-table-column v-for="(subject, subjectIndex) in subjects" :key="subject.id" :label="subject.subject.title" width="120">
           <template #default="scope">
             <el-input 
