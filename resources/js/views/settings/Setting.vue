@@ -359,6 +359,54 @@ export default {
       } finally {
         this.form_element.updating = false;
       }
+    },
+    async onSubmit() {
+      this.form_element.updating = true;
+      try {
+        const formData = new FormData();
+        formData.append('teacher_leaves_allowed', this.teacher_form.teacher_leaves_allowed || 0);
+
+        await this.settingResource.store(formData);
+        await this.getList();
+        this.$message.success('Teacher settings updated successfully');
+      } catch (error) {
+        console.error('Error saving teacher settings:', error);
+        this.$message.error('Failed to save teacher settings');
+      } finally {
+        this.form_element.updating = false;
+      }
+    },
+    async saveExamSettings() {
+      this.form_element.updating = true;
+      try {
+        const formData = new FormData();
+        formData.append('result_header', this.exam_form.result_header || '');
+
+        await this.settingResource.store(formData);
+        await this.getList();
+        this.$message.success('Exam settings updated successfully');
+      } catch (error) {
+        console.error('Error saving exam settings:', error);
+        this.$message.error('Failed to save exam settings');
+      } finally {
+        this.form_element.updating = false;
+      }
+    },
+    async saveStudentSettings() {
+      this.form_element.updating = true;
+      try {
+        const formData = new FormData();
+        formData.append('admission_rules', this.student_form.admission_rules || '');
+
+        await this.settingResource.store(formData);
+        await this.getList();
+        this.$message.success('Student settings updated successfully');
+      } catch (error) {
+        console.error('Error saving student settings:', error);
+        this.$message.error('Failed to save student settings');
+      } finally {
+        this.form_element.updating = false;
+      }
     }
   }
 }

@@ -84,6 +84,7 @@
 <script>
 import HeadControls from '@/components/HeadControls.vue';
 import { allTeachersPay, saveSalary, findSavedPay } from '@/api/teacher';
+import Resource from '@/api/resource';
 
 export default {
   name:'TeachersPay',
@@ -94,13 +95,25 @@ export default {
       query:{
         month: new Date().toISOString().substr(0, 7) + '-01',
 
-      }
+      },
+      allowedLeaves: 0,
+      settingResource: new Resource('settings'),
     }
   },
   created(){
+    this.getSettings();
     this.getPay();
   },
   methods: {
+    async getSettings() {
+      try {
+        const { data } = await this.settingResource.list();
+        this.allowedLeaves = parseInt(data.settings.teacher_leaves_allowed) || 0;
+      } catch (error) {
+        console.error('Failed to load settings:', error);
+        this.allowedLeaves = 0;
+      }
+    },
     disabledDate(time) {
       return time.getTime() > Date.now()
     },
@@ -197,10 +210,13 @@ export default {
       const { data } = await allTeachersPay(this.query);
       this.teachers = data.pay.map((item) => ({
             ...item,
+            allow_leaves: this.allowedLeaves, // Set from settings
             fine: item.fine || '0', // Set default value if none exists
             bonus: item.bonus || '0', // Set default value if none exists
             paid: item.paid || '0', // Set default value if none exists
           }));
+      // Recalculate salary after setting allowed leaves
+      this.calc_salary();
     },
     getSummaries(param) {
       const { columns, data } = param
