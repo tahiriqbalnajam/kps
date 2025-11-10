@@ -24,6 +24,7 @@ Route::post('students/export', 'StudentController@exportStudents'); // New route
 Route::get('students/{id}/subject-wise-scores', 'StudentController@getSubjectWiseScores');
 //classes
 Route::apiResource('classes', 'ClassesController');
+Route::post('classes/bulk-update-priority', 'ClassesController@bulkUpdatePriority');
 //teachers
 //teachers
 Route::apiResource('teachers', 'TeacherController');

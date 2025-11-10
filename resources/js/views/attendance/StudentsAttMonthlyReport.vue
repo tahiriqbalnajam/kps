@@ -49,6 +49,7 @@
               <div v-else-if="dayInfo.type === 'holiday'" class="vertical-text">{{ dayInfo.name }}</div>
               <div v-else>{{ dayInfo.day }}</div>
             </th>
+            <th>%</th>
           </tr>
           <tr v-for="student in attendance.students" :key="student.id">
             <td>{{ student.name }}</td>
@@ -63,6 +64,9 @@
                   'holiday': isHoliday(formatAttendance(att))
                 }">
               {{ formatAttendance(att) }}
+            </td>
+            <td class="percentage-cell">
+              <strong>{{ getStudentPercentage(student) }}%</strong>
             </td>
           </tr>
         </table>
@@ -181,6 +185,62 @@ export default {
     },
     showSummary() {
       return this.attendance.students && Array.isArray(this.attendance.students) && this.attendance.students.length > 0;
+    },
+    studentRankings() {
+      if (!this.attendance.students || this.attendance.students.length === 0) {
+        return { top: [], bottom: [] };
+      }
+
+      const studentStats = this.attendance.students.map(student => {
+        let present = 0, absent = 0, leave = 0;
+
+        if (student.attendances && Array.isArray(student.attendances)) {
+          student.attendances.forEach(att => {
+            const formatted = this.formatAttendance(att);
+            if (formatted !== 'Sun' && formatted !== '-') {
+              if (formatted === 'P' || att === 'present') present++;
+              else if (formatted === 'A' || att === 'absent') absent++;
+              else if (formatted === 'L' || att === 'leave') leave++;
+            }
+          });
+        }
+
+        const total = present + absent + leave;
+        const percentage = total > 0 ? ((present / total) * 100).toFixed(1) : 0;
+
+        return {
+          id: student.id,
+          name: student.name,
+          percentage: parseFloat(percentage),
+          total
+        };
+      });
+
+      const validStats = studentStats.filter(s => s.total > 0);
+      
+      if (validStats.length === 0) {
+        return { top: [], bottom: [] };
+      }
+      
+      const sortedStats = [...validStats].sort((a, b) => b.percentage - a.percentage);
+      
+      // Get top 3 (highest attendance)
+      const top = sortedStats.slice(0, Math.min(3, sortedStats.length)).map((s, index) => ({ 
+        ...s, 
+        rank: index + 1 
+      }));
+      
+      // Get bottom 3 (lowest attendance) - only if we have more than 3 students
+      let bottom = [];
+      if (sortedStats.length > 3) {
+        const bottomStudents = sortedStats.slice(-3);
+        bottom = bottomStudents.map((s, index) => ({ 
+          ...s, 
+          rank: 3 - index  // Reverse rank: worst is 1, third worst is 3
+        }));
+      }
+
+      return { top, bottom };
     },
     summaryData() {
       if (!this.attendance.students || this.attendance.students.length === 0) {
@@ -373,6 +433,36 @@ export default {
       const standardValues = ['-', 'P', 'A', 'L', 'Sun'];
       return !standardValues.includes(formattedAtt);
     },
+    getStudentPercentage(student) {
+      let present = 0, absent = 0, leave = 0;
+
+      if (student.attendances && Array.isArray(student.attendances)) {
+        student.attendances.forEach(att => {
+          const formatted = this.formatAttendance(att);
+          if (formatted !== 'Sun' && formatted !== '-') {
+            if (formatted === 'P' || att === 'present') present++;
+            else if (formatted === 'A' || att === 'absent') absent++;
+            else if (formatted === 'L' || att === 'leave') leave++;
+          }
+        });
+      }
+
+      const total = present + absent + leave;
+      return total > 0 ? ((present / total) * 100).toFixed(1) : 0;
+    },
+    getStudentRank(studentId) {
+      const topStudent = this.studentRankings.top.find(s => s.id === studentId);
+      if (topStudent) {
+        return { rank: topStudent.rank, type: 'top' };
+      }
+
+      const bottomStudent = this.studentRankings.bottom.find(s => s.id === studentId);
+      if (bottomStudent) {
+        return { rank: bottomStudent.rank, type: 'bottom' };
+      }
+
+      return null;
+    },
     
     todayDate() {
       var today = new Date();
@@ -528,6 +618,26 @@ export default {
   font-size: 13px;
   padding: 8px 12px;
   margin: 3px 5px;
+}
+
+.percentage-cell {
+  min-width: 80px !important;
+  font-weight: bold;
+}
+
+.percentage-container {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-wrap: nowrap;
+}
+
+.rank-tag {
+  font-size: 11px !important;
+  padding: 2px 6px !important;
+  height: 20px !important;
+  line-height: 16px !important;
 }
 </style>
 

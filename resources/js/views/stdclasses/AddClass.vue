@@ -13,6 +13,10 @@
         <el-form-item label="Name" :label-width="formLabelWidth">
           <el-input v-model="stdclass.name" autocomplete="off"></el-input>
         </el-form-item>
+        <el-form-item label="Priority" :label-width="formLabelWidth">
+          <el-input-number v-model="stdclass.priority" :min="0" :max="9999" placeholder="0"></el-input-number>
+          <span style="margin-left: 10px; color: #909399; font-size: 12px;">Lower numbers appear first</span>
+        </el-form-item>
       </el-form>
       <div class="demo-drawer__footer">
         <el-button @click="cancelAddClass()">Cancel</el-button>
@@ -46,6 +50,7 @@ export default {
       stdclass: {
         id: '',
         name: '',
+        priority: 0,
       },
     };
   },
@@ -72,6 +77,7 @@ export default {
         this.stdclass = {
           id: '',
           name: '',
+          priority: 0,
         };
       }
     }

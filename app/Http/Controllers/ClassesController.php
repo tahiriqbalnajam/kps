@@ -72,6 +72,7 @@ class ClassesController extends Controller
     {
         $class = new Classes();
         $class->name = $request->name;
+        $class->priority = $request->input('priority', 0);
         $class->save();
         return response()->json(new JsonResponse(['class' => $class]));
     }
@@ -110,6 +111,9 @@ class ClassesController extends Controller
     {
         $class = Classes::find($id);
         $class->name = $request->name;
+        if ($request->has('priority')) {
+            $class->priority = $request->priority;
+        }
         $class->save();
         return response()->json(new JsonResponse(['class' => $class]));
     }
@@ -124,5 +128,41 @@ class ClassesController extends Controller
     {
         $class->delete();
         return response()->json(new JsonResponse('Deleted successfully'));
+    }
+
+    /**
+     * Bulk update priorities for multiple classes
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function bulkUpdatePriority(Request $request)
+    {
+        $updates = $request->input('classes', []);
+        
+        if (empty($updates)) {
+            return response()->json(['error' => 'No classes provided'], 400);
+        }
+
+        try {
+            DB::beginTransaction();
+            
+            foreach ($updates as $update) {
+                if (isset($update['id']) && isset($update['priority'])) {
+                    Classes::where('id', $update['id'])
+                        ->update(['priority' => $update['priority']]);
+                }
+            }
+            
+            DB::commit();
+            
+            return response()->json(new JsonResponse([
+                'message' => 'Priorities updated successfully',
+                'count' => count($updates)
+            ]));
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['error' => 'Failed to update priorities: ' . $e->getMessage()], 500);
+        }
     }
 }

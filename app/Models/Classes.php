@@ -7,8 +7,19 @@ use Illuminate\Database\Eloquent\Model;
 class Classes extends Model
 {
     public $timestamps = false;
-    protected $fillable = ['name'];
+    protected $fillable = ['name', 'priority'];
     protected $table = "classes";
+
+    /**
+     * The "booted" method of the model.
+     * Applies global scope to always order by priority
+     */
+    protected static function booted()
+    {
+        static::addGlobalScope('priority', function ($builder) {
+            $builder->orderBy('priority', 'asc')->orderBy('id', 'asc');
+        });
+    }
 
     public function subjects()
     {
