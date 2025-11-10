@@ -34,37 +34,77 @@
         </el-row>
       </head-controls>
     </div>
-    <el-scrollbar height="700px">
-      <table class="tblwdborder">
-        <tr>
-          <th>Student Name</th>
-          <th v-for="(dayInfo, index) in dayHeaders" :key="index" 
-              :class="{
-                'sunday-header': dayInfo.type === 'sunday',
-                'holiday-header': dayInfo.type === 'holiday'
-              }">
-            <div v-if="dayInfo.type === 'sunday'" class="vertical-text">Sunday</div>
-            <div v-else-if="dayInfo.type === 'holiday'" class="vertical-text">{{ dayInfo.name }}</div>
-            <div v-else>{{ dayInfo.day }}</div>
-          </th>
-        </tr>
-        <tr v-for="student in attendance.students" :key="student.id">
-          <td>{{ student.name }}</td>
-          <td v-for="att in student.attendances" 
-              :key="att.id" 
-              :class="{
-                'absent': (att === 'absent' || att === 'A'),
-                'present': (att === 'present' || att === 'P'),
-                'leave': (att === 'leave' || att === 'L'),
-                'sunday': (att === 'Sun'),
-                'not-marked': (att === '-'),
-                'holiday': isHoliday(formatAttendance(att))
-              }">
-            {{ formatAttendance(att) }}
-          </td>
-        </tr>
-      </table>
-    </el-scrollbar>
+    
+    <el-card class="box-card">
+      <el-scrollbar max-height="700px">
+        <table class="tblwdborder">
+          <tr>
+            <th>Student Name</th>
+            <th v-for="(dayInfo, index) in dayHeaders" :key="index" 
+                :class="{
+                  'sunday-header': dayInfo.type === 'sunday',
+                  'holiday-header': dayInfo.type === 'holiday'
+                }">
+              <div v-if="dayInfo.type === 'sunday'" class="vertical-text">Sunday</div>
+              <div v-else-if="dayInfo.type === 'holiday'" class="vertical-text">{{ dayInfo.name }}</div>
+              <div v-else>{{ dayInfo.day }}</div>
+            </th>
+          </tr>
+          <tr v-for="student in attendance.students" :key="student.id">
+            <td>{{ student.name }}</td>
+            <td v-for="att in student.attendances" 
+                :key="att.id" 
+                :class="{
+                  'absent': (att === 'absent' || att === 'A'),
+                  'present': (att === 'present' || att === 'P'),
+                  'leave': (att === 'leave' || att === 'L'),
+                  'sunday': (att === 'Sun'),
+                  'not-marked': (att === '-'),
+                  'holiday': isHoliday(formatAttendance(att))
+                }">
+              {{ formatAttendance(att) }}
+            </td>
+          </tr>
+        </table>
+      </el-scrollbar>
+    </el-card>
+
+    <!-- Attendance Summary Section -->
+    <el-card v-if="showSummary" class="summary-card">
+      <template #header>
+        <div class="card-header">
+          <span style="font-weight: bold; font-size: 16px;">Attendance Summary</span>
+        </div>
+      </template>
+      
+      <el-table v-if="summaryData && summaryData.length > 0" :data="summaryData" :show-header="false" border style="width: 100%">
+        <el-table-column prop="metric" label="Metric" width="250">
+          <template #default="scope">
+            <strong>{{ scope.row.metric }}</strong>
+          </template>
+        </el-table-column>
+        <el-table-column prop="value" label="Value">
+          <template #default="scope">
+            <div v-if="scope.row.type === 'average'" style="font-size: 18px; color: #409EFF; font-weight: bold;">
+              {{ scope.row.value }}
+            </div>
+            <div v-else-if="scope.row.type === 'highest'" style="color: #67C23A;">
+              <div v-for="(student, index) in scope.row.students" :key="index" style="margin: 5px 0;">
+                <el-tag type="success" effect="plain">{{ student.name }} - {{ student.percentage }}%</el-tag>
+              </div>
+            </div>
+            <div v-else-if="scope.row.type === 'lowest'" style="color: #F56C6C;">
+              <div v-for="(student, index) in scope.row.students" :key="index" style="margin: 5px 0;">
+                <el-tag type="danger" effect="plain">{{ student.name }} - {{ student.percentage }}%</el-tag>
+              </div>
+            </div>
+          </template>
+        </el-table-column>
+      </el-table>
+      <div v-else style="padding: 20px; text-align: center; color: #909399;">
+        No attendance data available for summary calculation.
+      </div>
+    </el-card>
   </div>
 </template>
 <script>
@@ -138,6 +178,85 @@ export default {
       }
       
       return headers;
+    },
+    showSummary() {
+      return this.attendance.students && Array.isArray(this.attendance.students) && this.attendance.students.length > 0;
+    },
+    summaryData() {
+      if (!this.attendance.students || this.attendance.students.length === 0) {
+        return [];
+      }
+
+      // Calculate attendance percentage for each student
+      const studentStats = this.attendance.students.map(student => {
+        let present = 0;
+        let absent = 0;
+        let leave = 0;
+
+        if (student.attendances && Array.isArray(student.attendances)) {
+          student.attendances.forEach(att => {
+            const formatted = this.formatAttendance(att);
+            // Ignore Sundays and not-marked (-)
+            if (formatted !== 'Sun' && formatted !== '-') {
+              if (formatted === 'P' || att === 'present') {
+                present++;
+              } else if (formatted === 'A' || att === 'absent') {
+                absent++;
+              } else if (formatted === 'L' || att === 'leave') {
+                leave++;
+              }
+            }
+          });
+        }
+
+        const total = present + absent + leave;
+        const percentage = total > 0 ? ((present / total) * 100).toFixed(1) : 0;
+
+        return {
+          name: student.name,
+          present,
+          absent,
+          leave,
+          total,
+          percentage: parseFloat(percentage)
+        };
+      });
+
+      // Filter out students with no attendance records
+      const validStats = studentStats.filter(s => s.total > 0);
+
+      if (validStats.length === 0) {
+        return [];
+      }
+
+      // Calculate average attendance
+      const totalPercentage = validStats.reduce((sum, s) => sum + s.percentage, 0);
+      const averageAttendance = validStats.length > 0 
+        ? (totalPercentage / validStats.length).toFixed(1) 
+        : 0;
+
+      // Sort by percentage and get top 3 and bottom 3
+      const sortedStats = [...validStats].sort((a, b) => b.percentage - a.percentage);
+      const topThree = sortedStats.slice(0, 3);
+      const bottomThree = sortedStats.slice(-3).reverse();
+
+      return [
+        {
+          metric: 'Average Attendance (Overall)',
+          value: `${averageAttendance}%`,
+          type: 'average'
+        },
+        {
+          metric: 'Highest Attendance',
+          students: topThree,
+          type: 'highest'
+        },
+        {
+          metric: 'Lowest Attendance',
+          students: bottomThree,
+          type: 'lowest'
+        }
+      ];
     }
   },
   created() {
@@ -212,7 +331,17 @@ export default {
         }
         
         const { data } = await studentAttMonthlyReport(reportQuery);
-        this.attendance.students = data.students;
+        
+        // Convert object to array if needed
+        let studentsArray = [];
+        if (Array.isArray(data.students)) {
+          studentsArray = data.students;
+        } else if (typeof data.students === 'object' && data.students !== null) {
+          // Convert object to array of values
+          studentsArray = Object.values(data.students);
+        }
+        
+        this.attendance.students = studentsArray;
       } catch (error) {
         console.error('Error fetching attendance report:', error);
         this.$message.error('Error fetching attendance report. Please try again.');
@@ -375,6 +504,30 @@ export default {
   color: #fff;
   font-size: 11px;
   font-weight: bold;
+}
+
+.summary-card {
+  margin-top: 20px;
+}
+
+.summary-card .card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.summary-card :deep(.el-table) {
+  font-size: 14px;
+}
+
+.summary-card :deep(.el-table td) {
+  padding: 15px 10px;
+}
+
+.summary-card :deep(.el-tag) {
+  font-size: 13px;
+  padding: 8px 12px;
+  margin: 3px 5px;
 }
 </style>
 
