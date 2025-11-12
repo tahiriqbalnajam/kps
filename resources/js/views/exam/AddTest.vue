@@ -16,9 +16,15 @@
         </el-col>
         <el-col :span="3">
           <el-form-item label="Class" prop="class_id" style="width: 100%;">
-            <el-select v-model="test.class_id" placeholder="Select Class" clearable @change="getstudents()" size="small">
-              <el-option v-for="item in classes" :key="item.id" :label="item.name" :value="item.id"/>
-            </el-select>
+            <el-tree-select 
+              check-strictly
+              v-model="test.class_id" 
+              :data="classes"
+              placeholder="Select class/section..." 
+              clearable 
+              @change="getstudents()" 
+              size="small"
+            />
           </el-form-item>
         </el-col>
         <el-col :span="3">
@@ -146,6 +152,7 @@ export default {
         teacher_id: '',
         subject_id: '',
         class_id: '',
+        section_id: null,
         total_marks: 0,
         date: new Date(),
         students: [],
@@ -194,6 +201,16 @@ export default {
       this.testquery.filter['id'] = this.editid;
       const { data } = await tests.list(this.testquery);
       this.test = data.tests.data[0];
+      
+      // Convert class_id to tree-select format
+      if (this.test.section_id) {
+        // If there's a section_id, use section format
+        this.test.class_id = `section_${this.test.section_id}`;
+      } else if (this.test.class_id) {
+        // If only class_id, use class format
+        this.test.class_id = `class_${this.test.class_id}`;
+      }
+      
       this.testresult.filter['test_id'] = this.editid;
       let results = await testRes.list(this.testresult);
       results = results.data.results.data;
@@ -232,21 +249,100 @@ export default {
       this.$emit('closePopUp', 'yes')
     },
     async getstudents() {
+      if (!this.test.class_id) return;
+      
       this.listloading = true;
-      this.query.filter['stdclass'] = this.test.class_id;
-      this.query.filter['status'] = 'enable';
-      this.query.fields['students']= 'id,name,parent_id,class_id,parent.id, parent.name, class.id, class.name';
-      this.query.fields['parents']= 'id,name';
+      
+      // Parse the selected value to determine if it's a class or section
+      const selectedValue = this.test.class_id.toString();
+      let classId = null;
+      let sectionId = null;
+      
+      if (selectedValue.startsWith('class_')) {
+        classId = selectedValue.split('_')[1];
+        this.test.section_id = null;
+      } else if (selectedValue.startsWith('section_')) {
+        sectionId = selectedValue.split('_')[1];
+        this.test.section_id = sectionId;
+        
+        // Find the class ID for this section
+        const selectedSection = this.findSectionById(sectionId);
+        if (selectedSection) {
+          classId = selectedSection.class_id;
+        }
+      }
+      
+      // Build query for students
+      this.query.filter = {
+        stdclass: classId,
+        status: 'enable'
+      };
+      
+      if (sectionId) {
+        this.query.filter['section_id'] = sectionId;
+      }
+      
+      this.query.fields = {
+        'students': 'id,name,parent_id,class_id,parent.id, parent.name, class.id, class.name',
+        'parents': 'id,name'
+      };
+      
       const { data } = await students.list(this.query);
       this.test.students = data.students.data;
-      this.class_subject.filter['id'] = this.test.class_id;
+      
+      // Get subjects for the class
+      this.class_subject.filter['id'] = classId;
       const subjectdata = await subjectRes.list(this.class_subject);
       this.subjects = subjectdata.data.classubj.data[0].subjects;
+      
       this.listloading = false;
     },
+    
+    findSectionById(sectionId) {
+      for (const classItem of this.classes) {
+        if (classItem.children) {
+          const section = classItem.children.find(section => section.id == sectionId);
+          if (section) {
+            return section;
+          }
+        }
+      }
+      return null;
+    },
+    
     async getClasses() {
-      const { data } = await classes.list();
-      this.classes = data.classes.data;
+      const { data } = await classes.list({ include: 'sections' });
+      // Transform the classes data to include class and section hierarchy for tree select
+      this.classes = data.classes.data.map(classItem => {
+        // Create the parent class node
+        const classNode = {
+          value: `class_${classItem.id}`,
+          label: `${classItem.name}`,
+          id: classItem.id,
+          type: 'class',
+          name: classItem.name,
+          students_count: classItem.students_count,
+          males_count: classItem.males_count,
+          females_count: classItem.females_count
+        };
+        
+        // Add children if there are sections
+        if (classItem.sections && classItem.sections.length > 0) {
+          classNode.children = classItem.sections.map(section => ({
+            value: `section_${section.id}`,
+            label: `${section.name}`,
+            id: section.id,
+            type: 'section',
+            class_id: classItem.id,
+            name: section.name,
+            students_count: section.students_count,
+            males_count: section.males_count,
+            females_count: section.females_count
+          }));
+        }
+        
+        return classNode;
+      });
     },
     async getTeachers() {
       const { data } = await teacherRes.list();
@@ -261,15 +357,35 @@ export default {
             this.saving = true;
             
             try {
+              // Prepare test data with proper class_id and section_id
+              const testData = { ...this.test };
+              
+              // Parse the selected value to extract actual class_id and section_id
+              const selectedValue = testData.class_id.toString();
+              
+              if (selectedValue.startsWith('class_')) {
+                testData.class_id = parseInt(selectedValue.split('_')[1]);
+                testData.section_id = null;
+              } else if (selectedValue.startsWith('section_')) {
+                const sectionId = parseInt(selectedValue.split('_')[1]);
+                testData.section_id = sectionId;
+                
+                // Find the class ID for this section
+                const selectedSection = this.findSectionById(sectionId);
+                if (selectedSection) {
+                  testData.class_id = selectedSection.class_id;
+                }
+              }
+              
               if (this.editid) {
-                const { data } = await tests.update(this.editid, this.test);
+                const { data } = await tests.update(this.editid, testData);
                 this.$message({
                   message: 'Test updated successfully',
                   type: 'success',
                 });
                 this.handleClose();
               } else {
-                const { data } = await tests.store(this.test);
+                const { data } = await tests.store(testData);
                 this.$message({
                   message: 'Test added successfully',
                   type: 'success',

@@ -21,6 +21,7 @@ class TestService
             ->allowedFilters([
                 'id','class_id', 'subject_id', 'teacher_id', 'title', 'date'
             ])
+            ->orderBy('id', 'desc')
             ->paginate($limit)
             ->appends(request()->query());
         return Test::with(['class', 'subject'])->get();
@@ -43,7 +44,7 @@ class TestService
             $testresult[] = [
                 'test_id' => $test->id,
                 'student_id' => $student['id'],
-                'absent' => $student['absent'],
+                'absent' => $student['absent'] ?? 'no',
                 'score' => ($student['score']) ?? 0,
             ];
         }
@@ -71,7 +72,7 @@ class TestService
                         'test_id' => $test->id,
                         'student_id' => $student['id'],
                         'score' => ($student['score']) ?? 0,
-                        'absent' => $student['absent'],
+                        'absent' => $student['absent'] ?? 'no',
                     ];
                     $test_result_id = $student['test_result_id'] ?? '0';
                     $testResult = TestResult::firstOrNew(array('id' => $test_result_id) );
@@ -103,6 +104,7 @@ class TestService
         return validator($data, [
             'teacher_id' => 'required|exists:teachers,id',
             'class_id' => 'required|exists:classes,id',
+            'section_id' => 'nullable|exists:sections,id',
             'subject_id' => 'required|exists:subjects,id',
             'title' => 'required|string|max:255',
             'date' => 'required|date',

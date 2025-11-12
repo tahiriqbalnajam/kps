@@ -60,6 +60,7 @@
           filter: {},
           include: '',
         },
+        tableHeight: 500, // Default height
       };
   },
   created() {
@@ -68,9 +69,22 @@
     this.getSubjects();
     this.getTeachers();
   },
+  mounted() {
+    this.calculateTableHeight();
+    window.addEventListener('resize', this.calculateTableHeight);
+  },
+  beforeUnmount() {
+    window.removeEventListener('resize', this.calculateTableHeight);
+  },
   methods: {
+    calculateTableHeight() {
+      // Calculate available height: window height minus header, filters, pagination, and margins
+      // Approximate values: header ~60px, filters ~80px, pagination ~50px, margins ~40px
+      const offset = 230;
+      this.tableHeight = window.innerHeight - offset;
+    },
     async get_Exams() {
-      this.query.include = 'class,subject,teacher';
+      this.query.include = 'class,subject,teacher,section';
       this.listloading = true;
       const { data } = await tests.list(this.query);
       this.listloading = false;
@@ -272,9 +286,10 @@
     </div>
     <el-card class="box-card">
       <testing />
-      <el-table :data="testslist" height="400" style="width: 100%" v-loading="listloading">
+      <el-table :data="testslist" :max-height="tableHeight" style="width: 100%" v-loading="listloading" size="small">
         <el-table-column prop="title" label="Title"  />
         <el-table-column prop="class.name" label="Class"  />
+        <el-table-column prop="section.name" label="Section"  />
         <el-table-column prop="subject.title" label="Subject"  />
         <el-table-column prop="teacher.name" label="Teacher"  />
         <el-table-column prop="total_marks" label="Total Marks"  />
@@ -288,6 +303,7 @@
             <el-button-group>
               <el-tooltip content="Send all students results to Queue" placement="top">
                 <el-button
+                  size="small"
                   type="success"
                   :loading="scope.row.bulkSmsLoading"
                   @click="sendBulkTestSMS(scope.row)"
@@ -296,18 +312,18 @@
                 </el-button>
               </el-tooltip>
               <el-tooltip content="Show Result" placement="top">
-                <el-button color="#626aef" :dark="isDark" @click="[getResultClaswise(scope.row.id, scope.row.class.name),showTestStudentList = true]">
+                <el-button size="small" color="#626aef" :dark="isDark" @click="[getResultClaswise(scope.row.id, scope.row.class.name),showTestStudentList = true]">
                   <el-icon><ScaleToOriginal /></el-icon>
                 </el-button>
               </el-tooltip>
               <el-tooltip content="Edit Test" placement="top">
-                <el-button type="primary" @click="openPopup(scope.row.id)">
+                <el-button size="small" type="primary" @click="openPopup(scope.row.id)">
                   <el-icon><Edit /></el-icon>
                 </el-button>
               </el-tooltip>
 
               <el-tooltip content="Delete Test" placement="top">
-                <el-button type="danger" @click="deleteTest(scope.row.id)">
+                <el-button size="small" type="danger" @click="deleteTest(scope.row.id)">
                   <el-icon><Delete /></el-icon>
                 </el-button>
               </el-tooltip>

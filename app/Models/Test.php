@@ -9,6 +9,7 @@ class Test extends Model
     protected $fillable = [
         'teacher_id',
         'class_id',
+        'section_id',
         'subject_id',
         'title',
         'date',
@@ -34,5 +35,10 @@ class Test extends Model
     public function testResults()
     {
         return $this->hasMany(TestResult::class);
+    }
+
+    public function section()
+    {
+        return $this->belongsTo(Section::class)->select('id', 'name');
     }
 }
