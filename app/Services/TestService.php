@@ -17,7 +17,7 @@ class TestService
     {
         $limit = Arr::get($searchParams, 'limit', static::ITEM_PER_PAGE);
         return QueryBuilder::for(Test::class)
-            ->allowedIncludes(['class', 'subject', 'teacher', 'testResults','testResults.student','testResults.student.parents'])
+            ->allowedIncludes(['class', 'subject', 'teacher', 'section', 'testResults','testResults.student','testResults.student.parents'])
             ->allowedFilters([
                 'id','class_id', 'subject_id', 'teacher_id', 'title', 'date'
             ])

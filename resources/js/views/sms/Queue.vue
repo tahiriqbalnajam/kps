@@ -482,34 +482,56 @@ export default {
       return true;
     },
     async sendSMS() {
-      //this.sendsmsloading = true;
-      // await processSMS().then(result => {
-      //   this.sendsmsloading = false;
-      //   this.getList();
-      //   this.$message({
-      //     message: 'SMS sent successfully.',
-      //     type: 'success',
-      //   });
-      // }).catch(() => {
-      //   this.$message({
-      //     message: 'Something wrong while sending sms',
-      //     type: 'error',
-      //   });
-      //   this.sendsmsloading = false;
-      //   // return false;
-      // });
-        this.sendsmsloading = true;
-
-        let whatsapp_records = [];
+      this.sendsmsloading = true;
+      
+      try {
         let records = await processWhatsApp();
-        //console.log(records.original.records)
+        const totalRecords = records.data.records.length;
+        let successCount = 0;
+        let failCount = 0;
+        
+        // Process each record, continuing even if individual messages fail
         for (const record of records.data.records) {
+          try {
             await this.sendWhatsapp(record.id, record.phone, record.message);
+            successCount++;
             await new Promise(resolve => setTimeout(resolve, 2000)); // ⏳ Wait 2s before next message
+          } catch (error) {
+            failCount++;
+            console.error(`Failed to send message to ${record.phone}:`, error);
+            // Continue to next message instead of stopping
+          }
         }
-        if (this.message_ids.length)
-            this.updateSendStatus(this.message_ids, 'sent');
+        
+        // Update status for successfully sent messages
+        if (this.message_ids.length > 0) {
+          await this.updateSendStatus(this.message_ids, 'sent');
+        }
+        
+        // Show summary message
+        if (successCount > 0) {
+          this.$message({
+            message: `${successCount} message(s) sent successfully${failCount > 0 ? `, ${failCount} failed` : ''}.`,
+            type: successCount === totalRecords ? 'success' : 'warning',
+          });
+        } else if (failCount > 0) {
+          this.$message({
+            message: `Failed to send ${failCount} message(s).`,
+            type: 'error',
+          });
+        }
+        
+        await this.getList();
+      } catch (error) {
+        console.error('Error processing SMS queue:', error);
+        this.$message({
+          message: 'Error processing SMS queue: ' + (error.message || 'Unknown error'),
+          type: 'error',
+        });
+      } finally {
+        // Always reset loading state
         this.sendsmsloading = false;
+      }
     },
       defaultMessageChannel() {
           this.sms.channel = localStorage.getItem('message_channel') ? localStorage.getItem('message_channel') : 'SMS';
@@ -520,39 +542,14 @@ export default {
           await this.getList();
       },
       async sendWhatsapp(message_id, phoneNumber, message) {
-        try {
-            // Check if WhatsApp Web Suite is available
-            if (!window.whatsappWebSuite || typeof window.whatsappWebSuite.sendTextMessage !== 'function') {
-                throw new Error('WhatsApp Web Suite is not available. Please ensure the extension is installed and running.');
-            }
-            
-            const response = await window.whatsappWebSuite.sendTextMessage(phoneNumber, message);
-            this.message_ids.push(message_id)
-        } catch (error) {
-            console.error('Failed to send message:', error);
-            this.$message({
-                message: 'Unable to Send message. '+error,
-                type: 'error',
-            });
+        // Check if WhatsApp Web Suite is available
+        if (!window.whatsappWebSuite || typeof window.whatsappWebSuite.sendTextMessage !== 'function') {
+            throw new Error('WhatsApp Web Suite is not available. Please ensure the extension is installed and running.');
         }
-      // window.whatsappWebSuite.sendTextMessage(
-      //   phoneNumber,
-      //   message
-      // );
-
-        // document.addEventListener('whatsappSendResponse', (e) => {
-        //     if (e.detail.success) {
-        //         this.message_ids.push(message_id)
-        //         // this.updateSendStatus(message_id, 'sent');
-        //     } else {
-        //         console.log('Failed to send message.');
-        //         this.$message({
-        //             message: 'Unable to Send message. Please login Web WhatsApp same browser and WA Web Bridge Extension properly installed.',
-        //             type: 'error',
-        //         });
-        //     }
-        // });
-    },
+        
+        const response = await window.whatsappWebSuite.sendTextMessage(phoneNumber, message);
+        this.message_ids.push(message_id);
+      },
     clearQueue(){
       this.$confirm('Are you sure?', 'Warning', {
         confirmButtonText: 'OK',
