@@ -57,13 +57,13 @@ export const asyncRoutes = [
     path: '/students',
     component: Layout,
     redirect: 'students/list',
-    meta: { title: 'Students', bootstrapIcon: 'mortarboard-fill', noCache: true, permissions: ['manage user'] },
+    meta: { title: 'Students', bootstrapIcon: 'mortarboard-fill', noCache: true, permissions: ['view menu students'] },
     children: [
       {
         path: 'list',
         component: () => import('@/views/students/StudentList.vue'),
         name: 'Students List',
-        meta: { title: 'Students',bootstrapIcon: 'person-lines-fill', icon: 'person-lines-fill', noCache: true },
+        meta: { title: 'Students',bootstrapIcon: 'person-lines-fill', icon: 'person-lines-fill', noCache: true, permissions: ['manage students'] },
       },
       {
         path: 'report/:id',

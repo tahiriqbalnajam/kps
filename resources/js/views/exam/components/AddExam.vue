@@ -9,14 +9,14 @@
     <div class="drawer-header">
       <el-form :model="examForm" ref="examForm" label-width="120px" inline>
         <el-form-item label="Class" prop="class_id">
-          <el-select v-model="selectedClass" placeholder="Select Class" @change="fetchSubjects" style="width: 200px">
-            <el-option
-              v-for="classItem in classes"
-              :key="classItem.id"
-              :label="classItem.name"
-              :value="classItem.id"
-            />
-          </el-select>
+          <el-tree-select
+            v-model="selectedClass"
+            :data="classes"
+            placeholder="Select Class/Section"
+            @change="handleClassChange"
+            style="width: 250px"
+            check-strictly
+          />
         </el-form-item>
         <el-form-item label="Exam Title" prop="title">
           <el-input v-model="examForm.title" />
@@ -47,6 +47,7 @@
 import { ElMessage } from 'element-plus';
 import { fetchClasses, fetchSubjectsByClass, createExam } from '@/api/exam';
 import Resource from '@/api/resource';
+import { extractClassAndSection, transformClassesToTree } from '@/utils/classHelper';
 const subjRes = new Resource('subjects');
 const examRes = new Resource('exams');
 
@@ -70,6 +71,7 @@ export default {
       examForm: {
         title: '',
         class_id: null,
+        section_id: null,
         subjects: [],
       },
       isEditMode: false,
@@ -95,10 +97,16 @@ export default {
   methods: {
     async fetchClasses() {
       try {
-        const response = await fetchClasses();
-        this.classes = response.data.classes.data;
+        const response = await fetchClasses({ include: 'sections' });
+        this.classes = transformClassesToTree(response.data.classes.data);
       } catch (error) {
         ElMessage.error('Failed to fetch classes');
+      }
+    },
+    handleClassChange(value) {
+      const { classId } = extractClassAndSection(value, this.classes);
+      if (classId) {
+        this.fetchSubjects(classId);
       }
     },
     async fetchSubjects(classId) {
@@ -144,7 +152,11 @@ export default {
     },
     async submitExam() {
       try {
-        this.examForm.class_id = this.selectedClass;
+        // Extract class_id and section_id using helper
+        const { classId, sectionId } = extractClassAndSection(this.selectedClass, this.classes);
+        
+        this.examForm.class_id = classId;
+        this.examForm.section_id = sectionId;
         
         if (this.isEditMode && this.examToEdit) {
           await examRes.update(this.examToEdit.id, this.examForm);
@@ -158,7 +170,25 @@ export default {
         
         this.closeDrawer();
       } catch (error) {
-        ElMessage.error(this.isEditMode ? 'Failed to update exam' : 'Failed to create exam');
+        console.error('Error submitting exam:', error);
+        
+        // Extract and display validation errors
+        let errorMessage = this.isEditMode ? 'Failed to update exam' : 'Failed to create exam';
+        
+        if (error.response && error.response.data) {
+          // Check for validation errors
+          if (error.response.data.errors) {
+            const errors = error.response.data.errors;
+            const errorMessages = Object.values(errors).flat();
+            errorMessage = errorMessages.join(', ');
+          } else if (error.response.data.message) {
+            errorMessage = error.response.data.message;
+          }
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+        
+        ElMessage.error(errorMessage);
       }
     },
     closeDrawer() {
@@ -169,6 +199,7 @@ export default {
       this.examForm = {
         title: '',
         class_id: null,
+        section_id: null,
         subjects: [],
       };
       this.selectedClass = null;

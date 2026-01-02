@@ -85,6 +85,9 @@ class StudentService implements StudentServiceInterface
             $query->where('status', 'enable');
         }
 
+        // Order by roll_no ascending
+        $query->orderBy('roll_no', 'asc');
+
         return $query->paginate($limit)
             ->appends(request()->query());
     }

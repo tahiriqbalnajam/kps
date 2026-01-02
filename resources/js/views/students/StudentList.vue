@@ -128,7 +128,7 @@
           size="small"
         >
         <el-table-column type="selection" width="55" />
-       
+        <el-table-column label="Roll #" prop="roll_no" width="80" />
         <el-table-column label="Adm #" prop="adminssion_number">
           <template #default="scope">
             <el-badge is-dot class="item" v-if="scope.row.action_required == 'Yes'">
@@ -157,7 +157,6 @@
         <el-table-column label="Parent" prop="parents.name" />
         <el-table-column label="Phone" prop="parents.phone" />
         <el-table-column label="Class" prop="stdclasses.name" />
-        <el-table-column label="Gender" prop="gender" />
         <el-table-column label="Fee" prop="monthly_fee" />
         <el-table-column 
           label="DOB" 

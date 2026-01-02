@@ -9,7 +9,7 @@ class Exam extends Model
 {
     protected $table = 'exams';
     
-    protected $fillable = ['title', 'class_id','skip'];
+    protected $fillable = ['title', 'class_id', 'section_id', 'skip'];
 
     public function examSubjects()
     {
@@ -23,6 +23,10 @@ class Exam extends Model
 
     public function classes() {
         return $this->belongsTo(Classes::class, 'class_id');
+    }
+    
+    public function section() {
+        return $this->belongsTo(Section::class, 'section_id');
     }
     
 }

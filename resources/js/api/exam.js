@@ -24,10 +24,11 @@ export function editClass(stdData) {
   });
 }
 
-export function fetchClasses() {
+export function fetchClasses(params) {
   return request({
     url: '/classes',
     method: 'get',
+    params: params,
   });
 }
 

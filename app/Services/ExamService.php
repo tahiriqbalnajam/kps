@@ -21,11 +21,12 @@ class ExamService implements ExamServiceInterface
         $limit = Arr::get($searchParams, 'limit', static::ITEM_PER_PAGE);
         $query = QueryBuilder::for(Exam::class)
             ->allowedFields(['id', 'title', 'class_id', 'classes.name'])
-            ->with('classes')
+            ->with(['classes', 'section'])
             ->allowedFilters([
                 'id', 'title', 'class_id', 'created_at',
                 AllowedFilter::exact('class_id'),
-            ]);
+            ])
+            ->orderBy('id', 'desc');
 
         return $query->paginate($limit)
             ->appends(request()->query());
@@ -39,6 +40,7 @@ class ExamService implements ExamServiceInterface
             $exam = Exam::create([
                 'title' => $data['title'],
                 'class_id' => $data['class_id'],
+                'section_id' => $data['section_id'] ?? null,
             ]);
     
             foreach ($data['subjects'] as $subject) {
@@ -122,6 +124,7 @@ class ExamService implements ExamServiceInterface
         $exam->update([
             'title' => $data['title'],
             'class_id' => $data['class_id'],
+            'section_id' => $data['section_id'] ?? null,
         ]);
 
         // Update or create subjects
@@ -157,7 +160,13 @@ class ExamService implements ExamServiceInterface
     $query->where('skip', false);
 }, 'examSubjects.subject'])->findOrFail($examId);
         
-        $students = Student::with('parents')->where('class_id', $exam->class_id)->get();
+        // Filter students by section_id if it exists, otherwise by class_id
+        $studentsQuery = Student::with('parents')->where('class_id', $exam->class_id);
+        if ($exam->section_id) {
+            $studentsQuery->where('section_id', $exam->section_id);
+        }
+        $students = $studentsQuery->get();
+        
         $results = ExamResult::where('exam_id', $examId)->get();
         
         return [

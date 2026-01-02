@@ -14,20 +14,15 @@
                 />
               </el-form-item>
               <el-form-item>
-                <el-select 
+                <el-tree-select
                   v-model="query.filter.class_id" 
-                  placeholder="Select Class"
+                  :data="classes"
+                  placeholder="Select Class/Section"
                   clearable
                   @change="handleSearch"
-                  style="width: 200px"
-                >
-                  <el-option
-                    v-for="item in classes"
-                    :key="item.id"
-                    :label="item.name"
-                    :value="item.id"
-                  />
-                </el-select>
+                  style="width: 250px"
+                  check-strictly
+                />
               </el-form-item>
               <el-form-item>
                 <el-date-picker
@@ -71,6 +66,11 @@
       <el-table :data="examdata" height="600" style="width: 100%" size="small" stripe>
         <el-table-column prop="title" label="Exam"  />
         <el-table-column prop="classes.name" label="Class"  />
+        <el-table-column label="Section" width="120">
+          <template #default="scope">
+            {{ scope.row.section?.name || 'All' }}
+          </template>
+        </el-table-column>
         <el-table-column prop="created_at" label="Date">
           <template #default="scope">
             {{changeDate(scope.row.created_at)}}
@@ -152,6 +152,7 @@ import ViewMarksList from './components/ViewMarksList.vue';
 import PrintReports from './components/PrintReports.vue';
 import AwardListPrint from './components/AwardListPrint.vue';
 import moment from 'moment';
+import { transformClassesToTree } from '@/utils/classHelper';
 const examRes = new Resource('exams');
 const classRes = new Resource('classes');
 
@@ -220,8 +221,8 @@ export default {
 
       },
       async getClasses() {
-        const { data } = await classRes.list();
-        this.classes = data.classes.data;
+        const { data } = await classRes.list({ include: 'sections' });
+        this.classes = transformClassesToTree(data.classes.data);
       },
       handleSearch: debounce(function() {
         this.query.page = 1; // Reset to first page when searching

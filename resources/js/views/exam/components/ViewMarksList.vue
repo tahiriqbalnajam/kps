@@ -110,7 +110,7 @@ export default {
       query: {
         exam_id: null,
         class_id: null,
-        filter: { stdclass: null },
+        filter: {},
       },
     }
   },
@@ -149,7 +149,9 @@ export default {
       this.query = {
         exam_id: this.exam.id,
         class_id: this.exam.class_id,
-        filter: { stdclass: this.exam.class_id },
+        filter: this.exam.section_id 
+          ? { section_id: this.exam.section_id } 
+          : { stdclass: this.exam.class_id },
       };
     },
     async fetchData() {

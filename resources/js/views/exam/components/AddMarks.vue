@@ -23,7 +23,7 @@
         <el-table-column label="Student Name" width="220">
           <template #default="scope">
             <div>
-              <div style="font-weight: 500;">{{ scope.row.name }}</div>
+              <div style="font-weight: 500;">{{ scope.row.roll_no ? scope.row.roll_no + ' - ' : '' }}{{ scope.row.name }}</div>
               <div style="font-size: 12px; color: #909399;">{{ scope.row.parents?.name || 'N/A' }}</div>
             </div>
           </template>
@@ -78,7 +78,7 @@ export default {
       query: {
         exam_id: this.exam.id,
         class_id: this.class_id,
-        filter: { stdclass: this.class_id },
+        filter: {},
       },
     };
   },
@@ -101,6 +101,13 @@ export default {
     async fetchData() {
       this.loading = true;
       const studentRes = new Resource('students');
+
+      // Update query to include section_id if exam has one, otherwise use class_id
+      if (this.exam.section_id) {
+        this.query.filter.section_id = this.exam.section_id;
+      } else {
+        this.query.filter.stdclass = this.class_id;
+      }
 
       const { data: studentData } = await studentRes.list(this.query);
       const { data: subjectData } = await fetchExamSubjects(this.exam.id);

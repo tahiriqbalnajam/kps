@@ -173,11 +173,17 @@ class ExamController extends Controller
         try {
             $exam = Exam::with(['classes', 'examSubjects.subject'])->findOrFail($examId);
             
-            // Get students for this exam's class
-            $students = \App\Models\Student::with('parents')
+            // Get students for this exam's class/section
+            $studentsQuery = \App\Models\Student::with('parents')
                 ->where('class_id', $exam->class_id)
-                ->where('status', 'enable')
-                ->orderBy('roll_no')
+                ->where('status', 'enable');
+            
+            // Filter by section if exam has a section_id
+            if ($exam->section_id) {
+                $studentsQuery->where('section_id', $exam->section_id);
+            }
+            
+            $students = $studentsQuery->orderBy('roll_no')
                 ->get();
 
             // Calculate total marks
