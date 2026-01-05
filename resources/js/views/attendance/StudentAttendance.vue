@@ -128,6 +128,7 @@
           </el-radio-group>
         </template>
       </el-table-column>
+      <el-table-column label="Roll No" prop="roll_no" width="100" />
       <el-table-column label="Student Name" prop="name" />
       <el-table-column label="Father name" prop="parents.name" />
     </el-table>
