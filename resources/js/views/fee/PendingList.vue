@@ -1,7 +1,7 @@
 <template>
   <div class="app-container">
     <div class="filter-container">
-      <el-button style="margin-right: 10px;" type="success" @click="openpayfee = true">
+      <el-button style="margin-right: 10px;" type="success" @click="payFee(null)">
         <el-icon class="el-icon--left"><Money /></el-icon>Pay Fee
       </el-button>
       <el-button type="danger" :loading="smsloading" @click="addSmsQueue()">

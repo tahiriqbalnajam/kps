@@ -31,7 +31,8 @@ class StudentService implements StudentServiceInterface
                 'parents.id','parents.name','parent.phone','stdclasses.id','stdclasses.name'])
             ->with('parents', 'stdclasses', 'class_session')
             ->allowedFilters([
-                'id', 'name', 'roll_no', 'adminssion_number', 'is_orphan', 
+                AllowedFilter::exact('id'),
+                'name', 'roll_no', 'adminssion_number', 'is_orphan', 
                 'pef_admission', 'nadra_pending', 'gender', 'status',
                 AllowedFilter::partial('parent_phone', 'parents.phone'),
                 AllowedFilter::partial('parent_name', 'parents.name'),
@@ -116,7 +117,8 @@ class StudentService implements StudentServiceInterface
                 'parents.id','parents.name','parent.phone','stdclasses.id','stdclasses.name'])
             ->with('parents', 'stdclasses', 'class_session')
             ->allowedFilters([
-                'id', 'name', 'roll_no', 'adminssion_number', 'is_orphan', 
+                AllowedFilter::exact('id'),
+                'name', 'roll_no', 'adminssion_number', 'is_orphan', 
                 'pef_admission', 'nadra_pending', 'gender', 'status',
                 AllowedFilter::partial('parent_phone', 'parents.phone'),
                 AllowedFilter::partial('parent_name', 'parents.name'),

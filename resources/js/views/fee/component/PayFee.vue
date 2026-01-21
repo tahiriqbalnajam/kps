@@ -166,18 +166,30 @@ export default {
   computed: {
   },
   watch: {
-    stdid: function(val, oldval) {
-      this.query.id = val;
-      this.getStudent(this.query);
+    stdid: {
+      handler(val, oldval) {
+        if (val) {
+          this.getsetStudent();
+        }
+      },
+      immediate: true,
+    },
+    openpayfee: {
+      handler(val) {
+        if (val) {
+          this.closepopup = val;
+          if (this.stdid) {
+            this.getsetStudent();
+          }
+        }
+      },
+      immediate: true,
     },
   },
   mounted: function() {
-    this.closepopup = this.openpayfee;
   },
   created() {
     this.feeTypesList();
-    this.query.filter.id = this.stdid;
-    this.getsetStudent();
   },
   methods: {
     addFeeType(index, button) {
@@ -220,18 +232,27 @@ export default {
       this.findstudent = true;
       if (query) {
         this.query.keyword = query;
+        if(this.query.filter.id) delete this.query.filter.id;
       }
       const { data } = await studentPro.list(this.query);
       this.students = data.students.data;
       this.findstudent = false;
     },
-    async getsetStudent(query) {
+    async getsetStudent() {
       this.findstudent = true;
-      if (this.query.keyword !== '' || this.query.id !== null) {
-        const { data } = await studentPro.list(this.query);
+      if (this.stdid) {
+        const params = {
+            limit: 15,
+            filter: {
+                id: this.stdid
+            }
+        };
+        const { data } = await studentPro.list(params);
         this.students = data.students.data;
-        this.fee.student_id = this.students[0].id;
-        this.setFee();
+        if (this.students && this.students.length > 0) {
+          this.fee.student_id = this.students[0].id;
+          this.setFee();
+        }
       }
       this.findstudent = false;
     },
