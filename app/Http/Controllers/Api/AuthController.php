@@ -27,7 +27,7 @@ class AuthController extends BaseController
             'email' => 'required|email',
             'password' => 'required'
         ]);
-        $user = User::query()->where('email', $request->input('email'))->first();
+        $user = User::query()->with(['student', 'roles'])->where('email', $request->input('email'))->first();
         if (empty($user) || !Hash::check($request->input('password'), $user->password)) {
             return responseFailed('These credentials do not match our records.', Response::HTTP_UNAUTHORIZED);
         }

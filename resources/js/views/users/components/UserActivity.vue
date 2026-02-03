@@ -118,8 +118,9 @@ const onSubmit = () => {
   
   resData.updating = true
   let params = {
-    sex: props.user.sex,
-    description: props.user.description
+    name: props.user.name,
+    email: props.user.email,
+    sex: props.user.sex
   }
   
   if (props.user.birthday) {

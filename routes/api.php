@@ -93,7 +93,7 @@ Route::post('student_attendance_marked', 'StudentAttendanceController@student_at
 Route::post('student_monthly_attendance_report', 'StudentAttendanceController@student_monthly_attendance_report');
 Route::post('student_monthly_attendance_report', 'StudentAttendanceController@student_monthly_attendance_report');
 Route::post('student_daily_classwise_attendance_report', 'StudentAttendanceController@student_daily_classwise_attendance_report');
-Route::apiResource('attendance_student_monthly', 'StudentAttendanceController@attendance_student_monthly');
+Route::get('attendance_student_monthly', 'StudentAttendanceController@attendance_student_monthly');
 Route::get('student_att_report', 'StudentAttendanceController@student_att_report');
 Route::get('absent_student_each_class', 'StudentAttendanceController@absent_student_each_class');
 Route::get('student_attendance_total/{id}', 'StudentAttendanceController@student_attendance_total');
@@ -234,3 +234,12 @@ Route::prefix('accounting')->group(function () {
     Route::delete('/{id}', [App\Http\Controllers\AccountingController::class, 'destroy']);
 });
 
+
+// External Device API Routes
+Route::middleware(['auth.apikey'])->prefix('v1')->group(function () {
+    Route::get('/check', function () {
+        return response()->json(['message' => 'Secure API connection successful']);
+    });
+    Route::post('auth/login', 'App\Http\Controllers\Api\AuthController@login');
+    // Add your other device routes here
+});
