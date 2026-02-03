@@ -69,12 +69,13 @@
             />
           </template>
         </el-table-column>
+        <el-table-column prop="roll_no" label="Roll No" />
         <el-table-column prop="name" label="Name" />
         <el-table-column prop="parents.name" label="Father Name" />
         <el-table-column prop="stdclasses.name" label="Class" />
         <el-table-column prop="obtainedmarks" label="Obtained Marks">
           <template #default="scope">
-            <el-input :tabindex="scope.row.id" v-model="scope.row.score" required placeholder="Enter Marks" clearable
+            <el-input :tabindex="scope.row.roll_no" v-model="scope.row.score" required placeholder="Enter Marks" clearable
               @change="validateMarks(scope.row.score, test.total_marks, scope.row)" size="small" :disabled="scope.row.absent == 'yes'"/>
           </template>
         </el-table-column>
@@ -283,7 +284,7 @@ export default {
       }
       
       this.query.fields = {
-        'students': 'id,name,parent_id,class_id,parent.id, parent.name, class.id, class.name',
+        'students': 'id,name,roll_no,parent_id,class_id,parent.id, parent.name, class.id, class.name',
         'parents': 'id,name'
       };
       
