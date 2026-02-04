@@ -15,12 +15,6 @@ class CheckApiKey
      */
     public function handle(Request $request, Closure $next)
     {
-        \Illuminate\Support\Facades\Log::info('CheckApiKey Hit', [
-            'url' => $request->fullUrl(),
-            'method' => $request->method(),
-            'headers' => $request->headers->all(),
-            'ip' => $request->ip()
-        ]);
 
         $apiKey = config('app.api_key'); // You'll need to add this to config/app.php or use env('API_KEY') directly
 

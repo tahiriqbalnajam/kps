@@ -56,8 +56,18 @@ class User extends Authenticatable
      * @var array<int, string>
      */
     protected $fillable = [
-        'type','name', 'email','sex','birthday', 'password', 'status', 'gender', 'dob', 'education', 'cnic', 'pay','address', 'phone', 'profession' 
+        'type','name', 'email','sex','birthday', 'password', 'status', 'gender', 'dob', 'education', 'cnic', 'pay','address', 'phone', 'profession', 'player_id'
     ];
+
+    /**
+     * Route notifications for the OneSignal channel.
+     *
+     * @return string
+     */
+    public function routeNotificationForOneSignal()
+    {
+        return $this->player_id;
+    }
 
     /**
      * The accessors to append to the model's array form.

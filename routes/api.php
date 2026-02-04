@@ -241,5 +241,7 @@ Route::middleware(['auth.apikey'])->prefix('v1')->group(function () {
         return response()->json(['message' => 'Secure API connection successful']);
     });
     Route::post('auth/login', 'App\Http\Controllers\Api\AuthController@login');
+    Route::post('update-device-token', 'App\Http\Controllers\Api\AuthController@updateDeviceToken');
+    Route::post('test-notification', 'App\Http\Controllers\Api\AuthController@sendTestNotification');
     // Add your other device routes here
 });
