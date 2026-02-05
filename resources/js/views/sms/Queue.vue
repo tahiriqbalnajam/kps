@@ -32,9 +32,14 @@
         type="selection"
         width="55">
       </el-table-column>
-      <el-table-column label="Phone" prop="phone" />
+      <el-table-column label="Phone/Target" prop="phone">
+        <template #default="scope">
+          <span v-if="scope.row.channel === 'push'">{{ scope.row.phone === 'broadcast' ? 'All Users' : (scope.row.student ? scope.row.student.name : scope.row.phone) }}</span>
+          <span v-else>{{ scope.row.phone }}</span>
+        </template>
+      </el-table-column>
       <el-table-column label="Channel" prop="channel" />
-      <el-table-column label="Student" prop="student.name" />
+      <el-table-column label="Student/User" prop="student.name" />
       <el-table-column label="Message" prop="message" />
       <el-table-column label="Status" prop="status" />
       <el-table-column label="Error" prop="api_error" />
@@ -90,15 +95,42 @@
           <el-form-item label="Message Channel" :label-width="formLabelWidth">
             <el-radio v-model="sms.channel" label="sms" border>SMS</el-radio>
             <el-radio v-model="sms.channel" label="whatsapp" border>WhatsApp</el-radio>
+            <el-radio v-model="sms.channel" label="push" border>Push Notification</el-radio>
           </el-form-item>
-          <el-form-item v-show="sms.smstype == 'Multiple'" label="Select Classes" :label-width="formLabelWidth">
+          
+          <el-form-item v-show="sms.smstype == 'Multiple' && sms.channel !== 'push'" label="Select Classes" :label-width="formLabelWidth">
             <el-select v-model="sms.classes" multiple placeholder="Select">
               <el-option v-for="item in classes" :key="item.id" :label="item.name" :value="item.id" />
             </el-select>
           </el-form-item>
-          <el-form-item v-show="sms.smstype == 'Single'" label="Phone" :label-width="formLabelWidth">
+
+          <el-form-item v-show="sms.channel !== 'push' && sms.smstype == 'Single'" label="Phone" :label-width="formLabelWidth">
             <el-input v-model="sms.phone" autocomplete="off" />
           </el-form-item>
+
+          <el-form-item v-show="sms.channel === 'push'" label="User (Leave empty for All)" :label-width="formLabelWidth">
+            <el-select
+              v-model="sms.push_users"
+              multiple
+              filterable
+              remote
+              placeholder="Search by name or email"
+              :remote-method="remoteSearchUsers"
+              :loading="userSearchLoading"
+              style="width: 100%"
+            >
+              <el-option
+                v-for="item in userOptions"
+                :key="item.id"
+                :label="item.name + ' (' + item.email + ')'"
+                :value="item.id"
+              />
+            </el-select>
+            <div style="font-size: 12px; color: #888; margin-top: 5px;">
+              Leave empty to send to all subscribed users.
+            </div>
+          </el-form-item>
+
           <el-form-item label="Message" :label-width="formLabelWidth">
             <el-input v-model="sms.message" type="textarea" :rows="2" autocomplete="off" />
           </el-form-item>
@@ -130,6 +162,8 @@ import {
 
 const smsqueuePro = new Resource('smsqueue');
 const classes = new Resource('classes');
+const userResource = new Resource('users');
+
 export default {
   name: '',
   components: { Pagination, Plus, Message, Delete, Select },
@@ -198,10 +232,12 @@ export default {
       total: 0,
       loading: false,
       sendsmsloading: false,
+      userSearchLoading: false,
       downloading: false,
       editnow: false,
       formLabelWidth: '250',
       multipleSelection: [], // Add this line to track selected rows
+      userOptions: [],
       sms: {
         id: '',
         smstype: 'Single',
@@ -209,6 +245,7 @@ export default {
         message: '',
         phone: '',
         channel: '',
+        push_users: [],
       },
       message_ids: [],
       query: {
@@ -228,6 +265,21 @@ export default {
       this.defaultMessageChannel()
   },
   methods: {
+    async remoteSearchUsers(query) {
+      if (query !== '') {
+        this.userSearchLoading = true;
+        try {
+          const { data } = await userResource.list({ keyword: query, limit: 10 });
+          this.userOptions = data;
+        } catch (e) {
+            console.error(e);
+        } finally {
+            this.userSearchLoading = false;
+        }
+      } else {
+        this.userOptions = [];
+      }
+    },
 
     formatDate(date) {
       return moment(date).format('DD/MM/YYYY');
@@ -450,6 +502,16 @@ export default {
         return false;
       }
 
+        // Validate based on SMS type or Channel
+        if (this.sms.channel === 'push') {
+          // For push, we don't strict validation on users as empty means broadcast
+          // But maybe we want to confirm if empty
+          /* if (!this.sms.push_users || this.sms.push_users.length === 0) {
+              // This is allowed for broadcast
+          } */
+          return true;
+        }
+
       // Validate based on SMS type
       if (this.sms.smstype === 'Single') {
         if (!this.sms.phone || this.sms.phone.trim() === '') {
@@ -466,21 +528,21 @@ export default {
           this.$message({
             message: 'Please enter a valid phone number.',
             type: 'error',
-          });
-          return false;
+            });
+            return false;
+          }
+        } else if (this.sms.smstype === 'Multiple') {
+          if (!this.sms.classes || this.sms.classes.length === 0) {
+            this.$message({
+              message: 'Please select at least one class.',
+              type: 'error',
+            });
+            return false;
+          }
         }
-      } else if (this.sms.smstype === 'Multiple') {
-        if (!this.sms.classes || this.sms.classes.length === 0) {
-          this.$message({
-            message: 'Please select at least one class.',
-            type: 'error',
-          });
-          return false;
-        }
-      }
-
-      return true;
-    },
+  
+        return true;
+      },
     async sendSMS() {
       this.sendsmsloading = true;
       
@@ -581,6 +643,7 @@ export default {
         classes: null,
         message: '',
         phone: '',
+        push_users: [],
       };
     },
   },

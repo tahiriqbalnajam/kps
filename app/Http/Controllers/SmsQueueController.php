@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Exception;
+use App\Models\User;
 use App\Models\Student;
 use App\Models\Settings;
 use App\Models\SmsQueue;
@@ -50,6 +51,103 @@ class SmsQueueController extends Controller
     public function store(Request $request)
     {
         try {
+            if ($request->channel === 'push') {
+                $message = $request->message;
+                $pushUsers = $request->push_users;
+                
+                if (empty($message)) {
+                     return response()->json([
+                        'success' => false,
+                        'message' => 'Message is required.'
+                    ], 422);
+                }
+
+                // If no users selected, broadcast to all
+                if (empty($pushUsers)) {
+                    try {
+                        \OneSignal::sendNotificationToAll(
+                            $message, 
+                            $url = null, 
+                            $data = null, 
+                            $buttons = null, 
+                            $schedule = null
+                        );
+                        
+                        // Log to DB
+                        $sms = new SMS();
+                        $sms->message = $message;
+                        $sms->channel = 'push';
+                        $sms->phone = 'broadcast';
+                        $sms->status = 'sent';
+                        $sms->save();
+
+                        return response()->json([
+                            'success' => true,
+                            'message' => 'Push notification broadcasted to all users.',
+                            'data' => ['sms' => $sms]
+                        ]);
+
+                    } catch (\Exception $e) {
+                         return response()->json([
+                            'success' => false,
+                            'message' => 'Failed to broadcast push notification: ' . $e->getMessage()
+                        ], 500);
+                    }
+                } else {
+                    // Send to specific users
+                    $users = User::whereIn('id', $pushUsers)->whereNotNull('player_id')->get();
+                    
+                    if ($users->isEmpty()) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Selected users do not have associated devices (Player IDs).'
+                        ], 422);
+                    }
+
+                    $playerIds = $users->pluck('player_id')->toArray();
+                    
+                    try {
+                        \OneSignal::sendNotificationToUser(
+                            $message, 
+                            $playerIds, 
+                            $url = null, 
+                            $data = null, 
+                            $buttons = null, 
+                            $schedule = null
+                        );
+
+                        // Log to DB for each user
+                        foreach($users as $user) {
+                             $sms = new SMS();
+                             $sms->message = $message;
+                             $sms->channel = 'push';
+                             $sms->phone = $user->email; // Use email as identifier in phone column
+                             $sms->student_id = $user->id; // Use student_id to store user_id (assuming loose relation or just for ID ref)
+                             // Note: student_id usually links to students table, this might break relation view if not careful. 
+                             // If student_id is strict foreign key, we might need to leave it null or find linked student.
+                             // Checking User model: $user->student() exists.
+                             if ($user->student) {
+                                 $sms->student_id = $user->student->id;
+                             }
+                             $sms->status = 'sent';
+                             $sms->save();
+                        }
+
+                        return response()->json([
+                            'success' => true,
+                            'message' => 'Push notification sent to selected users.',
+                            'data' => ['count' => count($users)]
+                        ]);
+
+                    } catch (\Exception $e) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Failed to send push notification: ' . $e->getMessage()
+                        ], 500);
+                    }
+                }
+            }
+
             if($request->get('smstype') == 'Single'){
                 // Validate required fields for single SMS
                 if (!$request->phone || !$request->message) {
