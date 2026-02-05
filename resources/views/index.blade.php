@@ -20,7 +20,7 @@
   OneSignalDeferred.push(function(OneSignal) {
     OneSignal.init({
       appId: "{{ config('services.onesignal.app_id') }}",
-      safari_web_id: "web.onesignal.auto.17bc012e-15f1-432a-bc96-18751543883a", // Optional, if you have it
+      safari_web_id: "web.onesignal.auto.17bc012e-15f1-432a-bc96-18751543883a",
       notifyButton: {
         enable: true,
       },

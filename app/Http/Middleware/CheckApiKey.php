@@ -25,9 +25,17 @@ class CheckApiKey
              $apiKey = '12345678';
         }
 
-        if ($request->header('X-API-KEY') !== $apiKey) {
-            return response()->json(['message' => 'Unauthorized'], 401);
+        // Check for 'X-API-KEY'
+        if ($request->header('X-API-KEY') === $apiKey) {
+             return $next($request);
         }
+
+        // If API Key is missing or invalid, check for Sanctum authentication
+        if (\Illuminate\Support\Facades\Auth::guard('sanctum')->check()) {
+             return $next($request);
+        }
+
+        return response()->json(['message' => 'Unauthorized'], 401);
 
         return $next($request);
     }

@@ -150,10 +150,22 @@ class SmsQueueController extends Controller
 
             if($request->get('smstype') == 'Single'){
                 // Validate required fields for single SMS
-                if (!$request->phone || !$request->message) {
+                $rules = ['message' => 'required'];
+                
+                // Phone is required only if channel is NOT push
+                if($request->channel !== 'push') {
+                    if (!$request->phone) {
+                         return response()->json([
+                            'success' => false,
+                            'message' => 'Phone number is required.'
+                        ], 422);
+                    }
+                }
+
+                if (!$request->message) {
                     return response()->json([
                         'success' => false,
-                        'message' => 'Phone number and message are required.'
+                        'message' => 'Message is required.'
                     ], 422);
                 }
                 
@@ -167,7 +179,13 @@ class SmsQueueController extends Controller
                 $sms = new SMS();
                 $sms->message = $request->message;
                 $sms->channel = $request->channel;
-                $sms->phone = $this->format_phone($request->phone);
+                
+                if ($request->channel === 'push') {
+                    $sms->phone = 'push-user'; // Or retrieve user name/email if available
+                } else {
+                    $sms->phone = $this->format_phone($request->phone);
+                }
+                
                 $sms->save();
                 
                 return response()->json([

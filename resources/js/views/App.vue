@@ -17,7 +17,7 @@ export default {
       if (store.id && playerId) {
         try {
           await request({
-            url: '/api/v1/update-device-token',
+            url: '/v1/update-device-token',
             method: 'post',
             data: {
               user_id: store.id,
@@ -68,7 +68,7 @@ export default {
                      // But for simplicity, I'll inline the request here or refactor to Options API + setup mix.
                      try {
                         await request({
-                            url: '/api/v1/update-device-token',
+                            url: '/v1/update-device-token',
                             method: 'post',
                             data: {
                             user_id: currentStore.id,
@@ -87,7 +87,7 @@ export default {
           if (store.id && playerId) {
             try {
               await request({
-                url: '/api/v1/update-device-token',
+                url: '/v1/update-device-token',
                 method: 'post',
                 data: {
                   user_id: store.id,
