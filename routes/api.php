@@ -235,13 +235,29 @@ Route::prefix('accounting')->group(function () {
 });
 
 
-// External Device API Routes
+// External Device API Routes (Mobile App)
 Route::middleware(['auth.apikey'])->prefix('v1')->group(function () {
     Route::get('/check', function () {
         return response()->json(['message' => 'Secure API connection successful']);
     });
+    
+    // Auth routes
     Route::post('auth/login', 'App\Http\Controllers\Api\AuthController@login');
     Route::post('update-device-token', 'App\Http\Controllers\Api\AuthController@updateDeviceToken');
     Route::post('test-notification', 'App\Http\Controllers\Api\AuthController@sendTestNotification');
-    // Add your other device routes here
+    
+    // Settings routes (for school info)
+    Route::get('settings', 'App\Http\Controllers\SettingsController@index');
+    
+    // Student routes
+    Route::get('students/{id}', 'App\Http\Controllers\StudentController@show');
+    Route::get('students/{id}/subject-wise-scores', 'App\Http\Controllers\StudentController@getSubjectWiseScores');
+    
+    // Attendance routes
+    Route::get('student_attendance_total/{id}', 'App\Http\Controllers\StudentAttendanceController@student_attendance_total');
+    Route::post('attendance/summary', 'App\Http\Controllers\StudentAttendanceController@get_attendance_summry');
+    Route::get('attendance/monthly', 'App\Http\Controllers\StudentAttendanceController@attendance_student_monthly');
+
+    // Test Results (for widgets)
+    Route::get('tests/results', 'App\Http\Controllers\TestResultController@index');
 });
