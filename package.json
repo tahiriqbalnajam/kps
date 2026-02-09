@@ -10,6 +10,7 @@
     "@babel/preset-typescript": "^7.26.0",
     "@element-plus/icons-vue": "^2.3.1",
     "@types/node": "^22.10.6",
+    "@types/react": "~19.1.10",
     "@typescript-eslint/eslint-plugin": "^8.20.0",
     "@typescript-eslint/parser": "^8.20.0",
     "@vitejs/plugin-vue": "^5.2.1",
@@ -47,6 +48,7 @@
   "dependencies": {
     "chart.js": "^4.4.8",
     "element-tiptap": "^2.2.1",
+    "expo": "^54.0.33",
     "file-saver": "^2.0.5",
     "jspdf": "^2.5.2",
     "jspdf-autotable": "^3.8.4",

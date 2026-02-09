@@ -451,91 +451,89 @@ export default {
     },
     async handleSubmit(formName) {
       this.loading = true;
-      
-      // Parse the class_id format before submitting
-      if (this.student.class_id && typeof this.student.class_id === 'string' && this.student.class_id.startsWith('class_')) {
-        const parts = this.student.class_id.split('_');
-        if (parts.length === 3) {
-          const classId = parseInt(parts[1]);
-          const sectionId = parseInt(parts[2]);
+      try {
+        // Parse the class_id format before submitting
+        if (this.student.class_id && typeof this.student.class_id === 'string' && this.student.class_id.startsWith('class_')) {
+          const parts = this.student.class_id.split('_');
           
-          // Update the student object for submission
-          const studentForSubmit = {...this.student};
-          studentForSubmit.class_id = classId;
-          studentForSubmit.section_id = sectionId > 0 ? sectionId : null;
-          
-          await this.$refs[formName].validate(valid => {
-            if (valid) {
-              if (studentForSubmit.id !== undefined && studentForSubmit.id !== null && studentForSubmit.id !== '') {
-                stdRes
-                  .update(studentForSubmit.id, studentForSubmit)
-                  .then(response => {
-                    this.$message({
-                      type: 'success',
-                      message: 'Student info has been updated successfully',
-                      duration: 5 * 1000,
-                    });
-                    this.handleClose();
-                    this.loading = false;
-                  })
-                  .catch(error => {
-                    this.$message({
-                      type: 'error',
-                      message: 'Something Wrong while updating' + error,
-                      duration: 5 * 1000,
-                    });
-                    this.loading = false;
-                  })
-                  .finally(() => {
-                    this.customerForm = false;
-                    this.loading = false;
-                  });
-              } else {
-                stdRes
-                  .store(studentForSubmit)
-                  .then(response => {
-                    this.$message({
-                      message:
-                        'New Student  ' +
-                        studentForSubmit.name +
-                        ' has been created successfully.',
-                      type: 'success',
-                      duration: 5 * 1000,
-                    });
-                    this.account = {
-                      name: '',
-                      phone: '',
-                      address: '',
-                      type: '',
-                    };
-                    this.$emit('newcustomer', response);
-                    this.customerForm = false;
-                  })
-                  .catch(error => {
-                    console.log(error);
-                  });
-              }
-            } else {
-              console.log('error submit!!');
+          if (parts.length === 3) {
+            const classId = parseInt(parts[1]);
+            const sectionId = parseInt(parts[2]);
+            
+            // Update the student object for submission
+            // Create a copy to avoid modifying the bound model directly during submission if using parts for display
+            const studentForSubmit = { ...this.student };
+            studentForSubmit.class_id = classId;
+            studentForSubmit.section_id = sectionId > 0 ? sectionId : null;
+            
+            // Validate form using Promise approach for cleaner async/await usage
+            try {
+              await this.$refs[formName].validate();
+            } catch (err) {
+              console.log('Validation failed');
               this.loading = false;
               return false;
             }
-          });
+
+            // Proceed with API calls
+            if (studentForSubmit.id !== undefined && studentForSubmit.id !== null && studentForSubmit.id !== '') {
+              // Update existing student
+              await stdRes.update(studentForSubmit.id, studentForSubmit);
+              
+              this.$message({
+                type: 'success',
+                message: 'Student info has been updated successfully',
+                duration: 5 * 1000,
+              });
+              
+              this.handleClose();
+            } else {
+              // Create new student
+              const response = await stdRes.store(studentForSubmit);
+              
+              this.$message({
+                message: 'New Student ' + studentForSubmit.name + ' has been created successfully.',
+                type: 'success',
+                duration: 5 * 1000,
+              });
+              
+              // Reset specific fields if needed, or rely on handleClose/parent reload
+              this.account = {
+                name: '',
+                phone: '',
+                address: '',
+                type: '',
+              };
+              
+              this.$emit('newcustomer', response);
+              this.customerForm = false;
+              // Ideally close the drawer or reset form here too
+              this.handleClose(); 
+            }
+
+          } else {
+            throw new Error('Invalid class format');
+          }
         } else {
-          this.loading = false;
-          this.$message({
-            type: 'error',
-            message: 'Invalid class format',
-            duration: 5 * 1000,
-          });
+          throw new Error('Please select a valid class');
         }
-      } else {
-        this.loading = false;
+      } catch (error) {
+        console.error('Submit Error:', error);
+        let errorMessage = 'An error occurred while saving.';
+        
+        if (error.response && error.response.data && error.response.data.message) {
+          errorMessage = error.response.data.message;
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+
         this.$message({
           type: 'error',
-          message: 'Please select a class',
+          message: errorMessage,
           duration: 5 * 1000,
         });
+      } finally {
+        this.loading = false;
       }
     },
     async getStudent() {

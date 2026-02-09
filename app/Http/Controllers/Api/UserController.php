@@ -160,6 +160,14 @@ class UserController extends BaseController
             }
             $user->password = Hash::make($request->input('password'));
         }
+
+        if ($request->has('roles')) {
+            $roles = $request->get('roles');
+            if (!empty($roles)) {
+                $user->syncRoles($roles);
+            }
+        }
+        
         $user->save();
         return new UserResource($user);
     }

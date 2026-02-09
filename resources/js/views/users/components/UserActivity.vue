@@ -9,6 +9,11 @@
           <el-form-item :label="t('user.email')">
             <el-input v-model="user.email" :disabled="disabled"/>
           </el-form-item>
+          <el-form-item :label="t('user.role')">
+            <el-select v-model="user.roles[0]" :disabled="disabled">
+              <el-option v-for="item in roleOptions" :key="item" :label="item" :value="item"/>
+            </el-select>
+          </el-form-item>
           
           <!-- Password change section -->
           <el-divider content-position="left">Change Password</el-divider>
@@ -60,7 +65,10 @@ const props = defineProps({
   },
 })
 
+
 const {t} = useI18n({useScope: 'global'})
+// Remove hardcoded roles
+// const roles = ['admin', 'manager', 'user', 'visitor', 'teacher', 'student'] 
 
 // Add passwordForm data
 const passwordForm = reactive({
@@ -69,6 +77,10 @@ const passwordForm = reactive({
 })
 
 const userResource = new UserResource('users')
+// ADDED: Initialize RoleResource
+import RoleResource from '@/api/role'
+const roleResource = new RoleResource()
+
 const resData = reactive({
   activeActivity: 'second',
   disabled: computed(() => {
@@ -87,7 +99,8 @@ const resData = reactive({
     total: 0,
     currentPage: 1,
     pageSize: 10
-  }
+  },
+  roleOptions: [] // ADDED: to store fetched roles
 })
 
 const handleClick = (tab, event) => {
@@ -120,7 +133,8 @@ const onSubmit = () => {
   let params = {
     name: props.user.name,
     email: props.user.email,
-    sex: props.user.sex
+    sex: props.user.sex,
+    roles: props.user.roles
   }
   
   if (props.user.birthday) {
@@ -161,7 +175,24 @@ const getTimeLines = () => {
   })
 }
 
-const {activeActivity, updating, disabled, timeLinesData, timeLinesPagination} = toRefs(resData)
+const getRoles = () => {
+  roleResource.list({}).then(response => {
+    // Assuming the API returns a list of role objects with 'name' property
+    // Adjust based on actual API response structure if needed. 
+    // Usually it returns { data: [...] } or just [...]
+    const rolesData = response.data || response; 
+    resData.roleOptions = rolesData.map(role => role.name);
+  }).catch(err => {
+    console.error('Failed to fetch roles', err);
+  });
+}
+
+onMounted(() => {
+  getRoles();
+})
+
+const {activeActivity, updating, disabled, timeLinesData, timeLinesPagination, roleOptions} = toRefs(resData)
+
 </script>
 
 <style lang="scss" scoped>

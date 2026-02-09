@@ -177,6 +177,17 @@ class StudentService implements StudentServiceInterface
 
     public function storeStudent(array $data)
     {
+        $validator = \Illuminate\Support\Facades\Validator::make($data, [
+            'name' => 'required|string|max:191',
+            'b_form' => 'nullable|string|max:191',
+            'adminssion_number' => 'nullable|string|max:15',
+            'roll_no' => 'nullable|string|max:191',
+        ]);
+
+        if ($validator->fails()) {
+            throw new \Illuminate\Validation\ValidationException($validator);
+        }
+
         try {
             DB::beginTransaction();
             //commmented as user creation is not required here, user will be created in parent controller

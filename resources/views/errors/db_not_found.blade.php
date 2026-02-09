@@ -85,6 +85,7 @@
                   <li><a href="#about">About Us</a></li>
                   <li><a href="#features">Features</a></li>
                   <li><a href="#testimonials">Testimonials</a></li>
+                  <li><a href="#privacy">Privacy Policy</a></li>
                   <li><a href="#contact">Contact Us</a></li>
 
                 </ul>
@@ -547,6 +548,114 @@
         </div>
       </div>
     </section>
+  </section>
+
+  <!-- Privacy Policy Section -->
+  <section id="privacy" class="space">
+    <div class="container">
+      <div class="title-area text-center mb-5">
+        <h2 class="sec-title">Privacy <span>Policy</span></h2>
+        <p>Your privacy is important to us. Learn how we protect your information.</p>
+      </div>
+      <div class="row justify-content-center">
+        <div class="col-xl-10">
+          <div class="privacy-content">
+            <div class="privacy-section mb-4">
+              <h4 class="mb-3">1. Information We Collect</h4>
+              <p>We collect information that you provide directly to us when using our school management software, including:</p>
+              <ul class="ms-4">
+                <li>Student and parent contact information (names, email addresses, phone numbers)</li>
+                <li>Academic records and attendance data</li>
+                <li>Fee payment information and transaction records</li>
+                <li>Communication preferences and interaction history</li>
+              </ul>
+            </div>
+
+            <div class="privacy-section mb-4">
+              <h4 class="mb-3">2. How We Use Your Information</h4>
+              <p>We use the information we collect to:</p>
+              <ul class="ms-4">
+                <li>Provide and maintain our school management services</li>
+                <li>Process fee payments and generate receipts</li>
+                <li>Send important notifications via SMS and WhatsApp</li>
+                <li>Generate academic reports and performance analytics</li>
+                <li>Improve our software and develop new features</li>
+                <li>Ensure the security and integrity of our platform</li>
+              </ul>
+            </div>
+
+            <div class="privacy-section mb-4">
+              <h4 class="mb-3">3. Data Security</h4>
+              <p>We implement industry-standard security measures to protect your data:</p>
+              <ul class="ms-4">
+                <li>Encrypted data transmission using SSL/TLS protocols</li>
+                <li>Regular security audits and vulnerability assessments</li>
+                <li>Access controls and authentication mechanisms</li>
+                <li>Secure backup systems to prevent data loss</li>
+                <li>Compliance with data protection regulations</li>
+              </ul>
+            </div>
+
+            <div class="privacy-section mb-4">
+              <h4 class="mb-3">4. Information Sharing</h4>
+              <p>We do not sell or rent your personal information to third parties. We may share your information only in the following circumstances:</p>
+              <ul class="ms-4">
+                <li>With your explicit consent</li>
+                <li>To comply with legal obligations or court orders</li>
+                <li>With service providers who assist in our operations (under strict confidentiality agreements)</li>
+                <li>To protect the rights and safety of our users and the public</li>
+              </ul>
+            </div>
+
+            <div class="privacy-section mb-4">
+              <h4 class="mb-3">5. Data Retention</h4>
+              <p>We retain your information for as long as necessary to provide our services and comply with legal obligations. Student records are typically maintained according to educational regulations and institutional policies.</p>
+            </div>
+
+            <div class="privacy-section mb-4">
+              <h4 class="mb-3">6. Your Rights</h4>
+              <p>You have the right to:</p>
+              <ul class="ms-4">
+                <li>Access and review your personal information</li>
+                <li>Request corrections to inaccurate data</li>
+                <li>Request deletion of your data (subject to legal requirements)</li>
+                <li>Opt-out of marketing communications</li>
+                <li>Export your data in a portable format</li>
+              </ul>
+            </div>
+
+            <div class="privacy-section mb-4">
+              <h4 class="mb-3">7. Cookies and Tracking</h4>
+              <p>We use cookies and similar technologies to enhance user experience, analyze usage patterns, and maintain session security. You can control cookie preferences through your browser settings.</p>
+            </div>
+
+            <div class="privacy-section mb-4">
+              <h4 class="mb-3">8. Children's Privacy</h4>
+              <p>Our platform is designed for educational institutions. We collect student information only through authorized school administrators and with appropriate parental consent as required by law.</p>
+            </div>
+
+            <div class="privacy-section mb-4">
+              <h4 class="mb-3">9. Updates to This Policy</h4>
+              <p>We may update this privacy policy periodically to reflect changes in our practices or legal requirements. We will notify users of significant changes through our platform or via email.</p>
+            </div>
+
+            <div class="privacy-section mb-4">
+              <h4 class="mb-3">10. Contact Us</h4>
+              <p>If you have questions or concerns about this privacy policy or our data practices, please contact us:</p>
+              <ul class="ms-4">
+                <li><strong>Email:</strong> <a href="mailto:info@idlschool.pk">info@idlschool.pk</a></li>
+                <li><strong>Phone:</strong> <a href="tel:+923457050405">+92-345-7050405</a></li>
+                <li><strong>Address:</strong> IDLBridge St#7, H#273, Fort Abbas, Pakistan</li>
+              </ul>
+            </div>
+
+            <div class="alert alert-info mt-4">
+              <p class="mb-0"><strong>Last Updated:</strong> February 6, 2026</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </section>
 
   <!-- Contact Section -->
