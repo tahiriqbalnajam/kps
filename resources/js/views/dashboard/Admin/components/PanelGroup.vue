@@ -1,22 +1,6 @@
 <template>
   <div class="panel-group">
     <!-- Header with animated gradient -->
-    <div class="dashboard-header">
-      <h2 class="dashboard-title">
-        <el-icon class="title-icon"><School /></el-icon>
-        School Dashboard
-      </h2>
-      <div class="refresh-controls">
-        <el-button 
-          type="primary" 
-          :icon="RefreshRight" 
-          circle 
-          size="small"
-          @click="refreshData"
-          :loading="loading"
-        />
-      </div>
-    </div>
 
     <!-- Stats Cards with improved responsiveness -->
     <el-row :gutter="16" class="stats-row">
@@ -252,12 +236,42 @@
       </el-col>
 
       <el-col :xs="24" :sm="24" :md="24" :lg="8" class="card-panel-col">
-        <div class="info-card attendance-card">
+        <div class="info-card at-risk-card">
           <div class="card-header">
-            <el-icon class="header-icon"><TrendCharts /></el-icon>
-            <h3 class="card-header-title">Attendance Overview</h3>
+            <el-icon class="header-icon warning-icon"><WarningFilled /></el-icon>
+            <h3 class="card-header-title">At Risk Students</h3>
           </div>
-          <daily-attendance-graph />
+          
+          <div class="at-risk-content">
+             <div v-if="data.at_risk_students?.length" class="at-risk-list">
+               <el-scrollbar max-height="320px">
+                  <div v-for="(student, index) in data.at_risk_students" :key="index" class="at-risk-item">
+                     <div class="student-left">
+                       <div class="student-avatar" :class="student.type">
+                          <span class="avatar-text">{{ student.name.charAt(0) }}</span>
+                       </div>
+                       <div class="student-info">
+                          <div class="student-name">{{ student.name }}</div>
+                          <div class="student-meta">
+                            <span class="student-class">{{ student.class }}</span>
+                            <span v-if="student.parent_phone" class="phone-number">
+                              <el-icon><Phone /></el-icon> {{ student.parent_phone }}
+                            </span>
+                          </div>
+                       </div>
+                     </div>
+                     <div class="risk-badge">
+                        <el-tag :type="student.type" size="small" effect="dark">{{ student.reason }}</el-tag>
+                     </div>
+                  </div>
+               </el-scrollbar>
+             </div>
+             <div v-else class="empty-state">
+                <el-icon class="success-icon"><CircleCheckFilled /></el-icon>
+                <span>No students at risk! 🎉</span>
+                <span class="sub-text">Attendance is looking good</span>
+             </div>
+          </div>
         </div>
       </el-col>
     </el-row>
@@ -312,14 +326,13 @@
 </template>
 
 <script setup>
-import DailyAttendanceGraph from '@/views/attendance/DailyAttendanceGraph.vue';
 import Resource from '@/api/resource';
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { 
   User, Avatar, Warning, UserFilled, School, RefreshRight, 
   TrendCharts, Star, Clock, Present, CircleCheck, Plus, 
-  DocumentAdd
+  DocumentAdd, WarningFilled, CircleCheckFilled, Phone
 } from '@element-plus/icons-vue';
 
 const router = useRouter();
@@ -335,7 +348,8 @@ const data = ref({
   student_birthdays: [], 
   teacher_birthdays: [], 
   newAdmissionsPerClass: [], 
-  newAdmissions: 0
+  newAdmissions: 0,
+  at_risk_students: []
 });
 
 const loading = ref(false);
@@ -502,6 +516,7 @@ const handleSetLineChartData = (type) => {
     position: relative;
     overflow: hidden;
     border-radius: 20px;
+    padding: 0px 25px;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     border: none;
@@ -530,20 +545,20 @@ const handleSetLineChartData = (type) => {
     .card-content {
       position: relative;
       z-index: 2;
-      padding: 25px;
+      padding: 12px 20px;
       display: flex;
       align-items: center;
-      height: 120px;
+      height: 85px;
       
       .card-icon {
-        font-size: 48px;
+        font-size: 32px;
         color: rgba(255, 255, 255, 0.9);
-        margin-right: 20px;
+        margin-right: 15px;
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 70px;
-        height: 70px;
+        width: 48px;
+        height: 48px;
         background: rgba(255, 255, 255, 0.2);
         border-radius: 50%;
         backdrop-filter: blur(5px);
@@ -554,18 +569,18 @@ const handleSetLineChartData = (type) => {
         color: white;
         
         .card-title {
-          font-size: 14px;
+          font-size: 13px;
           font-weight: 500;
-          margin-bottom: 8px;
+          margin-bottom: 2px;
           opacity: 0.9;
           text-transform: uppercase;
           letter-spacing: 0.5px;
         }
         
         .card-number {
-          font-size: 32px;
+          font-size: 26px;
           font-weight: 700;
-          margin-bottom: 6px;
+          margin-bottom: 2px;
           text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
         }
         
@@ -573,11 +588,11 @@ const handleSetLineChartData = (type) => {
           display: flex;
           align-items: center;
           gap: 6px;
-          font-size: 12px;
+          font-size: 11px;
           opacity: 0.8;
           
           .trend-icon {
-            font-size: 14px;
+            font-size: 12px;
           }
         }
       }
@@ -1017,5 +1032,119 @@ const handleSetLineChartData = (type) => {
 
 .fade-enter, .fade-leave-to {
   opacity: 0;
+}
+
+// At Risk Card Styles
+.at-risk-card {
+  .header-icon.warning-icon {
+    color: #F56C6C;
+  }
+  
+  .at-risk-list {
+    .at-risk-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      margin-bottom: 8px;
+      background: #fafafa;
+      border-radius: 12px;
+      border: 1px solid #f0f0f0;
+      transition: all 0.2s ease;
+      
+      &:hover {
+        transform: translateX(5px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        background: #fff;
+      }
+      
+      .student-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex: 1;
+        min-width: 0;
+        
+        .student-avatar {
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: white;
+          font-weight: bold;
+          font-size: 16px;
+          flex-shrink: 0;
+          
+          &.danger {
+            background: linear-gradient(135deg, #F56C6C 0%, #fab6b6 100%);
+            box-shadow: 0 4px 10px rgba(245, 108, 108, 0.3);
+          }
+          
+          &.warning {
+            background: linear-gradient(135deg, #E6A23C 0%, #f7c986 100%);
+            box-shadow: 0 4px 10px rgba(230, 162, 60, 0.3);
+          }
+        }
+        
+        .student-info {
+          flex: 1;
+          min-width: 0;
+          
+          .student-name {
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+            margin-bottom: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+          
+          .student-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: #909399;
+            flex-wrap: wrap;
+            
+            .student-class {
+              background: #f4f4f5;
+              padding: 2px 6px;
+              border-radius: 4px;
+            }
+            
+            .phone-number {
+              display: flex;
+              align-items: center;
+              gap: 3px;
+              
+              .el-icon {
+                font-size: 10px;
+              }
+            }
+          }
+        }
+      }
+      
+      .risk-badge {
+        margin-left: 10px;
+        flex-shrink: 0;
+      }
+    }
+  }
+  
+  .empty-state {
+    .success-icon {
+      color: #67C23A;
+    }
+    .sub-text {
+      font-size: 13px;
+      color: #909399;
+      margin-top: 5px;
+    }
+  }
 }
 </style>

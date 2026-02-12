@@ -1,62 +1,107 @@
-# Laravel Vue Admin
+# IDL School New
 
-[Laravel Vue Admin](https://laravel-vue-admin.trumanwl.com) is a beautiful dashboard combination of [Laravel](https://laravel.com/), [Vue3](https://github.com/vuejs/vue) and the UI Toolkit [Element Plus](https://element-plus.org/).
+A comprehensive School Management System built with **Laravel 10** and **Vue 3**. This application handles all aspects of school administration including student management, fees, exams, attendance, and communication.
 
-## Getting started
+## 🚀 Features
 
-### Installing
+### 🎓 Academic Management
+- **Student Management**: Complete student profiles, admission handling, and bulk import/export.
+- **Class & Section**: Manage classes, sections, and subject allocations.
+- **Syllabus Tracking**: Track syllabus completion, chapters, and topics.
+- **Timetable**: Dynamic timetable management for classes and teachers.
 
-#### Manual
+### 📝 Examination & Results
+- **Exam Management**: Schedule exams, manage tests, and record marks.
+- **Results & Reports**: Generate award lists, student report cards, and subject-wise performance analysis.
+- **Tests**: Create and manage class tests (quizzes).
 
-```bash
-# Clone the project and run composer
-git clone https://github.com/trumanwong/laravel-vue-admin
-cd laravel-vue-admin
+### 💰 Finance & Fee Management
+- **Fee Collection**: Generate fee vouchers, track payments, and manage pending fees.
+- **Accounting**: Basic income and expense tracking.
+- **Payroll**: Teacher salary calculation and management.
 
-# Migration and DB seeder (after changing your DB settings in .env)
-php artisan migrate --seed
+### 📅 Attendance
+- **Student Attendance**: Daily marking, monthly reports, and absentee tracking.
+- **Teacher Attendance**: Track staff attendance and integrate with payroll.
+- **Biometric/Online**: Support for online attendance checks.
 
-# Install dependency with NPM
-npm install
+### 📢 Communication
+- **Notifications**: Integrated SMS and Push notifications using OneSignal.
+- **Complaints**: System for parents/students to lodge complaints.
+- **Mobile API**: Secure API endpoints for external mobile application integration.
 
-# develop
-npm run watch
+### 👥 User Management
+- **Role-Based Access Control (RBAC)**: Fine-grained permissions for Admins, Teachers, Parents, and Accountants using `spatie/laravel-permission`.
 
-# Build on production
-npm run build
-```
+## 🛠 Tech Stack
 
-#### Docker
+- **Backend**: Laravel 10, Laravel Sanctum (Auth)
+- **Frontend**: Vue 3, Element Plus (UI), Pinia (State Management), Vite
+- **Database**: MySQL
+- **Dependencies**: 
+  - `spatie/laravel-permission`
+  - `maatwebsite/excel`
+  - `laravel-notification-channels/onesignal`
 
-```sh
-docker-compose up -d
-```
+## 📦 Installation
 
-Build static files within `Laravel` container with `npm`
+### Prerequisites
+- PHP >= 8.1
+- Composer
+- Node.js & NPM
+- MySQL
 
-```sh
-docker exec -it laravel-vue-admin npm run watch
-```
+### Setup Steps
 
-Open http://localhost:8000 (laravel container port declared in `docker-compose.yml`) to access Laravel Vue Admin.
+1. **Clone the repository**
+   ```bash
+   git clone <repository_url>
+   cd idlschoolnew
+   ```
 
-## Built with
+2. **Install Backend Dependencies**
+   ```bash
+   composer install
+   ```
 
-* [Laravel](https://laravel.com/) - The PHP Framework For Web Artisans
-* [Laravel Sanctum](https://github.com/laravel/sanctum/) - Laravel Sanctum provides a featherweight authentication system for SPAs and simple APIs.
-* [spatie/laravel-permission](https://github.com/spatie/laravel-permission) - Associate users with permissions and roles.
-* [VueJS](https://vuejs.org/) - The Progressive JavaScript Framework
-* [Element Plus](https://element-plus.org/) -A Vue.js 3 UI library
-* [vue3-admin-ts](https://github.com/jzfai/vue3-admin-ts) - A minimal vue3 admin template with Element-Plus UI & axios & permission control & lint & hook
+3. **Install Frontend Dependencies**
+   ```bash
+   npm install
+   ```
 
-## License
+4. **Environment Setup**
+   ```bash
+   cp .env.example .env
+   ```
+   *Update `.env` with your database credentials and other settings.*
 
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE) file for details.
+5. **Generate App Key**
+   ```bash
+   php artisan key:generate
+   ```
 
-## Acknowledgements
+6. **Database Migration & Seeding**
+   ```bash
+   php artisan migrate --seed
+   ```
 
-* [Laravel](https://laravel.com/) - The PHP Framework For Web Artisans
-* [VueJS](https://vuejs.org/) - The Progressive JavaScript Framework
-* [vue3-admin-ts](https://panjiachen.github.io/vue-element-admin/#/) A minimal vue3 admin template with Element-Plus UI & axios & permission control & lint & hook
-* [Echarts](http://echarts.apache.org/) - A powerful, interactive charting and visualization library for browser.
-* [Cloudflare](https://https://www.cloudflare.com/) - A global network built for the cloud
+7. **Build Frontend Assets**
+   ```bash
+   npm run build
+   # or for development
+   npm run watch
+   ```
+
+8. **Run Application**
+   ```bash
+   php artisan serve
+   ```
+   Access the app at `http://localhost:8000`.
+
+## 📱 Mobile App API
+The system exposes a secure API for mobile devices under `/api/v1/`.
+- Requires `API_KEY` middleware.
+- Supports Authentication, Attendance, and Student Data retrieval.
+
+## 📄 License
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

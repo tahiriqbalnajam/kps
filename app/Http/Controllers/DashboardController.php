@@ -7,8 +7,10 @@ use App\Models\Holiday;
 use App\Models\Student;
 use App\Models\Teacher;
 use App\Models\Dashboard;
+use App\Models\StudentAttendance; 
 use Illuminate\Http\Request;
 use App\Laravue\JsonResponse;
+use Illuminate\Support\Facades\DB;
 
 
 class DashboardController extends Controller
@@ -27,6 +29,8 @@ class DashboardController extends Controller
         $absent_teachers = $this->getTotalAbsentTeachers($date);
         $student_birthday = $this->getTodaysBirthdayStudents();
         $teacher_birthday = $this->getTodaysBirthdayTeachers();
+        $at_risk_students = $this->getAtRiskStudents();
+
         $newAdmissions = Student::whereMonth('created_at', $date->month)
             ->whereYear('created_at', $date->year)
             ->where('status', 'enable')
@@ -53,6 +57,7 @@ class DashboardController extends Controller
                                                    'teacher_birthdays' => $teacher_birthday,
                                                    'newAdmissions' => $newAdmissions,
                                                    'newAdmissionsPerClass' => $newAdmissionsPerClass,
+                                                   'at_risk_students' => $at_risk_students
                                                 ]));
 
 
@@ -137,6 +142,74 @@ class DashboardController extends Controller
             ];
             });
         return $teachers;
+    }
+
+    public function getAtRiskStudents()
+    {
+        $atRisk = collect();
+
+        // 1. Consecutive Absences (Last 3 recorded days)
+        // Get the last 3 distinct dates where attendance was taken
+        $lastDates = StudentAttendance::select('attendance_date')
+            ->distinct()
+            ->orderBy('attendance_date', 'desc')
+            ->limit(3)
+            ->pluck('attendance_date');
+
+        if ($lastDates->count() >= 3) {
+            $consecutiveAbsents = StudentAttendance::whereIn('attendance_date', $lastDates)
+                ->where('status', 'absent')
+                ->select('student_id', DB::raw('count(*) as count'))
+                ->groupBy('student_id')
+                ->having('count', '>=', 3)
+                ->with(['students' => function($q) {
+                    $q->select('id', 'name', 'class_id', 'parent_id')->with('stdclasses', 'parents');
+                }])
+                ->get();
+
+            foreach ($consecutiveAbsents as $record) {
+                if ($record->students) {
+                    $atRisk->push([
+                        'student_id' => $record->student_id,
+                        'name' => $record->students->name,
+                        'class' => $record->students->stdclasses->name ?? 'N/A',
+                        'parent_phone' => $record->students->parents->phone ?? 'N/A',
+                        'reason' => '3 Consecutive Absences',
+                        'type' => 'danger' // UI purpose
+                    ]);
+                }
+            }
+        }
+
+        // 2. Low Monthly Attendance (< 75%)
+        $startOfMonth = Carbon::now()->startOfMonth();
+        $lowAttendance = StudentAttendance::where('attendance_date', '>=', $startOfMonth)
+            ->select('student_id', 
+                DB::raw('count(*) as total_days'),
+                DB::raw("sum(case when status = 'present' then 1 else 0 end) as present_days"))
+            ->groupBy('student_id')
+            ->havingRaw('(sum(case when status = "present" then 1 else 0 end) / count(*)) * 100 < 75')
+            ->with(['students' => function($q) {
+                $q->select('id', 'name', 'class_id', 'parent_id')->with('stdclasses', 'parents');
+            }])
+            ->get();
+
+        foreach ($lowAttendance as $record) {
+            // Avoid duplicates if already added for consecutive absence
+            if (!$atRisk->contains('student_id', $record->student_id) && $record->students) {
+                 $percentage = $record->total_days > 0 ? round(($record->present_days / $record->total_days) * 100) : 0;
+                 $atRisk->push([
+                    'student_id' => $record->student_id,
+                    'name' => $record->students->name,
+                    'class' => $record->students->stdclasses->name ?? 'N/A',
+                    'parent_phone' => $record->students->parents->phone ?? 'N/A',
+                    'reason' => "Low Attendance ({$percentage}%)",
+                    'type' => 'warning'
+                ]);
+            }
+        }
+
+        return $atRisk->values();
     }
 
     /**

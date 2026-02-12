@@ -229,30 +229,104 @@ export default {
 
 /* Print styles */
 @media print {
+  /* Set page to landscape and remove default margins */
+  @page {
+    size: A4 landscape;
+    margin: 8mm;
+  }
+
+  /* Hide non-printable elements */
   .no-print {
     display: none !important;
   }
 
+  /* Hide dialog header, title, and close button */
+  .el-dialog__header,
+  .el-dialog__headerbtn,
+  .el-dialog__close {
+    display: none !important;
+  }
+
+  /* Completely reset and remove all scrollbars */
+  * {
+    overflow: visible !important;
+  }
+
+  html, body {
+    width: 100% !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+  }
+
+  /* Force all Element Plus components to behave for print */
+  .el-overlay,
+  .el-overlay-dialog,
+  .el-dialog,
+  .el-dialog__wrapper,
+  .el-dialog__body,
+  .el-dialog__footer {
+    position: static !important;
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    transform: none !important;
+  }
+
   .award-list-container {
-    padding: 20px;
+    padding: 5px 0 0 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: visible !important;
+    page-break-after: auto;
+    box-sizing: border-box;
+  }
+
+  .award-list-header {
+    margin-bottom: 5px !important;
+  }
+
+  .award-list-header h3 {
+    font-size: 12px !important;
+    margin: 2px 0 !important;
+    line-height: 1.2;
   }
 
   .award-list-table {
-    font-size: 10px;
+    width: 100% !important;
+    max-width: 100% !important;
+    font-size: 8px !important;
     color: #000 !important;
+    border-collapse: collapse;
+    table-layout: fixed;
+    page-break-inside: avoid !important;
+    transform-origin: top left;
   }
 
   .award-list-table th,
   .award-list-table td {
-    padding: 6px 4px;
+    padding: 3px 2px !important;
     color: #000 !important;
     border: 1px solid #000 !important;
+    word-wrap: break-word;
+    line-height: 1.2;
+  }
+
+  .award-list-table thead {
+    display: table-header-group;
   }
 
   .award-list-table thead th {
-    background-color: #fff !important;
+    background-color: #e8e8e8 !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+    font-size: 8px !important;
+    padding: 2px !important;
   }
 
   .award-list-header h1,
@@ -268,9 +342,55 @@ export default {
     border-left: 2px solid #000 !important;
   }
 
-  /* Ensure table doesn't break badly */
+  /* Prevent bad page breaks - force single page */
+  .award-list-table,
+  .award-list-table tbody,
   .award-list-table tr {
-    page-break-inside: avoid;
+    page-break-inside: avoid !important;
+    page-break-after: avoid !important;
+  }
+
+  .award-list-table tbody tr {
+    page-break-inside: avoid !important;
+  }
+
+  /* Column width adjustments for print - use percentages to fit page */
+  .col-roll {
+    width: 6% !important;
+  }
+
+  .col-student {
+    width: 18% !important;
+  }
+
+  .col-father {
+    width: 18% !important;
+  }
+
+  .col-subject {
+    width: auto !important;
+    min-width: 0 !important;
+  }
+
+  .col-total {
+    width: 8% !important;
+  }
+
+  .marks-total {
+    font-size: 7px !important;
+    line-height: 1;
+  }
+
+  .marks-cell {
+    background-color: #f5f5f5 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .total-cell {
+    background-color: #e8e8e8 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 }
 </style>
