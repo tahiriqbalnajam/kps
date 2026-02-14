@@ -71,10 +71,13 @@ class ParentService implements ParentServiceInterface
         $parent = Parents::findOrFail($id);
         
         // Check if CNIC already exists (excluding current parent)
-        if (isset($data['cnic']) && $this->cnicExists($data['cnic'], $id)) {
-            throw ValidationException::withMessages([
-                'cnic' => ['This CNIC is already registered to another parent.']
-            ]);
+
+        if (isset($data['cnic']) && $this->normalizeCnic($data['cnic']) !== $this->normalizeCnic($parent->cnic ?? '')) {
+            if ($this->cnicExists($data['cnic'], $id)) {
+                throw ValidationException::withMessages([
+                    'cnic' => ['This CNIC is already registered to another parent.']
+                ]);
+            }
         }
         
         $parent->update($data);

@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use App\Models\Settings;
 use Carbon\Carbon;
+use Spatie\QueryBuilder\QueryBuilder;
+use Spatie\QueryBuilder\AllowedFilter;
 
 class FeeVoucherController extends Controller
 {
@@ -26,6 +28,24 @@ class FeeVoucherController extends Controller
             if ($request->has('filter')) {
                 $filters = $request->input('filter');
                 
+                // Specific filters
+                if (!empty($filters['student_name'])) {
+                    $query->where('name', 'LIKE', "{$filters['student_name']}%");
+                }
+                if (!empty($filters['parent_name'])) {
+                    $val = $filters['parent_name'];
+                    $query->whereHas('parents', function($q) use ($val) {
+                         $q->where('name', 'LIKE', "{$val}%");
+                    });
+                }
+                if (!empty($filters['admission_number'])) {
+                    $query->where('adminssion_number', 'LIKE', "{$filters['admission_number']}%");
+                }
+                if (!empty($filters['roll_no'])) {
+                    $query->where('roll_no', 'LIKE', "{$filters['roll_no']}%");
+                }
+
+                // Generic search
                 if (isset($filters['search']) && !empty($filters['search'])) {
                     $searchTerm = $filters['search'];
                     $query->where(function ($q) use ($searchTerm) {
@@ -46,7 +66,13 @@ class FeeVoucherController extends Controller
                 }
                 
                 if (isset($filters['status'])) {
-                    $query->where('status', $filters['status']);
+                    if ($filters['status'] === 'active') {
+                        $query->where(function($q) { 
+                            $q->where('status', 'active')->orWhere('status', 1); 
+                        });
+                    } else {
+                        $query->where('status', $filters['status']);
+                    }
                 }
             }
             
@@ -132,11 +158,11 @@ class FeeVoucherController extends Controller
             DB::beginTransaction();
             
             $savedVouchers = [];
-            $voucherNumber = 'FV-' . now()->format('YmdHis');
+            $voucherPrefix = 'FV-' . now()->format('ymd') . strtoupper(substr(uniqid(), -2));
             
             foreach ($request->vouchers as $index => $voucherData) {
                 $voucher = FeeVoucher::create([
-                    'voucher_number' => $voucherNumber . '-' . str_pad($index + 1, 3, '0', STR_PAD_LEFT),
+                    'voucher_number' => $voucherPrefix . '-' . str_pad($index + 1, 3, '0', STR_PAD_LEFT),
                     'student_id' => $voucherData['student_id'],
                     'student_name' => $voucherData['student_name'],
                     'admission_number' => $voucherData['admission_number'],
@@ -180,53 +206,76 @@ class FeeVoucherController extends Controller
     }
 
     /**
-     * Get list of generated vouchers
+     * Get list of generated vouchers (Spatie QueryBuilder)
      */
     public function getVouchers(Request $request)
     {
         try {
-            $query = FeeVoucher::query();
-            
-            // Apply filters
-            if ($request->filled('status') && !empty($request->status)) {
-                $query->where('status', $request->status);
-            }
-            
-            if ($request->filled('class_name') && !empty($request->class_name)) {
-                $query->where('class_name', 'LIKE', "%{$request->class_name}%");
-            }
-            
-            if ($request->filled('date_from') && !empty($request->date_from)) {
-                $query->whereDate('generated_at', '>=', $request->date_from);
-            }
-            
-            if ($request->filled('date_to') && !empty($request->date_to)) {
-                $query->whereDate('generated_at', '<=', $request->date_to);
-            }
-            
-            if ($request->filled('search') && !empty($request->search)) {
-                $searchTerm = $request->search;
-                $query->where(function ($q) use ($searchTerm) {
-                    $q->where('voucher_number', 'LIKE', "%{$searchTerm}%")
-                      ->orWhere('student_name', 'LIKE', "%{$searchTerm}%")
-                      ->orWhere('admission_number', 'LIKE', "%{$searchTerm}%");
-                });
-            }
-            
-            // Handle overdue_only parameter for tracking page
-            if ($request->boolean('overdue_only')) {
-                $query->where('status', 'unpaid')
-                      ->where('due_date', '<', now()->toDateString());
-            }
-            
-            $vouchers = $query->orderBy('generated_at', 'desc')
-                             ->paginate($request->input('limit', 15));
-            
+            $limit = $request->input('limit', 15);
+
+            $vouchers = QueryBuilder::for(FeeVoucher::class)
+                ->allowedFilters([
+                AllowedFilter::exact('status'),
+                AllowedFilter::partial('class_name'), // Keeping partial for class as it's often short
+                AllowedFilter::exact('voucher_type'),
+                AllowedFilter::callback('date_from', function ($query, $value) {
+                    $query->whereDate('generated_at', '>=', $value);
+                }),
+                AllowedFilter::callback('date_to', function ($query, $value) {
+                    $query->whereDate('generated_at', '<=', $value);
+                }),
+                // Specific column filters with prefix matching (performance improved)
+                AllowedFilter::callback('student_name', function ($query, $value) {
+                    $query->where('student_name', 'LIKE', "{$value}%");
+                }),
+                AllowedFilter::callback('parent_name', function ($query, $value) {
+                    $query->where('parent_name', 'LIKE', "{$value}%");
+                }),
+                AllowedFilter::callback('voucher_number', function ($query, $value) {
+                    $query->where('voucher_number', 'LIKE', "{$value}%");
+                }),
+                AllowedFilter::callback('roll_no', function ($query, $value) {
+                    $query->whereHas('student', function ($q) use ($value) {
+                        $q->where('roll_no', 'LIKE', "{$value}%");
+                    });
+                }),
+                // Generic search as fallback (expensive but flexible)
+                AllowedFilter::callback('search', function ($query, $value) {
+                    $query->where(function ($q) use ($value) {
+                        $q->where('voucher_number', 'LIKE', "{$value}%")
+                          ->orWhere('student_name', 'LIKE', "{$value}%")
+                          ->orWhere('admission_number', 'LIKE', "{$value}%")
+                          ->orWhere('parent_name', 'LIKE', "{$value}%")
+                          ->orWhere('parent_phone', 'LIKE', "{$value}%");
+                    });
+                }),
+                AllowedFilter::callback('overdue_only', function ($query, $value) {
+                    if ($value) {
+                        $query->whereIn('status', ['unpaid', 'partially_paid'])
+                              ->where('due_date', '<', now()->toDateString());
+                    }
+                }),
+            ])
+                ->orderByRaw("
+                    CASE 
+                        WHEN status = 'unpaid' AND due_date < CURDATE() THEN 0
+                        WHEN status = 'partially_paid' AND due_date < CURDATE() THEN 1
+                        WHEN status = 'unpaid' THEN 2
+                        WHEN status = 'partially_paid' THEN 3
+                        WHEN status = 'paid' THEN 4
+                        WHEN status = 'cancelled' THEN 5
+                        ELSE 6
+                    END ASC
+                ")
+                ->orderBy('due_date', 'asc')
+                ->paginate($limit)
+                ->appends(request()->query());
+
             return response()->json([
                 'success' => true,
                 'vouchers' => $vouchers
             ]);
-            
+
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -300,7 +349,7 @@ class FeeVoucherController extends Controller
                 ]);
                 
                 // If fully paid and there are pending vouchers included, mark them as paid too
-                if ($status === 'paid' && $request->has('pending_voucher_ids')) {
+                if ($status === 'paid' && $request->has('pending_voucher_ids') && is_array($request->pending_voucher_ids) && count($request->pending_voucher_ids) > 0) {
                     $pendingVoucherIds = $request->pending_voucher_ids;
                     
                     // Update all pending vouchers to paid
@@ -471,28 +520,44 @@ class FeeVoucherController extends Controller
     }
 
     /**
-     * Get voucher statistics
+     * Get voucher statistics with optional filters (Spatie QueryBuilder)
      */
     public function getStatistics(Request $request)
     {
         try {
+            // Build base query with Spatie filters
+            $baseQuery = QueryBuilder::for(FeeVoucher::class)
+                ->allowedFilters([
+                    AllowedFilter::partial('class_name'),
+                    AllowedFilter::exact('voucher_type'),
+                    AllowedFilter::callback('date_from', function ($query, $value) {
+                        $query->whereDate('generated_at', '>=', $value);
+                    }),
+                    AllowedFilter::callback('date_to', function ($query, $value) {
+                        $query->whereDate('generated_at', '<=', $value);
+                    }),
+                ])
+                ->getEloquentBuilder();
+
+            // Clone the base query for each stat
             $stats = [
-                'total_vouchers' => FeeVoucher::count(),
-                'paid_vouchers' => FeeVoucher::where('status', 'paid')->count(),
-                'unpaid_vouchers' => FeeVoucher::where('status', 'unpaid')->count(),
-                'overdue_vouchers' => FeeVoucher::where('status', 'unpaid')
+                'total_vouchers' => (clone $baseQuery)->count(),
+                'paid_vouchers' => (clone $baseQuery)->where('status', 'paid')->count(),
+                'unpaid_vouchers' => (clone $baseQuery)->where('status', 'unpaid')->count(),
+                'partially_paid_vouchers' => (clone $baseQuery)->where('status', 'partially_paid')->count(),
+                'overdue_vouchers' => (clone $baseQuery)->whereIn('status', ['unpaid', 'partially_paid'])
                                                 ->where('due_date', '<', now()->toDateString())
                                                 ->count(),
-                'total_amount_generated' => FeeVoucher::sum('total_with_fine'),
-                'total_amount_collected' => FeeVoucher::where('status', 'paid')->sum('paid_amount'),
-                'pending_amount' => FeeVoucher::where('status', 'unpaid')->sum('total_with_fine')
+                'total_amount_generated' => (clone $baseQuery)->sum('total_with_fine'),
+                'total_amount_collected' => (clone $baseQuery)->where('status', 'paid')->sum('paid_amount'),
+                'pending_amount' => (clone $baseQuery)->whereIn('status', ['unpaid', 'partially_paid'])->sum('total_with_fine')
             ];
-            
+
             return response()->json([
                 'success' => true,
                 'statistics' => $stats
             ]);
-            
+
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,

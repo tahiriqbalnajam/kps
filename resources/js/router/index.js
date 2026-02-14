@@ -1,4 +1,4 @@
-import {createRouter, createWebHashHistory} from 'vue-router'
+import { createRouter, createWebHashHistory } from 'vue-router'
 
 /* Layout */
 import Layout from '@/layout/Layout.vue'
@@ -63,7 +63,7 @@ export const asyncRoutes = [
         path: 'list',
         component: () => import('@/views/students/StudentList.vue'),
         name: 'Students List',
-        meta: { title: 'Students',bootstrapIcon: 'person-lines-fill', icon: 'person-lines-fill', noCache: true, permissions: ['manage students'] },
+        meta: { title: 'Students', bootstrapIcon: 'person-lines-fill', icon: 'person-lines-fill', noCache: true, permissions: ['manage students'] },
       },
       {
         path: 'report/:id',
@@ -77,28 +77,28 @@ export const asyncRoutes = [
         name: 'student-observations',
         hidden: true,
         component: () => import('@/views/students/components/StudentObservations.vue'),
-        meta: { title: 'Student Observations', icon: 'people', noCache: true  }
+        meta: { title: 'Student Observations', icon: 'people', noCache: true }
       },
       {
-          path: 'observations/create',
-          name: 'create-student-observation',
-          hidden: true,
-          component: () => import('@/views/students/components/CreateStudentObservation.vue'),
-          meta: { title: 'Create Student Observation', icon: 'people', noCache: true  }
+        path: 'observations/create',
+        name: 'create-student-observation',
+        hidden: true,
+        component: () => import('@/views/students/components/CreateStudentObservation.vue'),
+        meta: { title: 'Create Student Observation', icon: 'people', noCache: true }
       },
       {
-          path: 'observations/:id/edit',
-          name: 'edit-student-observation',
-          hidden: true,
-          component: () => import('@/views/students/components/EditStudentObservation.vue'),
-          meta: {   title: 'Edit Student Observation',icon: 'people', noCache: true}
+        path: 'observations/:id/edit',
+        name: 'edit-student-observation',
+        hidden: true,
+        component: () => import('@/views/students/components/EditStudentObservation.vue'),
+        meta: { title: 'Edit Student Observation', icon: 'people', noCache: true }
       },
       {
-          path: 'observations/:id',
-          name: 'view-student-observation',
-          hidden: true,
-          component: () => import('@/views/students/components/ViewStudentObservation.vue'),
-          meta: { title: 'View Student Observation' , icon: 'people', noCache: true}
+        path: 'observations/:id',
+        name: 'view-student-observation',
+        hidden: true,
+        component: () => import('@/views/students/components/ViewStudentObservation.vue'),
+        meta: { title: 'View Student Observation', icon: 'people', noCache: true }
       },
     ],
   },
@@ -115,7 +115,7 @@ export const asyncRoutes = [
       },
     ],
   },
-   {
+  {
     path: '/teacher',
     component: Layout,
     redirect: 'teacher/list',
@@ -134,13 +134,13 @@ export const asyncRoutes = [
         meta: { title: 'Pay', bootstrapIcon: 'currency-exchange', noCache: true },
       },
       {
-        path: 'class-observation' ,
+        path: 'class-observation',
         component: () => import('@/views/teachers/TeacherObservation.vue'),
         name: 'Teacher Observation',
         meta: { title: 'Obsercation', bootstrapIcon: 'file-spreadsheet', noCache: true },
       },
       {
-        path: 'profile/:id' ,
+        path: 'profile/:id',
         hidden: true,
         component: () => import('@/views/teachers/TeacherProfile.vue'),
         name: 'Teacher Profile',
@@ -202,7 +202,7 @@ export const asyncRoutes = [
     path: '/attendance',
     component: Layout,
     redirect: 'attendance/mark/add',
-    meta: { title: 'Attendance', bootstrapIcon: 'calendar-check-fill', noCache: true,permissions: ['view menu attendance'] },
+    meta: { title: 'Attendance', bootstrapIcon: 'calendar-check-fill', noCache: true, permissions: ['view menu attendance'] },
     children: [
       {
         path: 'mark',
@@ -298,9 +298,9 @@ export const asyncRoutes = [
     path: '/finance',
     component: Layout,
     redirect: '/finance/accounting/dashboard',
-    meta: {title: 'Finanace', bootstrapIcon: 'credit-card-2-back-fill', noCache: true, permissions: ['view menu timetabel']},
+    meta: { title: 'Finanace', bootstrapIcon: 'credit-card-2-back-fill', noCache: true, permissions: ['view menu timetabel'] },
     children: [
-     {
+      {
         path: 'fee',
         redirect: 'fee/paidlist',
         meta: { title: 'Fee', bootstrapIcon: 'currency-dollar', noCache: true, permissions: ['view menu fee'] },
@@ -326,20 +326,14 @@ export const asyncRoutes = [
           {
             path: 'feevoucher',
             component: () => import('@/views/fee/FeeVoucher.vue'),
-            name: 'Fee Voucher',
-            meta: { title: 'Fee Voucher', bootstrapIcon: 'file-earmark-text', noCache: true },
+            name: 'Generate',
+            meta: { title: 'Generate', bootstrapIcon: 'file-earmark-text', noCache: true },
           },
           {
-            path: 'vouchertracking',
-            component: () => import('@/views/fee/FeeVoucherTracking.vue'),
-            name: 'Voucher Tracking',
-            meta: { title: 'Voucher Tracking', bootstrapIcon: 'list-check', noCache: true },
-          },
-          {
-            path: 'voucherreminders',
-            component: () => import('@/views/fee/VoucherReminders.vue'),
-            name: 'Voucher Reminders',
-            meta: { title: 'Voucher Reminders', bootstrapIcon: 'bell', noCache: true },
+            path: 'manage',
+            component: () => import('@/views/fee/FeeManage.vue'),
+            name: 'Manage',
+            meta: { title: 'Manage', bootstrapIcon: 'list-check', noCache: true },
           },
         ],
       },
@@ -405,32 +399,38 @@ export const asyncRoutes = [
     path: '/exam',
     component: Layout,
     redirect: 'exam/test',
-    meta: {title: 'Assessments', bootstrapIcon: 'journal-text', noCache: true,  permissions: ['view menu exam'],},
+    meta: { title: 'Assessments', bootstrapIcon: 'journal-text', noCache: true, permissions: ['view menu exam'], },
     children: [
       {
         path: 'exam',
         component: () => import('@/views/exam/ExamList.vue'),
         name: 'Add Exam',
-        meta: {title: 'Exam', bootstrapIcon: 'clipboard2-pulse', noCache: true},
+        meta: { title: 'Exam', bootstrapIcon: 'clipboard2-pulse', noCache: true },
       },
       {
         path: 'test',
         component: () => import('@/views/exam/TestList.vue'),
         name: 'Add Test',
-        meta: {title: 'Test', bootstrapIcon: 'clipboard2-data', noCache: true},
+        meta: { title: 'Test', bootstrapIcon: 'clipboard2-data', noCache: true },
       },
       {
         path: 'index',
         component: () => import('@/views/exam/Chapters.vue'),
         name: 'Generate Test',
-        meta: {title: 'Chapters', bootstrapIcon: 'book', noCache: true},
+        meta: { title: 'Chapters', bootstrapIcon: 'book', noCache: true },
       },
       {
         path: 'chapter_options/:id',
         hidden: true,
         component: () => import('@/views/exam/ChapterQuestions.vue'),
         name: 'Options',
-        meta: {title: 'options', bootstrapIcon: 'journal-text', noCache: true},
+        meta: { title: 'options', bootstrapIcon: 'journal-text', noCache: true },
+      },
+      {
+        path: 'low-performance',
+        component: () => import('@/views/exam/LowPerformance.vue'),
+        name: 'Low Performance',
+        meta: { title: 'Low Performance', bootstrapIcon: 'graph-down-arrow', noCache: true },
       },
     ],
   },
@@ -438,7 +438,7 @@ export const asyncRoutes = [
     path: '/communication',
     component: Layout,
     redirect: 'communication/queue',
-    meta: {title: 'communication', bootstrapIcon: 'chat-right-text-fill', noCache: true, permissions: ['view menu timetabel']},
+    meta: { title: 'communication', bootstrapIcon: 'chat-right-text-fill', noCache: true, permissions: ['view menu timetabel'] },
     children: [
       {
         path: 'queue',
@@ -458,19 +458,19 @@ export const asyncRoutes = [
     path: '/timetable',
     component: Layout,
     redirect: 'timetable/create',
-    meta: {title: 'TimeTable', bootstrapIcon: 'clock-fill', noCache: true, permissions: ['view menu timetabel']},
+    meta: { title: 'TimeTable', bootstrapIcon: 'clock-fill', noCache: true, permissions: ['view menu timetabel'] },
     children: [
       {
         path: 'generator',
         component: () => import('@/views/timetable/TimeTable.vue'),
         name: 'Generat',
-        meta: {title: 'Generate Timetable', bootstrapIcon: 'calendar3', noCache: true},
+        meta: { title: 'Generate Timetable', bootstrapIcon: 'calendar3', noCache: true },
       },
       {
         path: 'periods',
         component: () => import('@/views/timetable/Periods.vue'),
         name: 'Periods',
-        meta: {title: 'Add/Edit Periods', bootstrapIcon: 'watch', noCache: true},
+        meta: { title: 'Add/Edit Periods', bootstrapIcon: 'watch', noCache: true },
       },
     ],
   },
@@ -483,7 +483,7 @@ export const asyncRoutes = [
         path: 'edit',
         component: () => import('@/views/users/SelfProfile.vue'),
         name: 'SelfProfile',
-        meta: {title: 'userProfile', bootstrapIcon: 'person-circle', noCache: true},
+        meta: { title: 'userProfile', bootstrapIcon: 'person-circle', noCache: true },
       },
     ],
   },

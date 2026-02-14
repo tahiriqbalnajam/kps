@@ -114,6 +114,7 @@ Route::apiResource('holidays', 'HolidayController');
 Route::get('/teacher/{id}/test-classwise', 'TeacherController@get_tests');
 Route::get('/teacher/{id}/online', 'TeacherController@online_attendance');
 //Tests
+Route::get('tests/low-performance-students', 'Api\LowPerformanceStudentController@index');
 Route::apiResource('tests', 'TestController');
 Route::apiResource('tests-result', 'TestResultController');
 Route::put('tests/{test_id}/results', 'TestController@updateTestResults');

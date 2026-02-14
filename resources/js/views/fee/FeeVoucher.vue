@@ -3,6 +3,35 @@
     <!-- Filter Header -->
     <div class="filter-header">
       <div class="filter-section">
+        <div class="search-group" style="display: flex; gap: 8px;">
+          <el-select 
+            v-model="query.searchType" 
+            placeholder="Search By" 
+            class="search-type-select"
+            style="width: 140px;"
+            size="default"
+          >
+            <el-option label="Student Name" value="student_name" />
+            <el-option label="Parent Name" value="parent_name" />
+            <el-option label="Admission #" value="admission_number" />
+            <el-option label="Roll No" value="roll_no" />
+          </el-select>
+
+          <el-input 
+            v-model="query.keyword" 
+            placeholder="Search..." 
+            class="search-input" 
+            v-on:input="debounceInput" 
+            clearable
+            size="default"
+            style="width: 200px;"
+          >
+            <template #prefix>
+              <el-icon><Search /></el-icon>
+            </template>
+          </el-input>
+        </div>
+
         <el-select 
           v-model="query.class_id" 
           placeholder="Select Class..." 
@@ -18,34 +47,6 @@
             :value="cls.id" 
           />
         </el-select>
-
-        <el-select 
-          v-model="query.group" 
-          placeholder="Select Group..." 
-          class="group-select"
-          clearable
-          @change="handleFilter"
-          size="default"
-        >
-          <el-option label="All Students" value="" />
-          <el-option label="Male Students" value="male" />
-          <el-option label="Female Students" value="female" />
-          <el-option label="Fee Pending" value="pending" />
-          <el-option label="Active Only" value="active" />
-        </el-select>
-
-        <el-input 
-          v-model="query.keyword" 
-          placeholder="Search by name, admission no..." 
-          class="search-input" 
-          v-on:input="debounceInput" 
-          clearable
-          size="default"
-        >
-          <template #prefix>
-            <el-icon><Search /></el-icon>
-          </template>
-        </el-input>
       </div>
 
       <div class="action-section">
@@ -486,6 +487,7 @@ export default {
       generatedVouchers: [],
       duplicateWarning: {
         show: false,
+        count: 0,
         title: '',
         message: '',
         duplicates: []
@@ -496,7 +498,8 @@ export default {
         keyword: '',
         class_id: '',
         group: '',
-        include: 'stdclasses,parents'
+        include: 'stdclasses,parents',
+        searchType: 'student_name'
       },
       voucherForm: {
         dueDate: null,
@@ -549,7 +552,11 @@ export default {
         const filters = {}
         
         if (this.query.keyword) {
-          filters.search = this.query.keyword
+          if (this.query.searchType) {
+            filters[this.query.searchType] = this.query.keyword
+          } else {
+            filters.search = this.query.keyword
+          }
         }
         
         if (this.query.class_id) {
@@ -1003,16 +1010,14 @@ export default {
         // Call API to save vouchers
         const response = await generateFeeVouchers(voucherData)
         
-        if (response && response.data) {
-          // Update vouchers with database IDs if returned
-          if (response.data.saved_vouchers) {
-            vouchers.forEach((voucher, index) => {
-              if (response.data.saved_vouchers[index]) {
-                voucher.id = response.data.saved_vouchers[index].id
-                voucher.voucher_number = response.data.saved_vouchers[index].voucher_number || `FV-${Date.now()}-${index + 1}`
-              }
-            })
-          }
+        if (response && response.saved_vouchers) {
+          // Update vouchers with database IDs and voucher numbers
+          vouchers.forEach((voucher, index) => {
+            if (response.saved_vouchers[index]) {
+              voucher.id = response.saved_vouchers[index].id
+              voucher.voucher_number = response.saved_vouchers[index].voucher_number || `FV-${Date.now()}-${index + 1}`
+            }
+          })
         }
 
         // Store generated vouchers for printing
@@ -1125,8 +1130,6 @@ export default {
 <style scoped>
 .app-container {
   padding: 16px;
-  background: #f5f7fa;
-  min-height: 100vh;
 }
 
 /* Filter Header */
@@ -1175,10 +1178,7 @@ export default {
 
 /* Table Card */
 .table-card {
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  border: none;
+  border-radius: 4px;
 }
 
 .card-header {
@@ -1270,18 +1270,6 @@ export default {
 }
 
 /* Voucher Dialog */
-.voucher-dialog :deep(.el-dialog__header) {
-  background: linear-gradient(135deg, #409eff, #36a3f7);
-  color: white;
-  padding: 20px 24px;
-  margin: 0;
-}
-
-.voucher-dialog :deep(.el-dialog__title) {
-  color: white;
-  font-weight: 600;
-}
-
 .voucher-form {
   padding: 20px 0;
 }
