@@ -80,80 +80,19 @@
         </div>
       </template>
 
-      <el-table
-        :data="studentsList"
-        v-loading="loading"
-        @selection-change="handleSelectionChange"
-        stripe
-        style="width: 100%"
-        class="voucher-table"
-      >
-        <el-table-column type="selection" width="55" />
-        
-        <el-table-column label="Admission #" prop="adminssion_number" width="120">
-          <template #default="scope">
-            <span class="admission-number">{{ scope.row.adminssion_number }}</span>
+      <div style="height: 600px; width: 100%">
+        <el-auto-resizer>
+          <template #default="{ height, width }">
+            <el-table-v2
+              :columns="columns"
+              :data="studentsList"
+              :width="width"
+              :height="height"
+              fixed
+            />
           </template>
-        </el-table-column>
-
-        <el-table-column label="Student" min-width="200">
-          <template #default="scope">
-            <div class="student-info">
-              <div class="student-details">
-                <span class="student-name">{{ scope.row.name }}</span>
-                <div class="parent-info">
-                  <el-icon class="parent-icon"><User /></el-icon>
-                  <span class="parent-name">{{ scope.row.parents?.name || 'N/A' }}</span>
-                </div>
-              </div>
-            </div>
-          </template>
-        </el-table-column>
-
-        <el-table-column label="Class" width="120">
-          <template #default="scope">
-            <el-tag 
-              :type="getClassTagType(scope.row.stdclasses?.name)" 
-              effect="light"
-            >
-              {{ scope.row.stdclasses?.name || 'Unassigned' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-
-        <el-table-column label="Monthly Fee" width="120" align="right">
-          <template #default="scope">
-            <div class="fee-amount">
-              <el-icon class="currency-icon"><Money /></el-icon>
-              <span class="amount">{{ getStudentFee(scope.row) }}</span>
-            </div>
-          </template>
-        </el-table-column>
-
-        <el-table-column label="Gender" width="100" align="center">
-          <template #default="scope">
-            <el-tag 
-              :type="scope.row.gender === 'Male' ? 'primary' : 'danger'" 
-              effect="light"
-              size="small"
-            >
-              {{ scope.row.gender }}
-            </el-tag>
-          </template>
-        </el-table-column>
-
-        <el-table-column label="Status" width="120" align="center">
-          <template #default="scope">
-            <el-tag 
-              :type="scope.row.status === 'active' ? 'success' : 'warning'" 
-              effect="light"
-              size="small"
-            >
-              {{ scope.row.status === 'active' ? 'Active' : 'Inactive' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-      </el-table>
+        </el-auto-resizer>
+      </div>
 
       <!-- Pagination -->
       <div class="pagination-section">
@@ -448,6 +387,7 @@
 </template>
 
 <script>
+import { h } from 'vue'
 import {
   Search,
   Document,
@@ -461,6 +401,14 @@ import moment from 'moment'
 import { debounce } from 'lodash'
 import Resource from '@/api/resource'
 import { getFeeVoucherStudents, generateFeeVouchers, checkExistingVouchers, getOutstandingVouchers } from '@/api/fee'
+import {
+  ElTableV2,
+  ElAutoResizer,
+  ElCheckbox,
+  ElTag,
+  ElInputNumber,
+  ElIcon
+} from 'element-plus'
 import FeeVoucherPrint from './component/FeeVoucherPrint.vue'
 
 const studentsResource = new Resource('students')
@@ -470,7 +418,9 @@ const feeTypesResource = new Resource('feetypes')
 export default {
   name: 'FeeVoucher',
   components: {
-    FeeVoucherPrint
+    FeeVoucherPrint,
+    ElTableV2,
+    ElAutoResizer
   },
   data() {
     return {
@@ -478,6 +428,7 @@ export default {
       generating: false,
       checkingDuplicates: false,
       studentsList: [],
+      editingRows: new Set(),
       classes: [],
       feeTypes: [],
       selectedStudents: [],
@@ -517,6 +468,122 @@ export default {
     }
   },
   computed: {
+    columns() {
+      return [
+        {
+          key: 'selection',
+          width: 50,
+          align: 'center',
+          cellRenderer: ({ rowData }) => h(ElCheckbox, {
+            modelValue: this.selectedStudents.some(s => s.id === rowData.id),
+            'onUpdate:modelValue': (val) => this.toggleSelection(rowData, val)
+          }),
+          headerCellRenderer: () => h(ElCheckbox, {
+            modelValue: this.isAllSelected,
+            indeterminate: this.isIndeterminate,
+            'onUpdate:modelValue': (val) => this.toggleAllSelection(val)
+          })
+        },
+        {
+          key: 'roll_no',
+          dataKey: 'roll_no',
+          title: 'Roll No',
+          width: 100,
+          align: 'center'
+        },
+        {
+          key: 'student',
+          title: 'Student',
+          width: 300,
+          cellRenderer: ({ rowData }) => h('div', { class: 'student-info' }, [
+            h('div', { class: 'student-details' }, [
+              h('span', { class: 'student-name', style: 'display: block; font-weight: bold;' }, rowData.name),
+              h('div', { class: 'parent-info', style: 'display: flex; align-items: center; gap: 4px; color: #909399; font-size: 12px;' }, [
+                h(ElIcon, null, { default: () => h(User) }),
+                h('span', null, rowData.parents?.name || 'N/A')
+              ])
+            ])
+          ])
+        },
+        {
+          key: 'class',
+          title: 'Class',
+          width: 120,
+          align: 'center',
+          cellRenderer: ({ rowData }) => h(ElTag, {
+            type: this.getClassTagType(rowData.stdclasses?.name),
+            effect: 'light'
+          }, { default: () => rowData.stdclasses?.name || 'Unassigned' })
+        },
+        {
+          key: 'monthly_fee',
+          title: 'Monthly Fee',
+          width: 150,
+          align: 'right',
+          cellRenderer: ({ rowData }) => {
+            const isEditing = this.editingRows.has(rowData.id)
+            
+            if (isEditing) {
+              return h(ElInputNumber, {
+                modelValue: rowData.monthly_fee,
+                'onUpdate:modelValue': (val) => (rowData.monthly_fee = val),
+                 min: 0,
+                 step: 100,
+                 size: 'small',
+                 style: { width: '100%' },
+                 controlsPosition: 'right',
+                 placeholder: '0',
+                 autofocus: true,
+                 ref: (el) => { if (el) el.focus() }, // Attempt to focus
+                 onBlur: () => this.saveStudentFee(rowData),
+                 onKeydown: (e) => {
+                   if (e.key === 'Enter') {
+                     this.saveStudentFee(rowData)
+                   }
+                 }
+              })
+            } else {
+              return h('div', {
+                style: { cursor: 'pointer', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'flex-end' },
+                onDblclick: () => {
+                  this.editingRows.add(rowData.id)
+                  // Force update to re-render
+                  this.editingRows = new Set(this.editingRows)
+                }
+              }, `Rs. ${rowData.monthly_fee}`)
+            }
+          }
+        },
+        {
+          key: 'gender',
+          title: 'Gender',
+          width: 100,
+          align: 'center',
+          cellRenderer: ({ rowData }) => h(ElTag, {
+            type: rowData.gender === 'Male' ? 'primary' : 'danger',
+            effect: 'light',
+            size: 'small'
+          }, { default: () => rowData.gender })
+        },
+        {
+          key: 'status',
+          title: 'Status',
+          width: 100,
+          align: 'center',
+          cellRenderer: ({ rowData }) => h(ElTag, {
+            type: rowData.status === 'active' ? 'success' : 'warning',
+            effect: 'light',
+            size: 'small'
+          }, { default: () => rowData.status === 'active' ? 'Active' : 'Inactive' })
+        }
+      ]
+    },
+    isAllSelected() {
+      return this.studentsList.length > 0 && this.selectedStudents.length === this.studentsList.length
+    },
+    isIndeterminate() {
+      return this.selectedStudents.length > 0 && this.selectedStudents.length < this.studentsList.length
+    },
     formattedDueDate() {
       return this.voucherForm.dueDate ? moment(this.voucherForm.dueDate).format('DD MMM, YYYY') : ''
     },
@@ -586,7 +653,13 @@ export default {
         }
 
         const { data } = await studentsResource.list(queryParams)
-        this.studentsList = data.students.data
+        this.studentsList = data.students.data.map(student => {
+          // Initialize monthly_fee with class fee if not set (checking for null/undefined to allow 0)
+          if ((student.monthly_fee === null || student.monthly_fee === undefined) && student.stdclasses && student.stdclasses.monthly_fee) {
+            student.monthly_fee = student.stdclasses.monthly_fee
+          }
+          return student
+        })
         this.total = data.students.total
       } catch (error) {
         console.error('Error fetching students:', error)
@@ -651,15 +724,7 @@ export default {
     },
 
     getStudentFee(student) {
-      // Get fee from student table, otherwise from class
-      if (student.monthly_fee && student.monthly_fee > 0) {
-        return student.monthly_fee
-      }
-      // Fallback to class fee if available
-      if (student.stdclasses && student.stdclasses.monthly_fee) {
-        return student.stdclasses.monthly_fee
-      }
-      return 'N/A'
+      return (student.monthly_fee !== null && student.monthly_fee !== undefined) ? student.monthly_fee : 0
     },
 
     formatDate(date) {
@@ -793,6 +858,44 @@ export default {
           amount: this.voucherForm.feeTypeAmounts[feeTypeId] || 0
         }
       })
+    },
+
+    toggleSelection(row, checked) {
+      if (checked) {
+        if (!this.selectedStudents.some(s => s.id === row.id)) {
+          this.selectedStudents.push(row)
+        }
+      } else {
+        const index = this.selectedStudents.findIndex(s => s.id === row.id)
+        if (index > -1) {
+          this.selectedStudents.splice(index, 1)
+        }
+      }
+      this.handleSelectionChange(this.selectedStudents)
+    },
+    
+    toggleAllSelection(checked) {
+      if (checked) {
+        this.selectedStudents = [...this.studentsList]
+      } else {
+        this.selectedStudents = []
+      }
+      this.handleSelectionChange(this.selectedStudents)
+    },
+
+    async saveStudentFee(student) {
+      if (this.editingRows.has(student.id)) {
+        this.editingRows.delete(student.id)
+        this.editingRows = new Set(this.editingRows) // Reactivity trigger
+      }
+      
+      try {
+        await studentsResource.update(student.id, { monthly_fee: student.monthly_fee })
+        this.$message.success(`Fee updated for ${student.name}`)
+      } catch (error) {
+        console.error('Failed to update fee:', error)
+        this.$message.error('Failed to update fee')
+      }
     },
 
     getFeeTypeById(feeTypeId) {

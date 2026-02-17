@@ -116,7 +116,7 @@ export default {
     height: 100%;
     padding: 20px;
   }
-  .el-date-editor >>> .el-range-separator {
+  .el-date-editor :deep(.el-range-separator) {
     width:10% !important;
   }
   .tblwdborder {

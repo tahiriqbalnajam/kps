@@ -322,49 +322,92 @@
     <el-dialog
       title="Voucher Statistics"
       v-model="showStatsDialog"
-      width="600px"
-      class="stats-dialog"
+      width="900px" 
+      class="stats-dialog compact-dialog"
+      top="5vh"
     >
       <div class="stats-content">
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <div class="stat-item">
-              <span class="stat-label">Total Vouchers:</span>
-              <span class="stat-value">{{ stats.total_vouchers }}</span>
+        <!-- Voucher Counts Inline -->
+        <div class="stats-section">
+          <h4 class="section-title">Voucher Counts</h4>
+          <div class="stat-boxes-inline">
+            <div class="stat-box">
+              <span class="label">Total</span>
+              <span class="value">{{ stats.total_vouchers || 0 }}</span>
             </div>
-          </el-col>
-          <el-col :span="12">
-            <div class="stat-item">
-              <span class="stat-label">Total Generated Amount:</span>
-              <span class="stat-value">Rs. {{ formatAmount(stats.total_amount_generated) }}</span>
+            <div class="stat-box success">
+              <span class="label">Paid</span>
+              <span class="value">{{ stats.paid_vouchers || 0 }}</span>
             </div>
-          </el-col>
-          <el-col :span="12">
-            <div class="stat-item">
-              <span class="stat-label">Amount Collected:</span>
-              <span class="stat-value success">Rs. {{ formatAmount(stats.total_amount_collected) }}</span>
+            <div class="stat-box warning">
+              <span class="label">Unpaid</span>
+              <span class="value">{{ stats.unpaid_vouchers || 0 }}</span>
             </div>
-          </el-col>
-          <el-col :span="12">
-            <div class="stat-item">
-              <span class="stat-label">Pending Amount:</span>
-              <span class="stat-value danger">Rs. {{ formatAmount(stats.pending_amount) }}</span>
+            <div class="stat-box danger">
+              <span class="label">Overdue</span>
+              <span class="value">{{ stats.overdue_vouchers || 0 }}</span>
             </div>
-          </el-col>
-          <el-col :span="12">
-            <div class="stat-item">
-              <span class="stat-label">Collection Rate:</span>
-              <span class="stat-value">{{ getCollectionRate() }}%</span>
+            <div class="stat-box info">
+              <span class="label">Cancelled</span>
+              <span class="value">{{ stats.cancelled_vouchers || 0 }}</span>
             </div>
-          </el-col>
-          <el-col :span="12">
-            <div class="stat-item">
-              <span class="stat-label">Overdue Vouchers:</span>
-              <span class="stat-value warning">{{ stats.overdue_vouchers }}</span>
+          </div>
+        </div>
+
+        <!-- Financial Summary Inline -->
+        <div class="stats-section">
+          <h4 class="section-title">Financial Summary</h4>
+          <div class="stat-boxes-inline">
+            <div class="stat-box">
+              <span class="label">Generated</span>
+              <span class="value">Rs. {{ formatAmount(stats.total_amount_generated) }}</span>
             </div>
-          </el-col>
-        </el-row>
+            <div class="stat-box success">
+              <span class="label">Collected</span>
+              <span class="value">Rs. {{ formatAmount(stats.total_amount_collected) }}</span>
+            </div>
+            <div class="stat-box danger">
+              <span class="label">Pending</span>
+              <span class="value">Rs. {{ formatAmount(stats.pending_amount) }}</span>
+            </div>
+            <div class="stat-box">
+              <span class="label">Rate</span>
+              <span class="value">{{ getCollectionRate() }}%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Paid Vouchers List -->
+        <div class="stats-section">
+          <h4 class="section-title">Recent Paid Vouchers</h4>
+          <el-table :data="paidVouchers" height="300" style="width: 100%" size="small" border stripe>
+            <el-table-column prop="voucher_number" label="Voucher #" width="120" />
+            <el-table-column prop="student_name" label="Student Name" min-width="150" />
+            <el-table-column prop="parent_name" label="Father Name" min-width="150" />
+            <el-table-column prop="class_name" label="Class" width="80" />
+            <el-table-column label="Paid Amount" width="120" align="right">
+              <template #default="scope">
+                Rs. {{ formatAmount(scope.row.paid_amount) }}
+              </template>
+            </el-table-column>
+            <el-table-column label="Date" width="100">
+              <template #default="scope">
+                {{ formatDate(scope.row.payment_date || scope.row.updated_at) }}
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
       </div>
+      
+      <template #footer>
+        <div class="dialog-footer-stats">
+          <div class="total-collected">
+            <strong>Total Collected Amount: </strong>
+            <span class="amount">Rs. {{ formatAmount(stats.total_amount_collected) }}</span>
+          </div>
+          <el-button @click="showStatsDialog = false">Close</el-button>
+        </div>
+      </template>
     </el-dialog>
 
     <!-- Voucher Print Component -->
@@ -436,7 +479,8 @@ export default {
       paymentForm: {
         paidAmount: 0,
         paymentDate: null
-      }
+      },
+      paidVouchers: []
     }
   },
   computed: {
@@ -484,9 +528,16 @@ export default {
     }
   },
   created() {
+    // Set default date range (1st of current month to today)
+    const startOfMonth = moment().startOf('month')
+    const today = moment()
+    this.dateRange = [startOfMonth.toDate(), today.toDate()]
+    this.query.date_from = startOfMonth.format('YYYY-MM-DD')
+    this.query.date_to = today.format('YYYY-MM-DD')
+
     this.getVouchers()
     this.getClasses()
-    this.getStatistics()
+    this.getStatistics() // Initial stats with default date
   },
   methods: {
     debounceInput: debounce(function () {
@@ -543,11 +594,32 @@ export default {
 
     async getStatistics() {
       try {
-        const data = await getFeeVoucherStats()
+        // Pass current filters to statistics
+        const params = { ...this.query }
+        
+        // Clean up empty parameters
+        Object.keys(params).forEach(key => {
+          if (params[key] === '' || params[key] === null || params[key] === undefined) {
+            delete params[key]
+          }
+        })
+
+        const data = await getFeeVoucherStats(params)
         this.stats = data.statistics || {}
+
+        // Also fetch paid vouchers list for the dialog
+        const paidParams = { ...params, status: 'paid', limit: 100 } // Fetch recent 100 paid
+        const paidData = await getFeeVouchers(paidParams)
+        if (paidData && paidData.success && paidData.vouchers) {
+          this.paidVouchers = paidData.vouchers.data || []
+        } else {
+          this.paidVouchers = []
+        }
+
       } catch (error) {
         console.error('Error fetching statistics:', error)
         this.stats = {}
+        this.paidVouchers = []
       }
     },
 
@@ -1055,5 +1127,77 @@ export default {
     width: 100%;
     margin-bottom: 4px;
   }
+}
+
+/* Compact Stats Dialog Styles */
+.stats-dialog :deep(.el-dialog__body) {
+  padding: 10px 20px;
+}
+
+.stats-section {
+  margin-bottom: 20px;
+}
+
+.section-title {
+  margin: 0 0 10px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #606266;
+  border-bottom: 1px solid #EBEEF5;
+  padding-bottom: 5px;
+}
+
+.stat-boxes-inline {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.stat-box {
+  flex: 1;
+  min-width: 100px;
+  background: #f5f7fa;
+  padding: 8px 12px;
+  border-radius: 4px;
+  border: 1px solid #e4e7ed;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.stat-box .label {
+  font-size: 11px;
+  color: #909399;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.stat-box .value {
+  font-size: 16px;
+  font-weight: 700;
+  color: #303133;
+}
+
+.stat-box.success .value { color: #67c23a; }
+.stat-box.warning .value { color: #e6a23c; }
+.stat-box.danger .value { color: #f56c6c; }
+.stat-box.info .value { color: #909399; }
+
+.dialog-footer-stats {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.total-collected {
+  font-size: 16px;
+  color: #303133;
+}
+
+.total-collected .amount {
+  font-weight: 800;
+  color: #67c23a;
+  font-size: 18px;
 }
 </style>

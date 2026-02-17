@@ -224,8 +224,17 @@ class FeeVoucherController extends Controller
                 AllowedFilter::callback('date_to', function ($query, $value) {
                     $query->whereDate('generated_at', '<=', $value);
                 }),
+                AllowedFilter::callback('paid_from', function ($query, $value) {
+                    $query->whereDate('payment_date', '>=', $value);
+                }),
+                AllowedFilter::callback('paid_to', function ($query, $value) {
+                    $query->whereDate('payment_date', '<=', $value);
+                }),
                 // Specific column filters with prefix matching (performance improved)
                 AllowedFilter::callback('student_name', function ($query, $value) {
+                    $query->where('student_name', 'LIKE', "{$value}%");
+                }),
+                AllowedFilter::callback('name', function ($query, $value) {
                     $query->where('student_name', 'LIKE', "{$value}%");
                 }),
                 AllowedFilter::callback('parent_name', function ($query, $value) {
@@ -525,32 +534,81 @@ class FeeVoucherController extends Controller
     public function getStatistics(Request $request)
     {
         try {
-            // Build base query with Spatie filters
+            // 1. Common Filters (Class, Type)
             $baseQuery = QueryBuilder::for(FeeVoucher::class)
                 ->allowedFilters([
                     AllowedFilter::partial('class_name'),
                     AllowedFilter::exact('voucher_type'),
-                    AllowedFilter::callback('date_from', function ($query, $value) {
-                        $query->whereDate('generated_at', '>=', $value);
-                    }),
-                    AllowedFilter::callback('date_to', function ($query, $value) {
-                        $query->whereDate('generated_at', '<=', $value);
-                    }),
-                ])
-                ->getEloquentBuilder();
+                    // Allow these filters but do nothing in base query (handled manually below for split logic)
+                    AllowedFilter::callback('date_from', function(){}),
+                    AllowedFilter::callback('date_to', function(){}),
+                    AllowedFilter::callback('paid_from', function(){}),
+                    AllowedFilter::callback('paid_to', function(){}),
+                ]);
 
-            // Clone the base query for each stat
+            // 2. Generation Query (for Total, Unpaid, Generated Amount, Pending)
+            $genQuery = clone $baseQuery;
+            if ($request->filled('filter.date_from')) {
+                $genQuery->whereDate('generated_at', '>=', $request->input('filter.date_from'));
+            }
+            if ($request->filled('filter.date_to')) {
+                $genQuery->whereDate('generated_at', '<=', $request->input('filter.date_to'));
+            }
+
+            // 3. Payment Query (for Paid Count, Collected Amount)
+            $payQuery = clone $baseQuery;
+            $hasPaymentFilter = false;
+            
+            // If paid_from/to is provided, use them. 
+            // If NOT provided but date_from/to IS provided, use date_from/to for payment query too (to align contexts if not explicitly separated)
+            // But frontend will be updated to send both identical for "Today"/"Month" stats.
+            
+            if ($request->filled('filter.paid_from')) {
+                $payQuery->whereDate('payment_date', '>=', $request->input('filter.paid_from'));
+                $hasPaymentFilter = true;
+            } elseif ($request->filled('filter.date_from')) {
+                 // Fallback: If looking at "Today", we want paid today
+                 $payQuery->whereDate('payment_date', '>=', $request->input('filter.date_from'));
+            }
+
+            if ($request->filled('filter.paid_to')) {
+                $payQuery->whereDate('payment_date', '<=', $request->input('filter.paid_to'));
+                $hasPaymentFilter = true;
+            } elseif ($request->filled('filter.date_to')) {
+                 $payQuery->whereDate('payment_date', '<=', $request->input('filter.date_to'));
+            }
+
+            // Clones for specific counts
+            $genQueryForCount = clone $genQuery;
+            $genQueryForSum = clone $genQuery;
+            $genQueryUnpaid = clone $genQuery;
+            $genQueryPending = clone $genQuery;
+
+            $payQueryForCount = clone $payQuery;
+            $payQueryForSum = clone $payQuery;
+
             $stats = [
-                'total_vouchers' => (clone $baseQuery)->count(),
-                'paid_vouchers' => (clone $baseQuery)->where('status', 'paid')->count(),
-                'unpaid_vouchers' => (clone $baseQuery)->where('status', 'unpaid')->count(),
-                'partially_paid_vouchers' => (clone $baseQuery)->where('status', 'partially_paid')->count(),
-                'overdue_vouchers' => (clone $baseQuery)->whereIn('status', ['unpaid', 'partially_paid'])
+                'total_vouchers' => $genQueryForCount->count(),
+                
+                // Paid Vouchers: Count of vouchers PAID in the period (status paid/partial? or just paid)
+                // Ususally "Paid Vouchers" implies fully paid.
+                'paid_vouchers' => $payQueryForCount->where('status', 'paid')->count(),
+                
+                'unpaid_vouchers' => $genQueryUnpaid->where('status', 'unpaid')->count(),
+                
+                // Overdue: Vouchers generated in period that are overdue? Or currently overdue?
+                // Visual consistency: Vouchers belonging to this generation batch that are overdue.
+                'overdue_vouchers' => (clone $genQuery)->whereIn('status', ['unpaid', 'partially_paid'])
                                                 ->where('due_date', '<', now()->toDateString())
                                                 ->count(),
-                'total_amount_generated' => (clone $baseQuery)->sum('total_with_fine'),
-                'total_amount_collected' => (clone $baseQuery)->where('status', 'paid')->sum('paid_amount'),
-                'pending_amount' => (clone $baseQuery)->whereIn('status', ['unpaid', 'partially_paid'])->sum('total_with_fine')
+                                                
+                'total_amount_generated' => $genQueryForSum->sum('total_with_fine'),
+                
+                // Collected: Sum of payments made in the period
+                'total_amount_collected' => $payQueryForSum->sum('paid_amount'),
+                
+                // Pending: Amount remaining from vouchers GENERATED in this period
+                'pending_amount' => $genQueryPending->whereIn('status', ['unpaid', 'partially_paid'])->sum(DB::raw('total_with_fine - paid_amount'))
             ];
 
             return response()->json([
@@ -662,6 +720,8 @@ class FeeVoucherController extends Controller
                     'fee_amount' => $voucher->fee_amount,
                     'fine_amount' => $voucher->fine_amount,
                     'total_with_fine' => $voucher->total_with_fine,
+                    'paid_amount' => $voucher->paid_amount, // Include paid amount
+                    'payment_date' => $voucher->payment_date, // Include payment date
                     'due_date' => $voucher->due_date,
                     'voucher_type' => $voucher->voucher_type,
                     'fee_month' => $voucher->fee_month,

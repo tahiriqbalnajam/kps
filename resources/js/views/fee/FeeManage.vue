@@ -11,7 +11,7 @@
             class="search-type-select"
             size="default"
           >
-            <el-option label="Student Name" value="student_name" />
+            <el-option label="Student Name" value="name" />
             <el-option label="Parent Name" value="parent_name" />
             <el-option label="Voucher #" value="voucher_number" />
             <el-option label="Roll No" value="roll_no" />
@@ -239,127 +239,11 @@
       @current-change="handleCurrentChange"
     />
 
-    <!-- Stats Drawer (70% width) -->
-    <el-drawer
-      title="Voucher Statistics"
-      v-model="showStatsDrawer"
-      direction="rtl"
-      size="70%"
-    >
-      <template #header>
-        <div class="drawer-header-row">
-          <span class="drawer-header-title">Voucher Statistics</span>
-          <el-button type="primary" size="small" @click="printStatsPDF">
-            <el-icon class="el-icon--left"><Printer /></el-icon> Download PDF
-          </el-button>
-        </div>
-      </template>
-
-      <div class="stats-drawer-body">
-        <!-- Stats Filters -->
-        <div class="drawer-section">
-          <div class="drawer-section-title">Filters</div>
-          <el-row :gutter="16" align="middle">
-            <el-col :span="10">
-              <el-date-picker
-                v-model="statsDateRange"
-                type="daterange"
-                range-separator="→"
-                start-placeholder="From"
-                end-placeholder="To"
-                style="width: 100%"
-                @change="loadStats"
-                :shortcuts="dateShortcuts"
-                size="default"
-              />
-            </el-col>
-            <el-col :span="5">
-              <el-select
-                v-model="statsFilters.class_name"
-                placeholder="All Classes"
-                clearable
-                style="width: 100%"
-                @change="loadStats"
-                size="default"
-              >
-                <el-option
-                  v-for="cls in classes"
-                  :key="cls.name"
-                  :label="cls.name"
-                  :value="cls.name"
-                />
-              </el-select>
-            </el-col>
-            <el-col :span="5">
-              <el-select
-                v-model="statsFilters.voucher_type"
-                placeholder="All Types"
-                clearable
-                style="width: 100%"
-                @change="loadStats"
-                size="default"
-              >
-                <el-option label="Monthly" value="monthly" />
-                <el-option label="Custom" value="custom" />
-                <el-option label="Multiple" value="multiple" />
-              </el-select>
-            </el-col>
-            <el-col :span="4">
-              <el-button type="primary" @click="loadStats" style="width: 100%">
-                <el-icon class="el-icon--left"><Refresh /></el-icon> Refresh
-              </el-button>
-            </el-col>
-          </el-row>
-        </div>
-
-        <!-- Voucher Counts -->
-        <div class="drawer-section">
-          <div class="drawer-section-title">Voucher Counts</div>
-          <el-row :gutter="16">
-            <el-col :span="5" v-for="item in statCards" :key="item.key">
-              <div class="drawer-stat-card" @click="filterByStatusAndClose(item.status)">
-                <div class="stat-card-value" :style="{ color: item.color }">{{ stats[item.key] || 0 }}</div>
-                <div class="stat-card-label">{{ item.label }}</div>
-              </div>
-            </el-col>
-          </el-row>
-        </div>
-
-        <!-- Financial Summary -->
-        <div class="drawer-section">
-          <div class="drawer-section-title">Financial Summary</div>
-          <el-row :gutter="16">
-            <el-col :span="6">
-              <div class="finance-card-drawer">
-                <div class="fc-label">Total Generated</div>
-                <div class="fc-value" style="color: #409eff">Rs. {{ formatAmount(stats.total_amount_generated) }}</div>
-              </div>
-            </el-col>
-            <el-col :span="6">
-              <div class="finance-card-drawer">
-                <div class="fc-label">Collected</div>
-                <div class="fc-value" style="color: #67c23a">Rs. {{ formatAmount(stats.total_amount_collected) }}</div>
-              </div>
-            </el-col>
-            <el-col :span="6">
-              <div class="finance-card-drawer">
-                <div class="fc-label">Pending</div>
-                <div class="fc-value" style="color: #f56c6c">Rs. {{ formatAmount(stats.pending_amount) }}</div>
-              </div>
-            </el-col>
-            <el-col :span="6">
-              <div class="finance-card-drawer">
-                <div class="fc-label">Collection Rate</div>
-                <div class="fc-value" style="color: #e6a23c">{{ getCollectionRate() }}%</div>
-                <div class="rate-bar">
-                  <div class="rate-fill" :style="{ width: getCollectionRate() + '%' }"></div>
-                </div>
-              </div>
-            </el-col>
-          </el-row>
-        </div>
-      </div>
-    </el-drawer>
+    <!-- Stats Component -->
+    <fee-voucher-statistics
+      v-model:visible="showStatsDrawer"
+      @close="showStatsDrawer = false"
+    />
 
     <!-- Payment Dialog -->
     <el-dialog
@@ -475,12 +359,13 @@ import {
 } from '@/api/fee'
 import Resource from '@/api/resource'
 import FeeVoucherPrint from './component/FeeVoucherPrint.vue'
+import FeeVoucherStatistics from './component/FeeVoucherStatistics.vue'
 
 const classesResource = new Resource('classes')
 
 export default {
   name: 'FeeManage',
-  components: { FeeVoucherPrint },
+  components: { FeeVoucherPrint, FeeVoucherStatistics },
   data() {
     return {
       loading: false,
@@ -489,32 +374,6 @@ export default {
       vouchersList: [],
       classes: [],
       total: 0,
-      stats: {},
-      dateRange: null,
-      statsDateRange: null,
-      selectedVoucher: null,
-      selectedVouchers: [],
-      showPaymentDialog: false,
-      showReminderDialog: false,
-      showPrintDialog: false,
-      showStatsDrawer: false,
-      voucherToPrint: [],
-      query: {
-        page: 1,
-        limit: 15,
-        status: '',
-        class_name: '',
-        search: '',
-        searchType: 'student_name',
-        date_from: '',
-        date_to: ''
-      },
-      statsFilters: {
-        class_name: '',
-        voucher_type: '',
-        date_from: '',
-        date_to: ''
-      },
       paymentForm: {
         paidAmount: 0,
         paymentDate: null
@@ -522,14 +381,28 @@ export default {
       reminderForm: {
         template: 'gentle',
         channels: ['sms']
+      }, // removed stats specific data
+      
+      // RESTORED MISSING DATA PROPERTIES
+      query: {
+        page: 1,
+        limit: 15,
+        search: '',
+        searchType: 'name',
+        status: '',
+        class_name: '',
+        date_from: '',
+        date_to: ''
       },
-      statCards: [
-        { key: 'total_vouchers', label: 'Total', status: '', color: '#409eff' },
-        { key: 'paid_vouchers', label: 'Paid', status: 'paid', color: '#67c23a' },
-        { key: 'partially_paid_vouchers', label: 'Partial', status: 'partially_paid', color: '#e6a23c' },
-        { key: 'unpaid_vouchers', label: 'Unpaid', status: 'unpaid', color: '#909399' },
-        { key: 'overdue_vouchers', label: 'Overdue', status: 'overdue', color: '#f56c6c' }
-      ],
+      showStatsDrawer: false,
+      showPaymentDialog: false,
+      showReminderDialog: false,
+      showPrintDialog: false,
+      selectedVoucher: null,
+      selectedVouchers: [],
+      voucherToPrint: [],
+      dateRange: [],
+
       dateShortcuts: [
         {
           text: 'This Month',
@@ -613,7 +486,6 @@ export default {
   created() {
     this.getVouchers()
     this.getClasses()
-    this.loadStats()
   },
   methods: {
     debounceInput: debounce(function () {
@@ -688,24 +560,7 @@ export default {
       }
     },
 
-    async loadStats() {
-      try {
-        const filters = { ...this.statsFilters }
-        if (this.statsDateRange) {
-          filters.date_from = moment(this.statsDateRange[0]).format('YYYY-MM-DD')
-          filters.date_to = moment(this.statsDateRange[1]).format('YYYY-MM-DD')
-        }
-        const params = this.buildSpatieParams(filters)
-        const data = await getFeeVoucherStats(params)
-        this.stats = data.statistics || {}
-      } catch (error) {
-        console.error('Error fetching stats:', error)
-        this.stats = {}
-      }
-    },
-
     openStatsDrawer() {
-      this.loadStats()
       this.showStatsDrawer = true
     },
 
@@ -776,95 +631,7 @@ export default {
       }
     },
 
-    printStatsPDF() {
-      const doc = new jsPDF()
-      const pageWidth = doc.internal.pageSize.getWidth()
 
-      // Title
-      doc.setFontSize(18)
-      doc.setFont('helvetica', 'bold')
-      doc.text('Fee Voucher Statistics Report', pageWidth / 2, 20, { align: 'center' })
-
-      // Date
-      doc.setFontSize(10)
-      doc.setFont('helvetica', 'normal')
-      doc.text(`Generated: ${moment().format('DD MMM, YYYY hh:mm A')}`, pageWidth / 2, 28, { align: 'center' })
-
-      // Filter info
-      let filterText = ''
-      if (this.statsDateRange) {
-        filterText += `Date: ${moment(this.statsDateRange[0]).format('DD MMM YY')} - ${moment(this.statsDateRange[1]).format('DD MMM YY')}`
-      }
-      if (this.statsFilters.class_name) {
-        filterText += `  |  Class: ${this.statsFilters.class_name}`
-      }
-      if (this.statsFilters.voucher_type) {
-        filterText += `  |  Type: ${this.statsFilters.voucher_type}`
-      }
-      if (filterText) {
-        doc.setFontSize(9)
-        doc.text(filterText, pageWidth / 2, 34, { align: 'center' })
-      }
-
-      // Voucher Counts Table
-      autoTable(doc, {
-        startY: 42,
-        head: [['Metric', 'Count']],
-        body: [
-          ['Total Vouchers', String(this.stats.total_vouchers || 0)],
-          ['Paid', String(this.stats.paid_vouchers || 0)],
-          ['Partially Paid', String(this.stats.partially_paid_vouchers || 0)],
-          ['Unpaid', String(this.stats.unpaid_vouchers || 0)],
-          ['Overdue', String(this.stats.overdue_vouchers || 0)]
-        ],
-        theme: 'grid',
-        headStyles: { fillColor: [64, 158, 255] },
-        styles: { fontSize: 11 },
-        columnStyles: {
-          0: { cellWidth: 80 },
-          1: { cellWidth: 40, halign: 'right', fontStyle: 'bold' }
-        }
-      })
-
-      // Financial Summary Table
-      const financialY = doc.lastAutoTable.finalY + 12
-      doc.setFontSize(13)
-      doc.setFont('helvetica', 'bold')
-      doc.text('Financial Summary', 14, financialY)
-
-      autoTable(doc, {
-        startY: financialY + 6,
-        head: [['Metric', 'Amount']],
-        body: [
-          ['Total Generated', `Rs. ${this.formatAmount(this.stats.total_amount_generated)}`],
-          ['Collected', `Rs. ${this.formatAmount(this.stats.total_amount_collected)}`],
-          ['Pending', `Rs. ${this.formatAmount(this.stats.pending_amount)}`],
-          ['Collection Rate', `${this.getCollectionRate()}%`]
-        ],
-        theme: 'grid',
-        headStyles: { fillColor: [103, 194, 58] },
-        styles: { fontSize: 11 },
-        columnStyles: {
-          0: { cellWidth: 80 },
-          1: { cellWidth: 60, halign: 'right', fontStyle: 'bold' }
-        }
-      })
-
-      // Footer
-      const footerY = doc.internal.pageSize.getHeight() - 10
-      doc.setFontSize(8)
-      doc.setFont('helvetica', 'italic')
-      doc.text('This is a system generated report and does not require a signature.', pageWidth / 2, footerY, { align: 'center' })
-
-      doc.setProperties({
-        title: 'Fee Voucher Statistics Report',
-        subject: 'Fee Statistics',
-        creator: 'School Management System'
-      })
-
-      doc.save(`fee-stats-${moment().format('YYYY-MM-DD')}.pdf`)
-      this.$message.success('PDF downloaded successfully')
-    },
 
     markAsPaid(voucher) {
       this.selectedVoucher = voucher

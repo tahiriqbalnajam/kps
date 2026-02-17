@@ -271,14 +271,14 @@ export default {
   #info {
     border-collapse: collapse;
   }
-  #info >>> td {
+  #info :deep(td) {
 		border:1px solid;
 		padding:2px 0 2px 10px;
   }
 	.paid_amount{
 		font-size:20px;
   }
-  #other-details >>> td {
+  #other-details :deep(td) {
     padding: 2px 0 2px 10px;
   }
 </style>

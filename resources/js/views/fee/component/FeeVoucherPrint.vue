@@ -10,8 +10,16 @@
     <div class="print-toolbar">
       <el-button type="primary" @click="printVouchers" size="large">
         <el-icon><Printer /></el-icon>
-        Print All Vouchers
+        Print
       </el-button>
+      
+      <div style="margin-left: 20px; display: flex; align-items: center;">
+        <span style="margin-right: 10px; font-weight: bold; color: #333;">Orientation:</span>
+        <el-radio-group v-model="printSettings.orientation" @change="savePrintSettings">
+          <el-radio label="landscape">Landscape (Side-by-Side)</el-radio>
+          <el-radio label="portrait">Portrait (Top-Bottom)</el-radio>
+        </el-radio-group>
+      </div>
       <el-button @click="handleClose" size="large">
         <el-icon><Close /></el-icon>
         Close
@@ -47,10 +55,12 @@
                 </div>
               </div>
               <div class="voucher-info">
-                <h3 class="voucher-title">FEE VOUCHER</h3>
+                <h3 class="voucher-title">
+                  STUDENT COPY 
+                  <span class="status-badge">({{ getStatusLabel(voucher.status) }})</span>
+                </h3>
                 <div class="voucher-number">Voucher #: {{ voucher.voucher_number || 'TEMP-' + (index + 1) }}</div>
-                <div class="copy-label">Student Copy</div>
-                <div class="print-date">{{ formatDate(new Date()) }}</div>
+                <div class="print-date"><strong>Due Date: {{ formatDate(voucher.due_date) }}</strong></div>
               </div>
             </div>
 
@@ -59,22 +69,14 @@
                 <tr>
                   <td class="label">Student:</td>
                   <td class="value">{{ voucher.student_name }}</td>
-                </tr>
-                <tr>
-                  <td class="label">Admission:</td>
-                  <td class="value">{{ voucher.admission_number }}</td>
-                </tr>
-                <tr>
                   <td class="label">Father:</td>
                   <td class="value">{{ voucher.parent_name }}</td>
                 </tr>
                 <tr>
                   <td class="label">Class:</td>
                   <td class="value">{{ voucher.class_name }}</td>
-                </tr>
-                <tr>
-                  <td class="label">Due Date:</td>
-                  <td class="value due-date">{{ formatDate(voucher.due_date) }}</td>
+                  <td class="label">Admission:</td>
+                  <td class="value">{{ voucher.admission_number }}</td>
                 </tr>
               </table>
 
@@ -107,27 +109,48 @@
                       <td class="amount">{{ voucher.fine_amount }}</td>
                     </tr>
                     
-                    <tr class="total-row">
-                      <td><strong>Total Amount</strong></td>
-                      <td class="amount total"><strong>{{ voucher.total_with_fine }}</strong></td>
-                    </tr>
+                    <template v-if="hasPayment(voucher)">
+                      <tr class="subtotal-row">
+                        <td><strong>Total Amount</strong></td>
+                        <td class="amount"><strong>{{ voucher.total_with_fine }}</strong></td>
+                      </tr>
+                      <tr class="paid-row">
+                        <td>Less: Paid Amount</td>
+                        <td class="amount">{{ voucher.paid_amount }}</td>
+                      </tr>
+                      <tr class="total-row">
+                        <td><strong>Balance Due</strong></td>
+                        <td class="amount total"><strong>{{ getBalanceAmount(voucher) }}</strong></td>
+                      </tr>
+                    </template>
+                    <template v-else>
+                      <tr class="total-row">
+                        <td><strong>Total Amount</strong></td>
+                        <td class="amount total"><strong>{{ voucher.total_with_fine }}</strong></td>
+                      </tr>
+                    </template>
                   </tbody>
                 </table>
               </div>
 
               <div class="payment-info">
+                <div v-if="voucher.status === 'paid'" class="paid-stamp">PAID</div>
+                <div v-else-if="voucher.status === 'partially_paid'" class="partial-stamp">PARTIAL</div>
                 <div class="payment-instruction">
-                  <strong>Payment Instructions:</strong>
-                  <p>Please pay before the due date to avoid fine charges.</p>
+                  <strong>Payment Instructions:</strong> Please pay before the due date to avoid fine charges.
                 </div>
               </div>
 
               <div class="signatures">
-                <div class="signature-box">
-                  <span>Received By:</span>
-                  <div class="signature-line">___________</div>
-                  <span>Date: _______</span>
+                <div class="signature-row">
+                  <div class="sig-item"><strong>Received By:</strong> {{ name }}</div>
+                  <div class="sig-item"><strong>Date:</strong> {{ currentTimestamp }}</div>
                 </div>
+              </div>
+
+              <!-- Footer -->
+              <div class="voucher-footer" v-if="settings.invoice_footer">
+                {{ settings.invoice_footer }}
               </div>
             </div>
           </div>
@@ -152,10 +175,12 @@
                 </div>
               </div>
               <div class="voucher-info">
-                <h3 class="voucher-title">FEE VOUCHER</h3>
+                <h3 class="voucher-title">
+                  OFFICE COPY 
+                  <span class="status-badge">({{ getStatusLabel(voucher.status) }})</span>
+                </h3>
                 <div class="voucher-number">Voucher #: {{ voucher.voucher_number || 'TEMP-' + (index + 1) }}</div>
-                <div class="copy-label office-label">Office Copy</div>
-                <div class="print-date">{{ formatDate(new Date()) }}</div>
+                <div class="print-date"><strong>Due Date: {{ formatDate(voucher.due_date) }}</strong></div>
               </div>
             </div>
 
@@ -164,22 +189,14 @@
                 <tr>
                   <td class="label">Student:</td>
                   <td class="value">{{ voucher.student_name }}</td>
-                </tr>
-                <tr>
-                  <td class="label">Admission:</td>
-                  <td class="value">{{ voucher.admission_number }}</td>
-                </tr>
-                <tr>
                   <td class="label">Father:</td>
                   <td class="value">{{ voucher.parent_name }}</td>
                 </tr>
                 <tr>
                   <td class="label">Class:</td>
                   <td class="value">{{ voucher.class_name }}</td>
-                </tr>
-                <tr>
-                  <td class="label">Due Date:</td>
-                  <td class="value due-date">{{ formatDate(voucher.due_date) }}</td>
+                  <td class="label">Admission:</td>
+                  <td class="value">{{ voucher.admission_number }}</td>
                 </tr>
               </table>
 
@@ -212,26 +229,48 @@
                       <td class="amount">{{ voucher.fine_amount }}</td>
                     </tr>
                     
-                    <tr class="total-row">
-                      <td><strong>Total Amount</strong></td>
-                      <td class="amount total"><strong>{{ voucher.total_with_fine }}</strong></td>
-                    </tr>
+                    <template v-if="hasPayment(voucher)">
+                      <tr class="subtotal-row">
+                        <td><strong>Total Amount</strong></td>
+                        <td class="amount"><strong>{{ voucher.total_with_fine }}</strong></td>
+                      </tr>
+                      <tr class="paid-row">
+                        <td>Less: Paid Amount</td>
+                        <td class="amount">{{ voucher.paid_amount }}</td>
+                      </tr>
+                      <tr class="total-row">
+                        <td><strong>Balance Due</strong></td>
+                        <td class="amount total"><strong>{{ getBalanceAmount(voucher) }}</strong></td>
+                      </tr>
+                    </template>
+                    <template v-else>
+                      <tr class="total-row">
+                        <td><strong>Total Amount</strong></td>
+                        <td class="amount total"><strong>{{ voucher.total_with_fine }}</strong></td>
+                      </tr>
+                    </template>
                   </tbody>
                 </table>
               </div>
 
               <div class="payment-info">
+                <div v-if="voucher.status === 'paid'" class="paid-stamp">PAID</div>
+                <div v-else-if="voucher.status === 'partially_paid'" class="partial-stamp">PARTIAL</div>
                 <div class="payment-instruction">
-                  <strong>Payment Instructions:</strong>
-                  <p>Please pay before the due date to avoid fine charges.</p>
+                  <strong>Payment Instructions:</strong> Please pay before the due date to avoid fine charges.
                 </div>
               </div>
 
               <div class="signatures">
-                <div class="signature-box">
-                  <span>Authorized Signature:</span>
-                  <div class="signature-line">___________</div>
+                <div class="signature-row">
+                  <div class="sig-item"><strong>Received By:</strong> {{ name }}</div>
+                  <div class="sig-item"><strong>Date:</strong> {{ currentTimestamp }}</div>
                 </div>
+              </div>
+
+              <!-- Footer -->
+              <div class="voucher-footer" v-if="settings.invoice_footer">
+                {{ settings.invoice_footer }}
               </div>
             </div>
           </div>
@@ -245,6 +284,8 @@
 import { Printer, Close } from '@element-plus/icons-vue'
 import moment from 'moment'
 import { getFeeVoucherSettings } from '@/api/fee'
+import { mapState } from 'pinia'
+import { userStore } from '@/store/user'
 
 export default {
   name: 'FeeVoucherPrint',
@@ -270,7 +311,10 @@ export default {
         school_logo: 'images/default-logo.png',
         school_email: '',
         school_website: '',
-        invoice_footer: 'Thank you for choosing our school!'
+        invoice_footer: 'Developed by IDLSchool (03217050405)'
+      },
+      printSettings: {
+        orientation: 'landscape'
       }
     }
   },
@@ -285,8 +329,25 @@ export default {
   mounted() {
     // Try to get settings from store or API
     this.loadSettings()
+    
+    // Load persisted print settings
+    const savedOrientation = localStorage.getItem('fee_print_orientation')
+    if (savedOrientation) {
+      this.printSettings.orientation = savedOrientation
+    }
+  },
+  computed: {
+    ...mapState(userStore, ['name']),
+    currentTimestamp() {
+      return moment().format('DD-MMM-YYYY h:mm A')
+    }
   },
   methods: {
+    getStatusLabel(status) {
+      if (!status) return 'UNPAID'
+      return status.replace(/_/g, ' ').toUpperCase()
+    },
+
     formatDate(date) {
       return moment(date).format('DD MMM, YYYY')
     },
@@ -311,6 +372,10 @@ export default {
       }
     },
 
+    savePrintSettings() {
+      localStorage.setItem('fee_print_orientation', this.printSettings.orientation)
+    },
+
     printVouchers() {
       const printContent = document.getElementById('printVouchers')
       const originalContent = document.body.innerHTML
@@ -318,74 +383,80 @@ export default {
       // Create comprehensive print styles
       const printStyles = `
         <style>
-          @page { 
-            size: A4 landscape; 
-            margin: 10mm;
-            orientation: landscape;
+          @page {  
+            size: A4 ${this.printSettings.orientation}; 
+            margin: 5mm;
+            orientation: ${this.printSettings.orientation};
           }
           
           * {
             box-sizing: border-box;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
           }
           
           body { 
-            font-family: Arial, sans-serif; 
-            font-size: 12px; 
-            line-height: 1.4;
+            font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif; 
+            font-size: 13px; /* Increased base size for inkjet clarity */
+            line-height: 1.4; /* More breathing room */
             margin: 0;
             padding: 0;
             background: white !important;
+            color: #000 !important;
+            -webkit-font-smoothing: antialiased;
           }
           
           .print-container {
             background: white;
-            min-height: auto;
+            width: 100%;
             padding: 0;
           }
           
           .voucher-page {
-            background: white;
-            margin: 0;
-            padding: 0;
+            width: 100%;
+            height: 100vh; /* Force full height per page */
             page-break-after: always;
+            padding: 5mm;
+            display: flex;
+            align-items: center; /* Center vertically if needed */
           }
           
           .voucher-row {
             display: flex;
-            gap: 10mm;
+            flex-direction: ${this.printSettings.orientation === 'landscape' ? 'row' : 'column'};
+            gap: ${this.printSettings.orientation === 'landscape' ? '10mm' : '0'}; /* Removed gap for portrait to save space */
             width: 100%;
+            height: 100%;
           }
           
           .voucher-column {
-            flex: 1;
-            width: 48%;
+            flex: ${this.printSettings.orientation === 'landscape' ? '1' : '0 0 50%'}; /* Use flex basis for 50% height */
+            width: ${this.printSettings.orientation === 'landscape' ? '48%' : '100%'};
+            height: ${this.printSettings.orientation === 'landscape' ? '100%' : '50%'}; /* Enforce 50% split */
+            padding-bottom: ${this.printSettings.orientation === 'landscape' ? '0' : '5mm'};
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box; /* Crucial for padding/border calculation */
           }
           
           .voucher-copy {
             background: white;
-            border: 1px solid #333;
-            border-radius: 4px;
-            padding: 8mm;
-            margin: 0;
-            box-shadow: none;
-            page-break-inside: avoid;
+            border: 2px solid #000;
+            border-radius: 0; /* Sharp corners for professional look */
+            padding: 5mm;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            position: relative;
           }
-          
-          .student-copy {
-            border-color: #666;
-          }
-          
-          .office-copy {
-            border-color: #333;
-          }
-          
+           
           .voucher-header {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #ddd;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 2px solid #000;
           }
           
           .school-info {
@@ -396,33 +467,30 @@ export default {
           }
           
           .school-logo img {
-            height: 50px;
-            width: 50px;
+            height: 60px;
+            width: 60px;
             object-fit: contain;
+            filter: grayscale(100%) contrast(120%); /* Optimize logo for B&W */
           }
           
           .school-details h2 {
-            margin: 0 0 4px 0;
-            color: #303133;
-            font-size: 16px;
-            font-weight: bold;
+            margin: 0 0 2px 0;
+            color: #000;
+            font-size: 18px;
+            font-weight: 800;
+            text-transform: uppercase;
           }
           
           .school-details p {
-            margin: 2px 0;
-            color: #606266;
-            font-size: 11px;
+            margin: 1px 0;
+            color: #000;
+            font-size: 12px; /* Bumped from 11px */
           }
           
           .school-tagline {
             font-style: italic;
-            color: #555 !important;
-            font-weight: 500;
-          }
-          
-          .school-website {
-            color: #666 !important;
-            font-size: 10px;
+            font-weight: 600;
+            margin-bottom: 3px !important;
           }
           
           .voucher-info {
@@ -431,157 +499,206 @@ export default {
           }
           
           .voucher-title {
-            margin: 0;
-            color: #333;
-            font-size: 18px;
-            font-weight: bold;
+            margin: 0 0 5px 0;
+            color: #000;
+            font-size: 16px; /* Adjusted for inline status */
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+          }
+          
+          .status-badge {
+            font-size: 12px;
+            font-weight: 700;
+            margin-left: 5px;
+            vertical-align: middle;
           }
           
           .voucher-number {
-            background: #f5f7fa;
-            color: #303133;
-            padding: 3px 6px;
-            border-radius: 3px;
-            font-size: 10px;
-            font-weight: 600;
-            margin: 3px 0;
-            display: inline-block;
-            border: 1px solid #ddd;
-            font-family: 'Courier New', monospace;
-          }
-          
-          .copy-label {
-            color: white;
-            padding: 3px 8px;
-            border-radius: 3px;
-            font-size: 10px;
-            font-weight: 600;
-            margin: 6px 0;
-            display: inline-block;
-          }
-          
-          .student-copy .copy-label {
-            background: #666;
-          }
-          
-          .office-copy .copy-label {
-            background: #333;
-          }
-          
-          .print-date {
-            color: #909399;
-            font-size: 10px;
-          }
-          
-          .info-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 15px;
-          }
-          
-          .info-table td {
-            padding: 6px 8px;
-            border: 1px solid #ddd;
-            font-size: 11px;
-          }
-          
-          .info-table .label {
-            background: #f5f7fa;
-            font-weight: 600;
-            width: 35%;
-          }
-          
-          .info-table .value {
+            border: 2px solid #000; /* Thicker border */
+            color: #000;
+            padding: 2px 4px;
+            font-size: 12px;
+            font-weight: 800;
+            display: block;
+            margin-bottom: 4px;
+            font-family: inherit; /* Removed Courier New */
             background: white;
           }
           
-          .due-date {
-            color: #555;
-            font-weight: 600;
+          .copy-label {
+            color: #000;
+            border: 2px solid #000;
+            padding: 2px 6px;
+            font-size: 11px; /* Bumped from 10px */
+            font-weight: 800;
+            text-transform: uppercase;
+            display: inline-block;
+            margin-top: 2px;
+          }
+          
+          .print-date {
+             color: #000;
+             font-size: 10px; /* Bumped from 9px */
+             margin-top: 2px;
+          }
+          
+          .voucher-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+          }
+
+          .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+            border: 1px solid #000;
+          }
+          
+          .info-table td {
+            padding: 5px 8px; /* More padding */
+            border: 1px solid #000;
+            font-size: 12px; /* Bumped from 11px */
+            color: #000;
+          }
+          
+          
+          .info-table .label {
+            background: white; /* Removed gray background */
+            font-weight: 800;
+            width: 15%; /* Optimized for name space */
+            white-space: nowrap; /* Prevent label wrapping */
+          }
+          
+          .info-table .value {
+            font-weight: 600; /* Slightly bolder for names */
+            width: 35%;
           }
           
           .fee-section {
-            margin: 15px 0;
+            margin-bottom: 10px;
+            flex: 1; 
           }
           
           .fee-table {
             width: 100%;
             border-collapse: collapse;
+            border: 1px solid #000;
           }
           
           .fee-table th,
           .fee-table td {
-            padding: 6px 8px;
-            border: 1px solid #ddd;
+            padding: 5px 8px; /* More padding */
+            border: 1px solid #000;
             text-align: left;
-            font-size: 11px;
+            font-size: 12px; /* Bumped from 11px */
+            color: #000;
           }
           
           .fee-table th {
-            background: #f5f7fa;
-            font-weight: 600;
+            background: white; /* Removed gray background */
+            font-weight: 800;
+            text-transform: uppercase;
+            border-bottom: 2px solid #000;
           }
           
           .fee-table .amount-col,
           .fee-table .amount {
             text-align: right;
             width: 25%;
+            font-family: inherit; /* Removed Consolas/Monaco */
           }
           
-          .fine-row td {
-            color: #555;
-            font-style: italic;
-          }
-          
+          .subtotal-row td,
+          .paid-row td,
           .total-row td {
-            background: #f0f0f0;
-            font-weight: bold;
-            border-top: 2px solid #333;
+            border-top: 1px solid #000;
+          }
+
+          .total-row td {
+            border-top: 2px solid #000;
+            font-weight: 900;
+            background: white; /* Removed gray background */
+            font-size: 13px;
           }
           
           .payment-info {
             margin: 10px 0;
+            border: 1px dashed #000;
+            padding: 5px;
+          }
+
+          .paid-stamp, .partial-stamp {
+             position: absolute;
+             top: 40%;
+             left: 50%;
+             transform: translate(-50%, -50%) rotate(-15deg);
+             font-size: 3.5rem;
+             font-weight: 900;
+             color: #000; /* Pure black text */
+             border: 6px double #000; /* Distinct double border */
+             padding: 10px 20px;
+             text-transform: uppercase;
+             z-index: 0;
+             pointer-events: none;
+             opacity: 0.15; /* Transparency for watermark effect */
+             mix-blend-mode: multiply; /* Better blending on print */
           }
           
           .payment-instruction {
-            font-size: 10px;
-            color: #606266;
+            font-size: 11px;
+            color: #000;
           }
-          
-          .payment-instruction p {
-            margin: 3px 0;
+           
+          .payment-instruction strong {
+            display: inline; /* Make inline */
+            margin-right: 5px;
+            text-decoration: underline;
           }
-          
+
           .signatures {
-            margin-top: 15px;
-            display: flex;
-            justify-content: space-between;
-            gap: 20px;
+            margin-top: auto; /* Push to bottom */
+            padding-top: 15px;
+            border-top: 1px dashed #000;
           }
           
-          .signature-box {
+          .signature-row {
+             display: flex;
+             justify-content: space-between;
+             width: 100%;
+             font-size: 11px;
+             font-weight: 500;
+             color: #000;
+          }
+          
+          .sig-item strong {
+            font-weight: 800;
+            margin-right: 5px;
+          }
+          
+          .voucher-status {
+             font-size: 11px;
+             font-weight: 800;
+             text-transform: uppercase;
+             margin-bottom: 2px;
+             padding: 2px 0;
+             border-bottom: 1px solid #000;
+             display: inline-block;
+          }
+
+          .voucher-footer {
+            margin-top: 10px;
+            border-top: 1px solid #000;
+            padding-top: 5px;
             text-align: center;
-            font-size: 10px;
-            flex: 1;
+            font-size: 10px; /* Bumped from 9px */
+            color: #000;
+            font-style: italic;
           }
-          
-          .signature-line {
-            border-bottom: 1px solid #333;
-            height: 25px;
-            margin: 8px 0;
-            width: 100%;
-          }
-          
-          .page-break {
-            page-break-before: always;
-          }
-          
-          /* Hide any remaining elements that shouldn't print */
-          .print-toolbar,
-          .el-dialog__header,
-          .el-dialog__footer {
-            display: none !important;
-          }
+
+          /* Hide elements */
+          .print-toolbar { display: none !important; }
         </style>
       `
 
@@ -625,6 +742,17 @@ export default {
         default:
           return 'Fee'
       }
+    },
+
+    getBalanceAmount(voucher) {
+      const total = parseFloat(voucher.total_with_fine || 0)
+      const paid = parseFloat(voucher.paid_amount || 0)
+      return (total - paid).toFixed(2)
+    },
+
+    hasPayment(voucher) {
+      if (voucher.status === 'paid' || voucher.status === 'partially_paid') return true
+      return parseFloat(voucher.paid_amount || 0) > 0
     }
   }
 }
@@ -666,6 +794,8 @@ export default {
 .voucher-column {
   flex: 1;
   width: 48%;
+  display: flex;
+  flex-direction: column;
 }
 
 .page-break {
@@ -675,15 +805,16 @@ export default {
 .voucher-copy {
   padding: 15px;
   margin: 0;
-  border: 2px solid #ddd;
-  border-radius: 8px;
+  border: 2px solid #000;
+  border-radius: 0;
   min-height: 95vh;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
 }
 
 .office-copy {
-  border-color: #333;
-  background: #f8f8f8;
+  background: #fff;
 }
 
 .voucher-header {
@@ -692,7 +823,7 @@ export default {
   align-items: flex-start;
   margin-bottom: 20px;
   padding-bottom: 15px;
-  border-bottom: 2px solid #e4e7ed;
+  border-bottom: 2px solid #000;
 }
 
 .school-info {
@@ -703,24 +834,25 @@ export default {
 
 .school-details h2 {
   margin: 0 0 5px 0;
-  color: #303133;
+  color: #000;
   font-size: 20px;
+  font-weight: 800;
 }
 
 .school-details p {
   margin: 2px 0;
-  color: #606266;
+  color: #000;
   font-size: 14px;
 }
 
 .school-tagline {
   font-style: italic;
-  color: #555 !important;
+  color: #000 !important;
   font-weight: 500;
 }
 
 .school-website {
-  color: #666 !important;
+  color: #000 !important;
   font-size: 12px;
 }
 
@@ -730,21 +862,21 @@ export default {
 
 .voucher-title {
   margin: 0;
-  color: #333;
+  color: #000;
   font-size: 24px;
   font-weight: bold;
 }
 
 .voucher-number {
-  background: #f5f7fa;
-  color: #303133;
+  background: #fff;
+  color: #000;
   padding: 4px 8px;
   border-radius: 4px;
   font-size: 12px;
   font-weight: 600;
   margin: 4px 0;
   display: inline-block;
-  border: 1px solid #e4e7ed;
+  border: 1px solid #000;
   font-family: 'Courier New', monospace;
 }
 
@@ -799,7 +931,29 @@ export default {
 }
 
 .fee-section {
-  margin: 20px 0;
+  margin: 10px 0;
+}
+
+.paid-stamp,
+.partial-stamp {
+  font-size: 24px;
+  font-weight: bold;
+  color: green;
+  border: 2px solid green;
+  padding: 5px 10px;
+  border-radius: 5px;
+  transform: rotate(-15deg);
+  display: inline-block;
+  margin-bottom: 10px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  opacity: 0.3;
+}
+
+.partial-stamp {
+  color: orange;
+  border-color: orange;
 }
 
 .fee-table {
@@ -832,6 +986,13 @@ export default {
   color: #555;
 }
 
+
+.subtotal-row td,
+.paid-row td {
+  font-weight: 600;
+  background-color: #fafafa;
+}
+
 .total-row {
   background: #f0f0f0;
   border-top: 2px solid #333;
@@ -840,6 +1001,7 @@ export default {
 .total-row td {
   font-size: 16px;
   color: #333;
+  font-weight: bold;
 }
 
 .notes-section {
