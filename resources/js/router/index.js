@@ -137,7 +137,7 @@ export const asyncRoutes = [
         path: 'class-observation',
         component: () => import('@/views/teachers/TeacherObservation.vue'),
         name: 'Teacher Observation',
-        meta: { title: 'Obsercation', bootstrapIcon: 'file-spreadsheet', noCache: true },
+        meta: { title: 'Observation', bootstrapIcon: 'file-spreadsheet', noCache: true },
       },
       {
         path: 'profile/:id',
@@ -298,7 +298,7 @@ export const asyncRoutes = [
     path: '/finance',
     component: Layout,
     redirect: '/finance/accounting/dashboard',
-    meta: { title: 'Finanace', bootstrapIcon: 'credit-card-2-back-fill', noCache: true, permissions: ['view menu timetabel'] },
+    meta: { title: 'Finance', bootstrapIcon: 'credit-card-2-back-fill', noCache: true, permissions: ['view menu finance'] },
     children: [
       {
         path: 'fee',
@@ -438,7 +438,7 @@ export const asyncRoutes = [
     path: '/communication',
     component: Layout,
     redirect: 'communication/queue',
-    meta: { title: 'communication', bootstrapIcon: 'chat-right-text-fill', noCache: true, permissions: ['view menu timetabel'] },
+    meta: { title: 'Communication', bootstrapIcon: 'chat-right-text-fill', noCache: true, permissions: ['view menu communication'] },
     children: [
       {
         path: 'queue',
@@ -458,7 +458,7 @@ export const asyncRoutes = [
     path: '/timetable',
     component: Layout,
     redirect: 'timetable/create',
-    meta: { title: 'TimeTable', bootstrapIcon: 'clock-fill', noCache: true, permissions: ['view menu timetabel'] },
+    meta: { title: 'TimeTable', bootstrapIcon: 'clock-fill', noCache: true, permissions: ['view menu timetable'] },
     children: [
       {
         path: 'generator',

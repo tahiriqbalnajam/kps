@@ -56,20 +56,7 @@
           <el-form-item :label="t('user.confirmPassword')" prop="confirmPassword">
             <el-input v-model="newUser.confirmPassword" show-password/>
           </el-form-item>
-          <el-form-item :label="$t('user.sex')">
-            <el-radio-group v-model="newUser.sex">
-              <el-radio :label="0">{{ $t('user.male') }}</el-radio>
-              <el-radio :label="1">{{ $t('user.female') }}</el-radio>
-            </el-radio-group>
-          </el-form-item>
-          <el-form-item :label="$t('user.birthday')">
-            <el-date-picker
-                v-model="newUser.birthday_model"
-                type="datetime"
-                :placeholder="$t('user.birthday')"
-                value-format="YYYY-MM-DD HH:mm:ss"
-            />
-          </el-form-item>
+
           <el-form-item :label="$t('user.description')">
             <el-input
                 v-model="newUser.description"
@@ -131,6 +118,7 @@ import CustomTable from '@/components/CustomTable.vue'
 import ElSvgItem from "@/components/Item/ElSvgItem.vue"
 import UserResource from '@/api/user'
 import Resource from '@/api/resource'
+import RoleResource from '@/api/role'
 import checkPermission from '@/utils/permission'
 import {ElMessage, ElMessageBox} from "element-plus"
 import {uppercaseFirst} from "../../utils"
@@ -145,6 +133,7 @@ export default {
     const {t} = useI18n({useScope: 'global'})
     const userResource = new UserResource()
     const permissionResource = new Resource('permissions')
+    const roleResource = new RoleResource()
     const refUserForm = ref(null)
     const refMenuPermissions = ref(null)
     const refOtherPermissions = ref(null)
@@ -188,8 +177,8 @@ export default {
         keyword: '',
         role: '',
       },
-      roles: ['admin', 'manager', 'user', 'visitor','teacher', 'student'],
-      nonAdminRoles: [ 'user', 'visitor', 'teacher', 'student'],
+      roles: [],
+      nonAdminRoles: [],
       pageSizes: [10, 30, 50, 100],
       dialogFormVisible: ref(false),
       userCreating: false,
@@ -383,9 +372,6 @@ export default {
       formEl.validate((valid) => {
         if (valid) {
           resData.newUser.roles = [resData.newUser.role]
-          if (resData.newUser.birthday_model) {
-            resData.newUser.birthday = dayjs(resData.newUser.birthday_model).format('YYYY-MM-DD HH:mm:ss')
-          }
           resData.userCreating = true
           userResource
               .store(resData.newUser)
@@ -489,8 +475,19 @@ export default {
         resData.dialogPermissionVisible = false
       })
     }
+    const getRoles = async () => {
+      roleResource.list({ per_page: 100 }).then(res => {
+        const rolesData = res.data.map(r => r.name)
+        resData.roles = rolesData
+        resData.nonAdminRoles = rolesData.filter(r => r !== 'admin')
+      }).catch(err => {
+        console.log(err)
+      })
+    }
+
     onMounted(() => {
       getList()
+      getRoles()
       if (checkPermission(['manage permission'])) {
         getPermissions()
       }

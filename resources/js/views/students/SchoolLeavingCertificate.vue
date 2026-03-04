@@ -1,109 +1,99 @@
 <template>
-    <el-dialog v-model="rdata.dialogVisible" title="School Leaving Certificate" width="80%" top="5vh">
+    <el-dialog v-model="rdata.dialogVisible" title="School Leaving Certificate" width="850px" top="5vh" custom-class="certificate-dialog">
         <!-- Print Button -->
         <div class="print-actions">
-            <el-button type="primary" @click="printCertificate">
+            <el-button type="primary" size="large" @click="printCertificate" plain>
                 <i class="el-icon-printer"></i> Print Certificate
             </el-button>
         </div>
 
-        <div class="certificate-container" ref="certificateContent">
-            <div class="certificate-content">
-                <!-- Header Section -->
-                <div class="header">
-                    <img v-if="rdata.settings.school_logo" :src="rdata.settings.school_logo" alt="School Logo" class="school-logo"/>
-                    <template v-if="rdata.settings.school_name">
-                        <h1 class="school-name">{{ rdata.settings.school_name }}</h1>
-                    </template>
-                    <template v-if="rdata.settings.tagline">
-                        <div class="school-motto">" {{ rdata.settings.tagline }} "</div>
-                    </template>
-                    <div v-if="hasContactInfo" class="contact-info">
-                        <span v-if="rdata.settings.phone"><i class="el-icon-phone"></i> {{ rdata.settings.phone }}</span>
-                        <template v-if="rdata.settings.website">| <span><i class="el-icon-globe"></i> {{ rdata.settings.website }}</span> |</template>
-                        <span v-if="rdata.settings.address"><i class="el-icon-location"></i> {{ rdata.settings.address }}</span>
+        <div class="certificate-wrapper" ref="certificateContent">
+            <div class="certificate-container">
+                <div class="certificate-border">
+                    <!-- Header Section -->
+                    <div class="header">
+                        <div class="header-content">
+                            <img v-if="rdata.settings.school_logo" :src="rdata.settings.school_logo" alt="School Logo" class="school-logo"/>
+                            <div class="school-details">
+                                <template v-if="rdata.settings.school_name">
+                                    <h1 class="school-name">{{ rdata.settings.school_name }}</h1>
+                                </template>
+                                <template v-if="rdata.settings.tagline">
+                                    <div class="school-motto">{{ rdata.settings.tagline }}</div>
+                                </template>
+                                <div v-if="hasContactInfo" class="contact-info">
+                                    <span v-if="rdata.settings.phone"><i class="el-icon-phone"></i> {{ rdata.settings.phone }}</span>
+                                    <template v-if="rdata.settings.website"><span class="separator">|</span><span><i class="el-icon-globe"></i> {{ rdata.settings.website }}</span></template>
+                                    <span v-if="rdata.settings.address" class="address-block"><span class="separator">|</span><i class="el-icon-location"></i> {{ rdata.settings.address }}</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="document-title">School Leaving Certificate</div>
-                </div>
 
-                <!-- Certificate Content -->
-                <div class="certificate-body">
-                    <div class="student-info">
-                        <div class="info-row">
-                            <div class="info-group">
-                                <span class="label">Name of Student:</span>
+                    <div class="document-title-wrapper">
+                        <h2 class="document-title">School Leaving Certificate</h2>
+                        <div class="title-decoration"></div>
+                    </div>
+
+                    <!-- Certificate Content -->
+                    <div class="certificate-body">
+                        <div class="student-info-grid">
+                            <div class="info-item">
+                                <span class="label">Name of Student</span>
                                 <span class="value">{{ rdata.student.name }}</span>
                             </div>
-                            <div class="info-group">
-                                <span class="label">Admission No:</span>
+                            <div class="info-item">
+                                <span class="label">Admission No.</span>
                                 <span class="value">{{ rdata.student.adminssion_number }}</span>
                             </div>
-                        </div>
-
-                        <div class="info-row">
-                            <div class="info-group">
-                                <span class="label">Father's Name:</span>
+                            <div class="info-item">
+                                <span class="label">Father's Name</span>
                                 <span class="value">{{ rdata.student.parents?.name }}</span>
                             </div>
-                            <div class="info-group">
-                                <span class="label">Date of Admission:</span>
+                            <div class="info-item">
+                                <span class="label">Date of Admission</span>
                                 <span class="value">{{ convertDate(rdata.student.doa) }}</span>
                             </div>
-                        </div>
-
-                        <div class="info-row">
-                            <div class="info-group">
-                                <span class="label">Date of Birth (in Figures):</span>
+                            <div class="info-item">
+                                <span class="label">Date of Birth (Figures)</span>
                                 <span class="value">{{ convertDate(rdata.student.dob) }}</span>
                             </div>
-                            <div class="info-group">
-                                <span class="label">Current Class:</span>
+                            <div class="info-item">
+                                <span class="label">Current Class</span>
                                 <span class="value">{{ rdata.student.stdclasses?.name }}</span>
                             </div>
-                        </div>
-
-                        <div class="info-row">
-                            <div class="info-group full-width">
-                                <span class="label">Date of Birth (in Words):</span>
+                            <div class="info-item full-width">
+                                <span class="label">Date of Birth (Words)</span>
                                 <span class="value">{{ convertDateToWords(new Date(rdata.student.dob)) }}</span>
                             </div>
-                        </div>
-
-                        <div class="info-row">
-                            <div class="info-group">
-                                <span class="label">Date of Leaving School:</span>
+                            <div class="info-item">
+                                <span class="label">Date of Leaving School</span>
                                 <span class="value">{{ getCurrentDate() }}</span>
                             </div>
-                            <div class="info-group">
-                                <span class="label">Reason for Leaving:</span>
+                            <div class="info-item">
+                                <span class="label">Reason for Leaving</span>
                                 <span class="value">On Parent's Request</span>
                             </div>
                         </div>
 
                         <div class="conduct-section">
-                            <p>This is to certify that {{ rdata.student.name }} has been a student of good conduct 
-                            during {{ rdata.student.gender === 'male' ? 'his' : 'her' }} stay in the school. 
-                            {{ rdata.student.gender === 'male' ? 'He' : 'She' }} bears a good moral character.</p>
+                            <p>This is to certify that <strong>{{ rdata.student.name }}</strong> has been a student of good conduct 
+                            during {{ rdata.student.gender?.toLowerCase() === 'male' ? 'his' : (rdata.student.gender?.toLowerCase() === 'female' ? 'her' : 'his/her') }} stay in the school. 
+                            {{ rdata.student.gender?.toLowerCase() === 'male' ? 'He' : (rdata.student.gender?.toLowerCase() === 'female' ? 'She' : 'He/She') }} bears a good moral character and has shown commendable dedication.</p>
                         </div>
-                    </div>
 
-                    <!-- Signature Section -->
-                    <div class="signature-section">
-                        <div class="signature-box">
-                            <div class="line"></div>
-                            <p>Class Teacher</p>
+                        <!-- Signature Section -->
+                        <div class="signature-section">
+                            <div class="signature-box left-sig">
+                                <div class="issue-date">
+                                    <span class="date-label">Date of Issue:</span> {{ getCurrentDate() }}
+                                </div>
+                            </div>
+                            <div class="signature-box right-sig">
+                                <div class="line"></div>
+                                <p>Principal Signature</p>
+                            </div>
                         </div>
-                        <div class="signature-box">
-                            <div class="line"></div>
-                            <p>Principal</p>
-                        </div>
-                        <div class="signature-box">
-                            <div class="stamp-area">School Stamp</div>
-                        </div>
-                    </div>
-
-                    <div class="issue-date">
-                        Issued on: {{ getCurrentDate() }}
                     </div>
                 </div>
             </div>
@@ -214,13 +204,27 @@ export default {
             document.body.innerHTML = `
                 <style>
                     @page {
-                        size: A4;
+                        size: A4 portrait;
                         margin: 0;
                     }
                     @media print {
-                        body { margin: 0; padding: 20px; }
-                        .certificate-container { box-shadow: none; }
-                        .print-actions { display: none; }
+                        body { 
+                            margin: 0; 
+                            background: none; 
+                        }
+                        .certificate-container { 
+                            box-shadow: none; 
+                            margin: 0;
+                            width: 210mm;
+                            min-height: 297mm;
+                            padding: 10mm;
+                            box-sizing: border-box;
+                        }
+                        .certificate-border {
+                            height: calc(297mm - 20mm);
+                            box-sizing: border-box;
+                        }
+                        .print-actions { display: none !important; }
                     }
                 </style>
                 <div class="certificate-container">${printContent}</div>
@@ -246,119 +250,264 @@ export default {
 </script>
 
 <style scoped>
-.student-info {
-    margin: 30px 0;
-}
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Great+Vibes&family=Montserrat:wght@300;400;500;600&display=swap');
 
-.info-row {
+/* Certificate Wrapper */
+.certificate-wrapper {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
+    padding: 0 0 20px 0;
+    background: transparent;
+}
+
+/* Print Actions */
+.print-actions {
+    text-align: right;
     margin-bottom: 20px;
-    gap: 20px;
+    padding-right: 20px;
 }
 
-.info-group {
-    flex: 1;
+/* Main Container */
+.certificate-container {
+    width: 100%;
+    max-width: 850px;
+    background: #fff;
+    padding: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    position: relative;
+    border-radius: 4px;
 }
 
-.info-group.full-width {
-    flex: 0 0 100%;
+/* Inner Border */
+.certificate-border {
+    border: 10px solid transparent;
+    border-image: repeating-linear-gradient(45deg, #b8860b, #b8860b 10px, #daa520 10px, #daa520 20px) 10;
+    padding: 40px 50px;
+    position: relative;
+    background: linear-gradient(135deg, rgba(255,255,255,1) 0%, rgba(250,248,240,1) 100%);
+}
+
+.certificate-border::before {
+    content: '';
+    position: absolute;
+    top: 5px; right: 5px; bottom: 5px; left: 5px;
+    border: 1px solid #b8860b;
+    pointer-events: none;
+}
+
+/* Header */
+.header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.header-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+.school-logo {
+    width: 100px;
+    height: auto;
+    object-fit: contain;
+}
+
+.school-details {
+    text-align: center;
+}
+
+.school-name {
+    font-family: 'Cinzel', serif;
+    font-size: 32px;
+    color: #2c3e50;
+    margin: 0 0 5px 0;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-weight: 700;
+}
+
+.school-motto {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 14px;
+    font-style: italic;
+    color: #555;
+    margin-bottom: 10px;
+    letter-spacing: 1px;
+}
+
+.contact-info {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 12px;
+    color: #666;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+}
+
+.separator {
+    color: #b8860b;
+    margin: 0 5px;
+}
+
+/* Title */
+.document-title-wrapper {
+    text-align: center;
+    margin: 30px 0 40px 0;
+}
+
+.document-title {
+    font-family: 'Great Vibes', cursive;
+    font-size: 48px;
+    color: #b8860b;
+    margin: 0;
+    line-height: 1;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+}
+
+.title-decoration {
+    width: 60%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #b8860b, transparent);
+    margin: 15px auto 0;
+}
+
+/* Grid Layout for Info */
+.student-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 50px;
+    row-gap: 25px;
+    margin-bottom: 40px;
+}
+
+.info-item {
+    display: flex;
+    flex-direction: column;
+    border-bottom: 1px solid #e0d8c3;
+    padding-bottom: 5px;
+}
+
+.info-item.full-width {
+    grid-column: 1 / -1;
 }
 
 .label {
-    color: #666;
-    font-size: 14px;
-    display: block;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 11px;
+    text-transform: uppercase;
+    color: #888;
+    letter-spacing: 1px;
     margin-bottom: 5px;
 }
 
 .value {
+    font-family: 'Cinzel', serif;
+    font-size: 18px;
     color: #2c3e50;
-    font-size: 16px;
-    font-weight: 500;
-    border-bottom: 1px dotted #bdc3c7;
-    padding: 3px 0;
-    display: block;
+    font-weight: 600;
 }
 
+/* Conduct text */
 .conduct-section {
-    margin: 40px 0;
-    text-align: justify;
-    line-height: 1.8;
+    font-family: 'Montserrat', sans-serif;
     font-size: 16px;
+    line-height: 2;
+    color: #333;
+    text-align: justify;
+    margin-bottom: 50px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.5);
+    border-left: 4px solid #b8860b;
 }
 
+/* Signatures */
 .signature-section {
     display: flex;
     justify-content: space-between;
-    margin-top: 60px;
-    gap: 30px;
+    align-items: flex-end;
+    margin-top: 50px;
 }
 
-.stamp-area {
-    border: 2px dashed #999;
-    width: 150px;
-    height: 150px;
+.signature-box {
+    flex: 1;
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    color: #666;
-    font-style: italic;
 }
 
+.left-sig {
+    align-items: flex-start;
+}
+
+.right-sig {
+    align-items: flex-end;
+}
+
+.issue-date {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 14px;
+    color: #444;
+}
+
+.date-label {
+    font-weight: 600;
+    color: #b8860b;
+}
+
+.line {
+    width: 200px;
+    height: 1px;
+    background-color: #333;
+    margin-bottom: 10px;
+}
+
+.signature-box p {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 14px;
+    text-transform: uppercase;
+    color: #555;
+    letter-spacing: 1px;
+    margin: 0;
+}
+
+/* Stamp area removed */
+
+/* Print Styles */
 @media print {
     @page {
-        size: A4;
+        size: A4 portrait;
         margin: 0;
     }
 
+    body {
+        background: none;
+    }
+
+    .certificate-wrapper {
+        padding: 0;
+        background: none;
+    }
+
     .certificate-container {
-        padding: 15px;
+        box-shadow: none;
+        max-width: 100%;
         width: 210mm;
-        min-height: 297mm;
-        page-break-after: avoid;
-        page-break-inside: avoid;
+        height: 297mm;
+        padding: 10mm;
+        box-sizing: border-box;
     }
 
-    .certificate-content {
-        padding: 20px;
+    .certificate-border {
+        height: calc(297mm - 20mm);
+        box-sizing: border-box;
     }
 
-    .school-logo {
-        width: 80px;
-        height: 80px;
-    }
-
-    .school-name {
-        font-size: 24px;
-    }
-
-    .document-title {
-        font-size: 22px;
-        margin: 15px 0;
-    }
-
-    .info-row {
-        margin-bottom: 15px;
-    }
-
-    .label {
-        font-size: 12px;
-    }
-
-    .value {
-        font-size: 14px;
-    }
-
-    .conduct-section {
-        font-size: 14px;
-        line-height: 1.6;
-        margin: 30px 0;
-    }
-
-    .print-actions {
-        display: none;
+    .print-actions, :deep(.el-dialog__header), :deep(.el-dialog__close), :deep(.el-dialog__headerbtn) {
+        display: none !important;
     }
 }
 </style>

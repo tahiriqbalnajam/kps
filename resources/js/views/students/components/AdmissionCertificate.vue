@@ -1,263 +1,151 @@
 <template>
-  <el-dialog title="Admission Certificate" :modelValue="openadcer" width="80%" top="5vh" :before-close="handleClose">
-    <div class="certificate-container">
-      <div class="certificate-content">
-        <div class="header">
-          <img v-if="settings.school_logo" :src="settings.school_logo" alt="School Logo" class="school-logo"/>
-          <template v-if="settings.school_name">
-            <h1 class="school-name">{{ settings.school_name }}</h1>
-          </template>
-          <template v-if="settings.school_motto">
-            <div class="school-motto">" {{ settings.school_motto }} "</div>
-          </template>
-          <div v-if="hasContactInfo" class="contact-info">
-            <span v-if="settings.school_phone"><i class="el-icon-phone"></i> {{ settings.school_phone }}</span>
-            <template v-if="settings.school_website">| <span><i class="el-icon-globe"></i> {{ settings.school_website }}</span> |</template>
-            <span v-if="settings.school_email"><i class="el-icon-message"></i> {{ settings.school_email }}</span>
-          </div>
-          <div class="document-title">Admission Letter</div>
-        </div>
+  <el-dialog title="Admission Certificate" :modelValue="openadcer" width="900px" top="5vh" :before-close="handleClose" custom-class="certificate-dialog">
+    <div class="print-actions">
+      <el-button type="primary" size="large" @click="printCertificate" plain>
+        <i class="el-icon-printer"></i> Print Certificate
+      </el-button>
+    </div>
 
-        <div class="module-body" style="color: #555">
-          <div class="row-fluid p-20 p-t-0 p-b-10" style="background: white; border-bottom: 1px solid #999">
-            <table style="width: 100%">
-              <tbody>
-                <tr style="border: none">
-                  <td>
-                    no image
-                  </td>
-                  <td>
-                    <div style="position: relative">
-                      <span class="f-10 m-gray" style="border-bottom: 1.5px solid #999">Serial No</span><br />
-                      <strong class="f-12 m-l-20">{{ student.id }}</strong>
-                    </div>
-                    <div style="position: relative">
-                      <span class="f-10 m-gray" style="border-bottom: 1.5px solid #999">Registration No</span><br />
-                      <strong class="f-12 m-l-20 m-dblue">{{ student.adminssion_number }}</strong>
-                    </div>
-                    <div style="position: relative">
-                      <span class="f-10 m-gray" style="border-bottom: 1.5px solid #999">Student Name</span><br />
-                      <strong class="f-12 m-l-20">{{ student.name }}</strong>
-                    </div>
-                    <div style="position: relative">
-                      <span class="f-10 m-gray" style="border-bottom: 1.5px solid #999">Class</span><br />
-                      <strong class="f-12 m-l-20">{{ student.stdclasses.name }}</strong>
-                    </div>
-                  </td>
-                  <td>
-                    <div style="position: relative; min-height: 30px" class="">
-                      <span class="f-10 m-gray" style="border-bottom: 1.5px solid #999">Date Of Birth</span><br />
-                      <strong class="f-12 m-l-20">{{ student.dob }}</strong>
-                    </div>
-                    <div style="position: relative; min-height: 30px" class="">
-                      <span class="f-10 m-gray" style="border-bottom: 1.5px solid #999">Student Birth Form ID / NIC</span><br />
-                      <strong class="f-12 m-l-20">{{ student.b_form }}</strong>
-                    </div>
-                    <div style="position: relative; min-height: 30px" class="">
-                      <span class="f-10 m-gray" style="border-bottom: 1.5px solid #999">Gender</span><br />
-                      <strong class="f-12 m-l-20">{{ student.gender }}</strong>
-                    </div>
-                    <div style="position: relative" class="">
-                      <span class="f-10 m-gray" style="border-bottom: 1.5px solid #999">Religion</span><br />
-                      <strong class="f-12 m-l-20">{{ student.religion }}</strong>
-                    </div>
-                  </td>
-                  <td>
-                    <div style="position: relative">
-                      <span class="f-10 m-gray" style="border-bottom: 1.5px solid #999">Date of Admission</span><br />
-                      <strong class="f-12 m-l-20">{{ student.doa }}</strong>
-                    </div>
-                    <div style="position: relative">
-                      <span class="f-10 m-gray" style="border-bottom: 1.5px solid #999">Discount In Fee</span><br />
-                      <strong class="f-12 m-l-20">0 %</strong>
-                    </div>
-                    <div style="position: relative">
-                      <span class="f-10 m-gray" style="border-bottom: 1.5px solid #999">Username</span><br />
-                      <strong class="f-12 m-l-20">783338M521</strong>
-                    </div>
-                    <div style="position: relative">
-                      <span class="f-10 m-gray" style="border-bottom: 1.5px solid #999">Password</span><br />
-                      <strong class="f-12 m-l-20">783338M521</strong>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <div class="row-fluid p-20 p-t-5 p-b-5">
-            <table class="w-100">
-              <tbody>
-                <tr style="border: none">
-                  <td>
-                    <div style="position: relative; min-height: 30px" class="text-left">
-                      <span class="f-10 m-gray" style="border-bottom: 1.5px solid #999">Address</span><br />
-                      <strong class="f-12 m-l-20">{{ student.parents.address }}</strong>
-                    </div>
-                  </td>
-                  <td>
-                    <div class="text-right" style="line-height: 10px">
-                      <strong class="f-12">SCAN QR CODE</strong><br /><span class="f-10">TO ACCESS PORTAL</span>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <div class="row-fluid p-20 p-t-0 p-b-5" style="background: white">
-            <table style="width: 100%">
-              <tbody>
-                <tr style="border: none">
-                  <td>
-                    <div style="position: relative; min-height: 30px" class="">
-                      <span class="f-10 m-gray" style="border-bottom: 1.5px solid #999">Any Identification Mark?</span><br />
-                      <strong class="f-12 m-l-20"></strong>
-                    </div>
-                    <div style="position: relative; min-height: 30px" class="">
-                      <span class="f-10 m-gray" style="border-bottom: 1.5px solid #999">Blood Group</span><br />
-                      <strong class="f-12 m-l-20"></strong>
-                    </div>
-                    <div style="position: relative; min-height: 30px" class="">
-                      <span class="f-10 m-gray" style="border-bottom: 1.5px solid #999">Disease If Any?</span><br />
-                      <strong class="f-12 m-l-20"></strong>
-                    </div>
-                    <div style="position: relative; min-height: 30px" class="">
-                      <span class="f-10 m-gray" style="border-bottom: 1.5px solid #999">Cast</span><br />
-                      <strong class="f-12 m-l-20">{{ student.cast }}</strong>
-                    </div>
-                    <div style="position: relative; min-height: 30px" class="">
-                      <span class="f-10 m-gray" style="border-bottom: 1.5px solid #999">Orphan Student</span><br />
-                      <strong class="f-12 m-l-20"></strong>
-                    </div>
-                    <div style="position: relative; min-height: 30px" class="">
-                      <span class="f-10 m-gray" style="border-bottom: 1.5px solid #999">OSC</span><br />
-                      <strong class="f-12 m-l-20"></strong>
-                    </div>
-                    <div style="position: relative; min-height: 30px" class="">
-                      <span class="f-10 m-gray" style="border-bottom: 1.5px solid #999">Previous School</span><br />
-                      <strong class="f-12 m-l-20">{{ student.previous_school }}</strong>
-                    </div>
-                    <div style="position: relative; min-height: 30px" class="">
-                      <span class="f-10 m-gray" style="border-bottom: 1.5px solid #999">Previous ID / Board Roll No</span><br />
-                      <strong class="f-12 m-l-20"></strong>
-                    </div>
-                    <div style="position: relative; min-height: 30px" class="">
-                      <span class="f-10 m-gray" style="border-bottom: 1.5px solid #999">Any Additional Note</span><br />
-                      <strong class="f-12 m-l-20"></strong>
-                    </div>
-                  </td>
-                  <td>
-                    <div style="position: relative; min-height: 30px" class="">
-                      <span class="f-10 m-gray" style="border-bottom: 1.5px solid #999">Father Name</span><br />
-                      <strong class="f-12 m-l-20">{{ student.parents.name }}</strong>
-                    </div>
-                    <div style="position: relative; min-height: 30px" class="">
-                      <span class="f-10 m-gray" style="border-bottom: 1.5px solid #999">Father National ID</span><br />
-                      <strong class="f-12 m-l-20">{{ student.parents.nice }}</strong>
-                    </div>
-                    <div style="position: relative; min-height: 30px" class="">
-                      <span class="f-10 m-gray" style="border-bottom: 1.5px solid #999">Education</span><br />
-                      <strong class="f-12 m-l-20"></strong>
-                    </div>
-                    <div style="position: relative; min-height: 30px" class="">
-                      <span class="f-10 m-gray" style="border-bottom: 1.5px solid #999">Mobile No</span><br />
-                      <strong class="f-12 m-l-20">{{ student.parents.phone }}</strong>
-                    </div>
-                    <div style="position: relative; min-height: 30px" class="">
-                      <span class="f-10 m-gray" style="border-bottom: 1.5px solid #999">Occupation</span><br />
-                      <strong class="f-12 m-l-20">{{ student.parents.profession }}</strong>
-                    </div>
-                    <div style="position: relative; min-height: 30px" class="">
-                      <span class="f-10 m-gray" style="border-bottom: 1.5px solid #999">Profession</span><br />
-                      <strong class="f-12 m-l-20"></strong>
-                    </div>
-                    <div style="position: relative; min-height: 30px" class="">
-                      <span class="f-10 m-gray" style="border-bottom: 1.5px solid #999">Income</span><br />
-                      <strong class="f-12 m-l-20">0</strong>
-                    </div>
-                    <div style="position: relative; min-height: 30px" class="">
-                      <span class="f-10 m-gray" style="border-bottom: 1.5px solid #999">Total Siblings</span><br />
-                      <strong class="f-12 m-l-20">0</strong>
-                    </div>
-                    <div style="position: relative; min-height: 30px">
-                      <span class="f-10 m-gray" style="border-bottom: 1.5px solid #999">Family</span><br />
-                      <strong class="f-12 m-l-20"></strong>
-                    </div>
-                  </td>
-                  <td>
-                    <div style="position: relative; min-height: 30px" class="">
-                      <span class="f-10 m-gray" style="border-bottom: 1.5px solid #999">Mother Name</span><br />
-                      <strong class="f-12 m-l-20"></strong>
-                    </div>
-                    <div style="position: relative; min-height: 30px" class="">
-                      <span class="f-10 m-gray" style="border-bottom: 1.5px solid #999">Mother National ID</span><br />
-                      <strong class="f-12 m-l-20"></strong>
-                    </div>
-                    <div style="position: relative; min-height: 30px" class="">
-                      <span class="f-10 m-gray" style="border-bottom: 1.5px solid #999">Education</span><br />
-                      <strong class="f-12 m-l-20"></strong>
-                    </div>
-                    <div style="position: relative; min-height: 30px" class="">
-                      <span class="f-10 m-gray" style="border-bottom: 1.5px solid #999">Mobile No</span><br />
-                      <strong class="f-12 m-l-20"></strong>
-                    </div>
-                    <div style="position: relative; min-height: 30px" class="">
-                      <span class="f-10 m-gray" style="border-bottom: 1.5px solid #999">Occupation</span><br />
-                      <strong class="f-12 m-l-20"></strong>
-                    </div>
-                    <div style="position: relative; min-height: 30px" class="">
-                      <span class="f-10 m-gray" style="border-bottom: 1.5px solid #999">Profession</span><br />
-                      <strong class="f-12 m-l-20"></strong>
-                    </div>
-                    <div style="position: relative; min-height: 30px" class="">
-                      <span class="f-10 m-gray" style="border-bottom: 1.5px solid #999">Income</span><br />
-                      <strong class="f-12 m-l-20">0</strong>
-                    </div>
-                  </td>
-                  <td>
-                    <div class="text-center">
-                      <div style="width: 80px; margin: 0 auto" class="bg-gradient-gray m-white p-10 f-10 p-t-0 p-b-0">
-                        <strong>Web Portal</strong>
-                      </div>
-                    </div>
-                    <div class="text-center m-t-10">
-                      <div style="width: 80px; margin: 0 auto" class="bg-gradient-gray m-white p-10 f-10 p-t-0 p-b-0">
-                        <strong>Andriod App</strong>
-                      </div>
-                    </div>
-                    <div class="text-center m-t-10">
-                      <div style="width: 80px; margin: 0 auto" class="bg-gradient-gray m-white p-10 f-10 p-t-0 p-b-0">
-                        <strong>iOS App</strong>
-                      </div>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <div class="row-fluid p-20 p-t-5" style="background: white">
-            <strong class="f-14 m-gray">Rules And Regulations: </strong><br />
-            <div v-html="sanitizedRules" class="rules-content"></div>
-          </div>
-        </div>
-
-        <div class="qr-section">
-          <vue-qrcode :value="qrValue" :size="120" level="H"></vue-qrcode>
-          <div class="qr-text">Scan to verify</div>
-        </div>
-
-        <div class="footer">
-          <div class="signature-section">
-            <div class="signature-line">
-              <span>Signature of Authority</span>
-              <div class="line"></div>
-            </div>
-            <div class="signature-line">
-              <span>Institute Stamp</span>
-              <div class="line"></div>
+    <div class="certificate-wrapper" ref="certificateContent">
+      <div class="certificate-container">
+        <div class="certificate-border">
+          <!-- Header Section -->
+          <div class="header">
+            <div class="header-content">
+              <img v-if="settings.school_logo" :src="settings.school_logo" alt="School Logo" class="school-logo"/>
+              <div class="school-details">
+                <template v-if="settings.school_name">
+                  <h1 class="school-name">{{ settings.school_name }}</h1>
+                </template>
+                <template v-if="settings.school_motto">
+                  <div class="school-motto">{{ settings.school_motto }}</div>
+                </template>
+                <div v-if="hasContactInfo" class="contact-info">
+                  <span v-if="settings.school_phone"><i class="el-icon-phone"></i> {{ settings.school_phone }}</span>
+                  <template v-if="settings.school_website"><span class="separator">|</span><span><i class="el-icon-globe"></i> {{ settings.school_website }}</span></template>
+                  <span v-if="settings.school_email" class="address-block"><span class="separator">|</span><i class="el-icon-message"></i> {{ settings.school_email }}</span>
+                </div>
+              </div>
             </div>
           </div>
-          <div class="print-date">
-            Printed on: {{ getCurrentDate() }}
+
+          <div class="document-title-wrapper">
+            <h2 class="document-title">Admission Certificate</h2>
+            <div class="title-decoration"></div>
+          </div>
+
+          <div class="certificate-body">
+            <!-- Grid for Primary Details -->
+            <div class="info-section-title">Student Information</div>
+            <div class="student-info-grid">
+              <div class="info-item">
+                <span class="label">Serial No.</span>
+                <span class="value">{{ student.id }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">Registration No.</span>
+                <span class="value">{{ student.adminssion_number }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">Student Name</span>
+                <span class="value">{{ student.name }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">Class Enrolled</span>
+                <span class="value">{{ student.stdclasses?.name }}</span>
+              </div>
+              
+              <div class="info-item">
+                <span class="label">Date of Birth</span>
+                <span class="value">{{ student.dob }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">B-Form / NIC</span>
+                <span class="value">{{ student.b_form }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">Gender</span>
+                <span class="value">{{ student.gender }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">Religion</span>
+                <span class="value">{{ student.religion || '-' }}</span>
+              </div>
+
+              <div class="info-item">
+                <span class="label">Date of Admission</span>
+                <span class="value">{{ student.doa }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">Discount In Fee</span>
+                <span class="value">0 %</span>
+              </div>
+              <!-- Credentials block (placeholder for logic) -->
+              <div class="info-item highlight-box">
+                <span class="label">Portal Username</span>
+                <span class="value">783338M521</span>
+              </div>
+              <div class="info-item highlight-box">
+                <span class="label">Portal Password</span>
+                <span class="value">783338M521</span>
+              </div>
+            </div>
+            
+            <div class="info-section-title">Additional Information</div>
+            <div class="student-info-grid secondary-grid">
+              <div class="info-item">
+                <span class="label">Cast</span>
+                <span class="value">{{ student.cast || '-' }}</span>
+              </div>
+               <div class="info-item">
+                <span class="label">Previous School</span>
+                <span class="value">{{ student.previous_school || '-' }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">Father's Name</span>
+                <span class="value">{{ student.parents?.name }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">Father's NIC</span>
+                <span class="value">{{ student.parents?.nice || '-' }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">Father's Phone</span>
+                <span class="value">{{ student.parents?.phone }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">Father's Occupation</span>
+                <span class="value">{{ student.parents?.profession || '-' }}</span>
+              </div>
+              <div class="info-item full-width">
+                <span class="label">Address</span>
+                <span class="value">{{ student.parents?.address }}</span>
+              </div>
+            </div>
+
+            <!-- Rules -->
+            <div class="rules-section" v-if="sanitizedRules">
+               <strong class="rules-title">Rules And Regulations:</strong>
+               <div v-html="sanitizedRules" class="rules-content"></div>
+            </div>
+
+            <!-- Footer -->
+            <div class="signature-section">
+                <div class="signature-box left-sig">
+                    <div class="issue-date">
+                        <span class="date-label">Date of Issue:</span> {{ getCurrentDate() }}
+                    </div>
+                </div>
+                <div class="signature-box center-sig">
+                    <div class="line"></div>
+                    <p>Institute Stamp</p>
+                </div>
+                <div class="signature-box right-sig">
+                    <div class="line"></div>
+                    <p>Signature of Authority</p>
+                </div>
+            </div>
+
           </div>
         </div>
       </div>
@@ -266,7 +154,6 @@
 </template>
 
 <script>
-import VueQrcode from 'qrcode.vue'
 import Resource from '@/api/resource'
 import DOMPurify from 'dompurify'
 const stdRes = new Resource('students')
@@ -274,9 +161,6 @@ const settingsRes = new Resource('settings')
 
 export default {
   name: 'AdmissionCertificate',
-  components: {
-    VueQrcode
-  },
   props: {
     openadmitcert: {
       type: Boolean,
@@ -293,7 +177,6 @@ export default {
       student: {},
       local_studentid: null,
       settings: {},
-      qrValue: ''
     }
   },
   computed: {
@@ -313,14 +196,6 @@ export default {
       if (val) {
         this.getStudent(val)
       }
-    },
-    student: {
-      handler(val) {
-        if (val.id) {
-          this.qrValue = `${this.settings.school_website || 'https://yourschool.com'}/verify-student/${val.id}`
-        }
-      },
-      deep: true
     }
   },
   async created() {
@@ -341,7 +216,6 @@ export default {
     },
     async getStudent(id) {
       const { data } = await stdRes.get(id);
-      console.log(data);
       this.student = data.student;
     },
     handleClose() {
@@ -353,162 +227,336 @@ export default {
         month: 'long',
         day: 'numeric'
       })
+    },
+    printCertificate() {
+       const printContent = this.$refs.certificateContent.innerHTML;
+       const originalContent = document.body.innerHTML;
+            
+       document.body.innerHTML = `
+           <style>
+               @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Great+Vibes&family=Montserrat:wght@300;400;500;600&display=swap');
+               @page { size: A4 portrait; margin: 0; }
+               @media print {
+                   body { margin: 0; background: none; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                   .certificate-container { 
+                       box-shadow: none !important; 
+                       margin: 0 !important;
+                       width: 210mm !important;
+                       height: 296mm !important;
+                       padding: 8mm !important;
+                       box-sizing: border-box !important;
+                       overflow: hidden !important;
+                   }
+                   .certificate-border {
+                       height: calc(296mm - 16mm) !important;
+                       padding: 20px 30px !important;
+                       box-sizing: border-box !important;
+                   }
+                   .header { margin-bottom: 15px !important; }
+                   .school-logo { width: 80px !important; height: auto !important; }
+                   .school-name { font-size: 26px !important; margin-bottom: 2px !important; }
+                   .document-title { font-size: 38px !important; }
+                   .document-title-wrapper { margin: 10px 0 20px 0 !important; }
+                   .student-info-grid { row-gap: 12px !important; margin-bottom: 15px !important; }
+                   .info-section-title { margin-bottom: 10px !important; font-size: 16px !important; padding-bottom: 2px !important; }
+                   .label { font-size: 9px !important; margin-bottom: 2px !important; }
+                   .value { font-size: 12px !important; }
+                   .rules-section { margin-top: 15px !important; padding: 10px 15px !important; }
+                   .rules-content p, .rules-content li { font-size: 11px !important; margin: 2px 0 !important; line-height: 1.3 !important; }
+                   .rules-content h3 { font-size: 12px !important; margin: 5px 0 !important; }
+                   .signature-section { margin-top: 25px !important; }
+                   .print-actions { display: none !important; }
+               }
+           </style>
+           <div class="certificate-container">${printContent}</div>
+       `;
+            
+       window.print();
+       document.body.innerHTML = originalContent;
+       window.location.reload();
     }
   }
 }
 </script>
 
 <style scoped>
-.certificate-container {
-  background: #fff;
-  padding: 30px;
-  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Great+Vibes&family=Montserrat:wght@300;400;500;600&display=swap');
+
+.certificate-wrapper {
+    display: flex;
+    justify-content: center;
+    padding: 0 0 20px 0;
+    background: transparent;
 }
 
-.certificate-content {
-  border: 2px solid #333;
-  padding: 20px;
-  position: relative;
+.print-actions {
+    text-align: right;
+    margin-bottom: 20px;
+    padding-right: 20px;
+}
+
+.certificate-container {
+    width: 100%;
+    max-width: 900px;
+    background: #fff;
+    padding: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    position: relative;
+    border-radius: 4px;
+}
+
+.certificate-border {
+    border: 10px solid transparent;
+    border-image: repeating-linear-gradient(45deg, #185a9d, #185a9d 10px, #43cea2 10px, #43cea2 20px) 10;
+    padding: 40px 50px;
+    position: relative;
+    background: linear-gradient(135deg, rgba(255,255,255,1) 0%, rgba(245,249,255,1) 100%);
+}
+
+.certificate-border::before {
+    content: '';
+    position: absolute;
+    top: 5px; right: 5px; bottom: 5px; left: 5px;
+    border: 1px solid #185a9d;
+    pointer-events: none;
 }
 
 .header {
-  text-align: center;
-  margin-bottom: 30px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+.header-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
 }
 
 .school-logo {
-  width: 80px;
-  height: 80px;
-  object-fit: contain;
+    width: 100px;
+    height: auto;
+    object-fit: contain;
+}
+
+.school-details {
+    text-align: center;
 }
 
 .school-name {
-  font-size: 28px;
-  font-weight: bold;
-  color: #2c3e50;
-  margin: 10px 0;
+    font-family: 'Cinzel', serif;
+    font-size: 32px;
+    color: #185a9d;
+    margin: 0 0 5px 0;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-weight: 700;
 }
 
 .school-motto {
-  font-style: italic;
-  color: #7f8c8d;
-  margin: 5px 0;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 14px;
+    font-style: italic;
+    color: #555;
+    margin-bottom: 10px;
+    letter-spacing: 1px;
 }
 
 .contact-info {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 12px;
+    color: #666;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+}
+
+.separator {
+    color: #185a9d;
+    margin: 0 5px;
+}
+
+.document-title-wrapper {
+    text-align: center;
+    margin: 20px 0 35px 0;
 }
 
 .document-title {
-  font-size: 24px;
-  font-weight: bold;
-  color: #2980b9;
-  margin: 20px 0;
-  text-transform: uppercase;
-  border-bottom: 2px solid #3498db;
-  padding-bottom: 10px;
+    font-family: 'Great Vibes', cursive;
+    font-size: 48px;
+    color: #185a9d;
+    margin: 0;
+    line-height: 1;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
 }
 
-.qr-section {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  text-align: center;
+.title-decoration {
+    width: 60%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #185a9d, transparent);
+    margin: 15px auto 0;
 }
 
-.qr-text {
-  font-size: 12px;
-  margin-top: 5px;
-  color: #666;
+.info-section-title {
+    font-family: 'Cinzel', serif;
+    font-size: 18px;
+    color: #185a9d;
+    font-weight: 600;
+    border-bottom: 2px solid rgba(24, 90, 157, 0.3);
+    padding-bottom: 5px;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
+/* Grid Layout */
+.student-info-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    column-gap: 20px;
+    row-gap: 20px;
+    margin-bottom: 30px;
+}
+
+.secondary-grid {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.info-item {
+    display: flex;
+    flex-direction: column;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    padding-bottom: 5px;
+}
+
+.info-item.full-width {
+    grid-column: 1 / -1;
+}
+
+.highlight-box {
+    background: rgba(24, 90, 157, 0.05);
+    padding: 8px;
+    border: 1px dashed rgba(24, 90, 157, 0.3);
+    border-radius: 4px;
+}
+
+.label {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 10px;
+    text-transform: uppercase;
+    color: #888;
+    letter-spacing: 1px;
+    margin-bottom: 3px;
+}
+
+.value {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 14px;
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+/* Rules */
+.rules-section {
+    margin-top: 30px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.6);
+    border-left: 4px solid #185a9d;
+}
+
+.rules-title {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 14px;
+    text-transform: uppercase;
+    color: #333;
+    display: block;
+    margin-bottom: 10px;
+}
+
+.rules-content :deep(h3) { font-size: 14px; color: #303133; margin: 10px 0 5px; }
+.rules-content :deep(ul) { padding-left: 20px; margin: 5px 0; font-family: 'Montserrat', sans-serif; font-size: 13px; color: #555; }
+.rules-content :deep(li) { margin: 3px 0; }
+.rules-content :deep(strong) { font-weight: 600; color: #303133; }
+
+/* Signatures */
 .signature-section {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 50px;
-  padding-top: 20px;
-  border-top: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-top: 50px;
 }
 
-.signature-line {
-  text-align: center;
+.signature-box {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
-.signature-line span {
-  font-size: 14px;
-  color: #666;
+.left-sig { align-items: flex-start; }
+.right-sig { align-items: flex-end; }
+
+.issue-date {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 13px;
+    color: #444;
+}
+
+.date-label {
+    font-weight: 600;
+    color: #185a9d;
 }
 
 .line {
-  width: 200px;
-  height: 1px;
-  background: #000;
-  margin-top: 30px;
+    width: 200px;
+    height: 1px;
+    background-color: #333;
+    margin-bottom: 10px;
 }
 
-.print-date {
-  text-align: right;
-  font-size: 12px;
-  color: #666;
-  margin-top: 20px;
-}
-
-td {
-  padding: 10px;
-  vertical-align: top;
-}
-
-.info-label {
-  font-size: 12px;
-  color: #666;
-  border-bottom: 1px solid #ddd;
-  padding-bottom: 3px;
-}
-
-.info-value {
-  font-size: 14px;
-  color: #333;
-  padding: 5px 0;
-  font-weight: 500;
+.signature-box p {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 13px;
+    text-transform: uppercase;
+    color: #555;
+    letter-spacing: 1px;
+    margin: 0;
 }
 
 @media print {
-  .certificate-container {
-    box-shadow: none;
-  }
-  
-  .el-dialog {
-    margin: 0;
-    padding: 0;
-    width: 100% !important;
-  }
-}
-
-.rules-content :deep(h3) {
-  font-size: 16px;
-  color: #303133;
-  margin: 15px 0 10px;
-}
-
-.rules-content :deep(ul) {
-  padding-left: 20px;
-  margin: 10px 0;
-}
-
-.rules-content :deep(li) {
-  margin: 5px 0;
-}
-
-.rules-content :deep(strong) {
-  font-weight: 600;
-  color: #303133;
+    @page { size: A4 portrait; margin: 0; }
+    body, .certificate-wrapper { background: none; margin: 0; padding: 0; }
+    .certificate-container { 
+        box-shadow: none; 
+        max-width: 100%;
+        width: 210mm;
+        height: 296mm;
+        padding: 8mm;
+        box-sizing: border-box;
+        overflow: hidden;
+    }
+    .certificate-border {
+        height: calc(296mm - 16mm);
+        padding: 20px 30px;
+        box-sizing: border-box;
+    }
+    .header { margin-bottom: 15px; }
+    .school-logo { width: 80px; }
+    .school-name { font-size: 26px; }
+    .document-title { font-size: 38px; }
+    .document-title-wrapper { margin: 10px 0 20px 0; }
+    .student-info-grid { row-gap: 12px; margin-bottom: 15px; }
+    .info-section-title { margin-bottom: 10px; font-size: 16px; padding-bottom: 2px; }
+    .label { font-size: 9px; margin-bottom: 2px; }
+    .value { font-size: 12px; }
+    .rules-section { margin-top: 15px; padding: 10px 15px; }
+    .rules-content :deep(p), .rules-content :deep(li) { font-size: 11px; margin: 2px 0; line-height: 1.3; }
+    .rules-content :deep(h3) { font-size: 12px; margin: 5px 0; }
+    .signature-section { margin-top: 25px; }
+    .print-actions, :deep(.el-dialog__header), :deep(.el-dialog__close), :deep(.el-dialog__headerbtn) {
+        display: none !important;
+    }
 }
 </style>

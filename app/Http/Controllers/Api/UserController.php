@@ -80,9 +80,7 @@ class UserController extends BaseController
                 $user = User::create([
                     'name' => $params['name'],
                     'email' => $params['email'],
-                    'password' => Hash::make($params['password']),
-                    'sex' => $params['sex'],
-                    'birthday' => $params['birthday'] ?? null
+                    'password' => Hash::make($params['password'])
                 ]);
                 $role = Role::findByName($params['role']);
                 $user->syncRoles($role);
@@ -143,12 +141,6 @@ class UserController extends BaseController
 
         $user->name = $request->get('name');
         $user->email = $request->get('email');
-        if ($request->has('sex')) {
-            $user->sex = $request->get('sex');
-        }
-        if ($request->has('birthday')) {
-            $user->birthday = $request->get('birthday');
-        }
 
         if ($request->has('password')) {
             $validator = Validator::make($request->all(), [
