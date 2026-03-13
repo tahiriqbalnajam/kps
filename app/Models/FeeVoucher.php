@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Carbon\Carbon;
 
 class FeeVoucher extends Model
 {
@@ -118,9 +119,16 @@ class FeeVoucher extends Model
     public function getDaysOverdueAttribute()
     {
         if ($this->is_overdue) {
-            return now()->diffInDays($this->due_date);
+            // Positive value = number of days past the due date
+            return (int) Carbon::parse($this->due_date)->diffInDays(now());
         }
         return 0;
+    }
+
+    // Computed remaining balance (not stored; always derived from live DB values)
+    public function getRemainingAmountAttribute(): float
+    {
+        return max(0, round((float) $this->total_with_fine - (float) ($this->paid_amount ?? 0), 2));
     }
 
     public function getFormattedVoucherNumberAttribute()

@@ -315,80 +315,126 @@ class FeeVoucherController extends Controller
     }
 
     /**
-     * Update voucher status (paid/unpaid)
+     * Update voucher status (paid/unpaid/partially_paid/cancelled)
+     *
+     * PAYMENT SEMANTICS:
+     *   - `paid_amount`  in the REQUEST  = the NEW incremental payment being made right now.
+     *   - `paid_amount`  on the DB row   = running cumulative total (auto-calculated here).
+     *   - Status is auto-determined by comparing the new cumulative total to total_with_fine.
+     *     The caller's `status` field is IGNORED for payment flows to prevent the frontend
+     *     from accidentally forcing 'paid' on a partial amount.
      */
     public function updateStatus(Request $request, $id)
     {
         try {
             $request->validate([
-                'status' => 'required|in:paid,unpaid,partially_paid,cancelled',
-                'paid_amount' => 'nullable|numeric|min:0',
-                'payment_date' => 'nullable|date',
-                'pending_voucher_ids' => 'nullable|array'
+                'status'              => 'required|in:paid,unpaid,partially_paid,cancelled',
+                'paid_amount'         => 'nullable|numeric|min:0',
+                'payment_date'        => 'nullable|date',
+                'pending_voucher_ids' => 'nullable|array',
             ]);
 
             $voucher = FeeVoucher::findOrFail($id);
-            
-            // Start a database transaction
+
             DB::beginTransaction();
-            
+
             try {
-                $paidAmount = $request->paid_amount ?? 0;
-                $totalAmount = $voucher->total_with_fine;
-                $status = $request->status;
-                
-                // Automatically determine status based on paid amount
-                if ($status === 'paid' || $paidAmount > 0) {
-                    if ($paidAmount >= $totalAmount) {
-                        $status = 'paid';
-                    } elseif ($paidAmount > 0 && $paidAmount < $totalAmount) {
-                        $status = 'partially_paid';
-                    } else {
-                        $status = 'unpaid';
-                    }
+                // --- Cancellation: no payment logic needed ---
+                if ($request->status === 'cancelled') {
+                    $voucher->update([
+                        'status'     => 'cancelled',
+                        'updated_by' => Auth::id() ?? 1,
+                    ]);
+                    DB::commit();
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Voucher cancelled successfully',
+                        'voucher' => $voucher->fresh(),
+                    ]);
                 }
-                
-                // Update main voucher status
-                $voucher->update([
-                    'status' => $status,
-                    'paid_amount' => $request->paid_amount,
-                    'payment_date' => $request->payment_date,
-                    'updated_by' => Auth::id() ?? 1,
-                    'updated_at' => now()
-                ]);
-                
-                // If fully paid and there are pending vouchers included, mark them as paid too
-                if ($status === 'paid' && $request->has('pending_voucher_ids') && is_array($request->pending_voucher_ids) && count($request->pending_voucher_ids) > 0) {
-                    $pendingVoucherIds = $request->pending_voucher_ids;
-                    
-                    // Update all pending vouchers to paid
-                    FeeVoucher::whereIn('id', $pendingVoucherIds)
-                        ->where('status', '!=', 'paid')
+
+                $totalAmount  = round((float) $voucher->total_with_fine, 2);
+                $alreadyPaid  = round((float) ($voucher->paid_amount ?? 0), 2);
+                $newPayment   = round((float) ($request->paid_amount ?? 0), 2);
+                $paymentDate  = $request->payment_date ?? now()->toDateString();
+
+                if ($newPayment > 0) {
+                    // --- Overpayment guard ---
+                    $remaining = round($totalAmount - $alreadyPaid, 2);
+                    if ($newPayment > $remaining + 0.005) {
+                        DB::rollBack();
+                        return response()->json([
+                            'success'          => false,
+                            'message'          => "Payment of Rs. {$newPayment} exceeds the remaining balance of Rs. {$remaining}.",
+                            'remaining_amount' => $remaining,
+                        ], 422);
+                    }
+
+                    // --- Accumulate ---
+                    $newCumulativeTotal = round($alreadyPaid + $newPayment, 2);
+
+                    // --- Auto-determine status (ignores the request `status` field) ---
+                    if ($newCumulativeTotal >= $totalAmount - 0.005) {
+                        $resolvedStatus     = 'paid';
+                        $newCumulativeTotal = $totalAmount; // remove float dust
+                    } else {
+                        $resolvedStatus = 'partially_paid';
+                    }
+
+                    $voucher->update([
+                        'status'       => $resolvedStatus,
+                        'paid_amount'  => $newCumulativeTotal,
+                        'payment_date' => $paymentDate,
+                        'updated_by'   => Auth::id() ?? 1,
+                    ]);
+
+                } else {
+                    // No payment amount provided — honour the explicit status as-is
+                    // (handles resets like marking back to unpaid by admin)
+                    $resolvedStatus = $request->status;
+                    $voucher->update([
+                        'status'     => $resolvedStatus,
+                        'updated_by' => Auth::id() ?? 1,
+                    ]);
+                }
+
+                // Bulk-mark additional pending vouchers (bundle payment feature)
+                if ($resolvedStatus === 'paid'
+                    && $request->filled('pending_voucher_ids')
+                    && count($request->pending_voucher_ids) > 0
+                ) {
+                    FeeVoucher::whereIn('id', $request->pending_voucher_ids)
+                        ->whereNotIn('status', ['paid', 'cancelled'])
                         ->update([
-                            'status' => 'paid',
-                            'payment_date' => $request->payment_date ?? now(),
-                            'updated_by' => Auth::id() ?? 1,
-                            'updated_at' => now()
+                            'status'       => 'paid',
+                            'payment_date' => $paymentDate,
+                            'updated_by'   => Auth::id() ?? 1,
                         ]);
                 }
-                
+
                 DB::commit();
-                
-                $statusMessage = $status === 'partially_paid' 
-                    ? 'Voucher marked as partially paid' 
-                    : 'Voucher status updated successfully';
-                
+
+                $freshVoucher     = $voucher->fresh();
+                $remainingAfter   = round($totalAmount - (float) ($freshVoucher->paid_amount ?? 0), 2);
+
+                $message = match ($resolvedStatus) {
+                    'paid'           => 'Voucher marked as fully paid',
+                    'partially_paid' => "Partial payment of Rs. {$newPayment} recorded. Remaining: Rs. {$remainingAfter}",
+                    default          => 'Voucher status updated successfully',
+                };
+
                 return response()->json([
-                    'success' => true,
-                    'message' => $statusMessage,
-                    'voucher' => $voucher
+                    'success'          => true,
+                    'message'          => $message,
+                    'voucher'          => $freshVoucher,
+                    'remaining_amount' => $remainingAfter,
                 ]);
-                
+
             } catch (\Exception $e) {
                 DB::rollBack();
                 throw $e;
             }
-            
+
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -405,11 +451,11 @@ class FeeVoucherController extends Controller
         try {
             $voucher = FeeVoucher::findOrFail($id);
             
-            // Only allow deletion of unpaid vouchers
-            if ($voucher->status === 'paid') {
+            // Only allow deletion of vouchers where no money has been received
+            if (in_array($voucher->status, ['paid', 'partially_paid'])) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Cannot delete paid vouchers'
+                    'message' => 'Cannot delete paid or partially paid vouchers. Cancel instead.'
                 ], 400);
             }
             
@@ -491,19 +537,12 @@ class FeeVoucherController extends Controller
                 // Check if voucher is overdue
                 $isOverdue = $voucher->due_date < now()->toDateString();
                 
-                // Calculate remaining amount for partially paid vouchers
-                $paidAmount = floatval($voucher->paid_amount ?? 0);
-                $feeAmount = floatval($voucher->fee_amount);
-                $fineAmount = floatval($voucher->fine_amount);
-                
-                if ($isOverdue) {
-                    // If overdue, include fine
-                    $totalAmount = $feeAmount + $fineAmount;
-                    $voucher->total_amount_with_fine = $totalAmount - $paidAmount;
-                } else {
-                    // If not overdue, just the fee amount minus what's paid
-                    $voucher->total_amount_with_fine = $feeAmount - $paidAmount;
-                }
+                // Remaining balance = total_with_fine minus what has already been paid.
+                // total_with_fine already includes fine_amount regardless of overdue status.
+                $paidAmount  = round(floatval($voucher->paid_amount ?? 0), 2);
+                $totalAmount = round(floatval($voucher->total_with_fine), 2);
+                $voucher->remaining_amount      = max(0, $totalAmount - $paidAmount);
+                $voucher->total_amount_with_fine = $voucher->remaining_amount; // backward-compat alias
                 
                 // Also set the amount field for backward compatibility
                 $voucher->amount = $voucher->fee_amount;
@@ -607,8 +646,10 @@ class FeeVoucherController extends Controller
                 // Collected: Sum of payments made in the period
                 'total_amount_collected' => $payQueryForSum->sum('paid_amount'),
                 
-                // Pending: Amount remaining from vouchers GENERATED in this period
-                'pending_amount' => $genQueryPending->whereIn('status', ['unpaid', 'partially_paid'])->sum(DB::raw('total_with_fine - paid_amount'))
+                // Pending: Amount remaining from vouchers GENERATED in this period.
+                // COALESCE handles NULL paid_amount (unpaid vouchers) so the subtraction is correct.
+                'pending_amount' => $genQueryPending->whereIn('status', ['unpaid', 'partially_paid'])
+                                        ->sum(DB::raw('COALESCE(total_with_fine, 0) - COALESCE(paid_amount, 0)'))
             ];
 
             return response()->json([
