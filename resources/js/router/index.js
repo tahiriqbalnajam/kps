@@ -155,6 +155,12 @@ export const asyncRoutes = [
     meta: { title: 'Academics', bootstrapIcon: 'mortarboard-fill', noCache: true, permissions: ['view menu classes'] },
     children: [
       {
+        path: 'sessions',
+        component: () => import('@/views/academics/AcademicSessions.vue'),
+        name: 'Academic Sessions',
+        meta: { title: 'Sessions', bootstrapIcon: 'calendar3-range', noCache: true },
+      },
+      {
         path: 'list',
         component: () => import('@/views/stdclasses/classlist.vue'),
         name: 'Classes',

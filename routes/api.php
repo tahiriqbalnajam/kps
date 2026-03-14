@@ -25,6 +25,10 @@ Route::get('students/{id}/subject-wise-scores', 'StudentController@getSubjectWis
 //classes
 Route::apiResource('classes', 'ClassesController');
 Route::post('classes/bulk-update-priority', 'ClassesController@bulkUpdatePriority');
+// Academic Sessions
+Route::get('academic-sessions/active', 'AcademicSessionController@active');
+Route::post('academic-sessions/{id}/set-active', 'AcademicSessionController@setActive');
+Route::apiResource('academic-sessions', 'AcademicSessionController');
 //teachers
 //teachers
 Route::apiResource('teachers', 'TeacherController');
