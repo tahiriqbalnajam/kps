@@ -39,6 +39,7 @@ class StudentService implements StudentServiceInterface
                 AllowedFilter::partial('parent_name', 'parents.name'),
                 AllowedFilter::exact('stdclass', 'stdclasses.id'),
                 AllowedFilter::exact('section_id', 'section_id'),
+                AllowedFilter::exact('session_id', 'session_id'),
                 // Add 'all' filter for searching across multiple fields
                 AllowedFilter::callback('all', function ($query, $value) {
                     $query->where(function ($q) use ($value) {
@@ -126,6 +127,7 @@ class StudentService implements StudentServiceInterface
                 AllowedFilter::partial('parent_name', 'parents.name'),
                 AllowedFilter::exact('stdclass', 'stdclasses.id'),
                 AllowedFilter::exact('section_id', 'section_id'),
+                AllowedFilter::exact('session_id', 'session_id'),
                 // Add 'all' filter for searching across multiple fields
                 AllowedFilter::callback('all', function ($query, $value) {
                     $query->where(function ($q) use ($value) {

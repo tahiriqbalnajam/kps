@@ -30,3 +30,11 @@ export function exportStudent(stdData){
     responseType: 'blob', // Important for file downloads
   });
 }
+
+export function promoteStudents(data) {
+  return request({
+    url: 'students/promote',
+    method: 'post',
+    data,
+  });
+}

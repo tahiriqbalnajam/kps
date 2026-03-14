@@ -9,12 +9,47 @@
       />
       <breadcrumb class="breadcrumb-container" />
     </div>
+
     <!--nav title-->
     <div v-if="settings.showNavbarTitle" class="heardCenterTitle">{{ settings.showNavbarTitle }}</div>
+
     <div v-if="settings.ShowDropDown" class="right-menu rowSC">
+
+      <!-- ── Session Selector ── -->
+      <div class="session-selector">
+        <el-select
+          :model-value="useSessionStore.currentSessionId"
+          placeholder="Select Session"
+          size="small"
+          style="width: 170px;"
+          @change="handleSessionChange"
+          :loading="!useSessionStore.loaded"
+        >
+          <template #prefix>
+            <el-icon style="color:#fff;"><Calendar /></el-icon>
+          </template>
+          <el-option
+            v-for="s in useSessionStore.sessions"
+            :key="s.id"
+            :value="s.id"
+            :label="s.name"
+          >
+            <span>{{ s.name }}</span>
+            <el-tag
+              v-if="s.is_active"
+              type="success"
+              size="small"
+              style="margin-left:6px;"
+            >Active</el-tag>
+          </el-option>
+        </el-select>
+      </div>
+      <!-- ── end Session Selector ── -->
+
       <ScreenFull />
       <SizeSelect />
       <LangSelect />
+
       <el-dropdown trigger="click" size="medium">
         <div class="avatar-wrapper">
           <img
@@ -43,33 +78,38 @@
 import SizeSelect from '@/components/SizeSelect/index.vue'
 import LangSelect from '@/components/LangSelect/index.vue'
 import ScreenFull from '@/components/ScreenFull/index.vue'
-
-import { CaretBottom } from '@element-plus/icons-vue'
+import { CaretBottom, Calendar } from '@element-plus/icons-vue'
 import Breadcrumb from './Breadcrumb'
 import Hamburger from './Hamburger'
-
 import { appStore } from '@/store/app'
 import { userStore } from '@/store/user'
+import { sessionStore } from '@/store/session'
+import { ElMessage } from 'element-plus'
+
 const router = useRouter()
-const route = useRoute()
-
 const useUserStore = userStore()
-const useAppStore = appStore()
+const useAppStore  = appStore()
+const useSessionStore = sessionStore()
 
-const settings = computed(() => {
-  return useAppStore.settings
+const settings = computed(() => useAppStore.settings)
+const opened   = computed(() => useAppStore.sidebar.opened)
+
+const toggleSideBar = () => useAppStore.toggleSideBar()
+
+// Initialise session list when the navbar mounts (once per session)
+onMounted(() => {
+  useSessionStore.init()
 })
 
-const opened = computed(() => {
-  return useAppStore.sidebar.opened
-})
-
-const toggleSideBar = () => {
-  useAppStore.toggleSideBar()
+const handleSessionChange = (id) => {
+  useSessionStore.setSession(id)
+  const name = useSessionStore.currentSession?.name ?? ''
+  ElMessage({ message: `Switched to session: ${name}`, type: 'success', duration: 1800 })
 }
 
 const loginOut = async () => {
   await useUserStore.logout().then(() => {
+    useSessionStore.clear()
     router.push(`/login?redirect=/`)
   })
 }
@@ -85,7 +125,31 @@ const loginOut = async () => {
   background: linear-gradient(to right, #0071f3, #73b4ff);
 }
 
-//logo
+.session-selector {
+  margin-right: 12px;
+  display: flex;
+  align-items: center;
+
+  // Make the select look good on the blue navbar
+  :deep(.el-select .el-input__wrapper) {
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    box-shadow: none;
+    color: #fff;
+  }
+  :deep(.el-select .el-input__inner) {
+    color: #fff;
+    font-weight: 600;
+    font-size: 13px;
+  }
+  :deep(.el-select .el-input__inner::placeholder) {
+    color: rgba(255,255,255,0.7);
+  }
+  :deep(.el-select .el-select__caret) {
+    color: #fff;
+  }
+}
+
 .avatar-wrapper {
   margin-top: 5px;
   position: relative;
@@ -97,17 +161,8 @@ const loginOut = async () => {
     height: 40px;
     border-radius: 10px;
   }
-
-  .el-icon-caret-bottom {
-    cursor: pointer;
-    position: absolute;
-    right: -20px;
-    top: 25px;
-    font-size: 12px;
-  }
 }
 
-//center-title
 .heardCenterTitle {
   text-align: center;
   position: absolute;
@@ -118,7 +173,6 @@ const loginOut = async () => {
   transform: translate(-50%, -50%);
 }
 
-//drop-down
 .right-menu {
   cursor: pointer;
   margin-right: 40px;

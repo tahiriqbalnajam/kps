@@ -126,6 +126,57 @@ class StudentController extends Controller
         return response()->json(new JsonResponse(['results' => $results]));
     }
 
+    /**
+     * Promote students to a new session with optional class remapping.
+     *
+     * Payload:
+     *   student_ids    : array of IDs  (required)
+     *   target_session : int           (required)
+     *   class_map      : array { from_class_id => to_class_id }  (optional)
+     */
+    public function promote(Request $request)
+    {
+        $request->validate([
+            'student_ids'    => 'required|array|min:1',
+            'student_ids.*'  => 'integer|exists:students,id',
+            'target_session' => 'required|integer|exists:class_sessions,id',
+            'class_map'      => 'nullable|array',
+        ]);
+
+        $studentIds    = $request->student_ids;
+        $targetSession = $request->target_session;
+        $classMap      = $request->class_map ?? [];   // [from_class_id => to_class_id]
+
+        DB::beginTransaction();
+        try {
+            $promoted = 0;
+
+            // Group students by their current class so we can apply the map efficiently
+            $students = Student::whereIn('id', $studentIds)
+                ->select('id', 'class_id', 'session_id')
+                ->get();
+
+            foreach ($students as $student) {
+                $newClassId = $classMap[$student->class_id] ?? $student->class_id;
+                $student->update([
+                    'session_id' => $targetSession,
+                    'class_id'   => $newClassId,
+                ]);
+                $promoted++;
+            }
+
+            DB::commit();
+
+            return response()->json(new JsonResponse([
+                'promoted' => $promoted,
+                'message'  => "{$promoted} student(s) promoted successfully.",
+            ]));
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(new JsonResponse(['error' => $e->getMessage()], 'error'), 500);
+        }
+    }
+
     public function edit_class(Request $request){
         $selected_students = $request->multiStudent;
         $desired_class = $request->changeClass;

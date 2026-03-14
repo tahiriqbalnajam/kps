@@ -90,14 +90,26 @@
           </el-tooltip>
           
           <el-tooltip content="Change Selected Students Class" placement="top">
-            <el-button 
-              :disabled="multiStudentOption.multiStudent.length <= 0" 
-              type="warning" 
+            <el-button
+              :disabled="multiStudentOption.multiStudent.length <= 0"
+              type="warning"
               @click="dialogVisible = true"
               size="default"
               class="action-btn"
             >
               <el-icon><Sort /></el-icon>
+            </el-button>
+          </el-tooltip>
+
+          <el-tooltip content="Promote Selected Students to Another Session" placement="top">
+            <el-button
+              :disabled="multiStudentOption.multiStudent.length <= 0"
+              type="info"
+              @click="promoteDialogVisible = true"
+              size="default"
+              class="action-btn"
+            >
+              <el-icon><Promotion /></el-icon>
             </el-button>
           </el-tooltip>
         </el-button-group>
@@ -250,6 +262,67 @@
         @current-change="handleCurrentChange"
       />
     </div>
+    <!-- Promote Students Dialog -->
+    <el-dialog
+      v-model="promoteDialogVisible"
+      title="Promote Students to Session"
+      width="480px"
+      :close-on-click-modal="false"
+    >
+      <div style="margin-bottom: 12px; color: #606266; font-size: 13px;">
+        <strong>{{ multiStudentOption.multiStudent.length }}</strong> student(s) selected.
+        After promotion their <em>session</em> will change. Their class stays the same unless you select a new one below.
+      </div>
+
+      <el-form label-position="top" style="margin-top: 8px;">
+        <el-form-item label="Target Session" required>
+          <el-select
+            v-model="promoteForm.targetSession"
+            placeholder="Select target session..."
+            style="width: 100%"
+          >
+            <el-option
+              v-for="s in availableSessions"
+              :key="s.id"
+              :label="s.name"
+              :value="s.id"
+            >
+              <span>{{ s.name }}</span>
+              <el-tag v-if="s.is_active" size="small" type="success" style="margin-left: 8px;">Active</el-tag>
+            </el-option>
+          </el-select>
+        </el-form-item>
+
+        <el-form-item label="New Class (optional — leave blank to keep existing class)">
+          <el-select
+            v-model="promoteForm.targetClass"
+            placeholder="Keep existing class"
+            clearable
+            style="width: 100%"
+          >
+            <el-option
+              v-for="cls in flatClasses"
+              :key="cls.id"
+              :label="cls.name"
+              :value="cls.id"
+            />
+          </el-select>
+        </el-form-item>
+      </el-form>
+
+      <template #footer>
+        <el-button @click="promoteDialogVisible = false">Cancel</el-button>
+        <el-button
+          type="primary"
+          :loading="promoteLoading"
+          :disabled="!promoteForm.targetSession"
+          @click="handlePromote"
+        >
+          Promote
+        </el-button>
+      </template>
+    </el-dialog>
+
     <add-student  v-if="addstudentpop" :addeditstudentprop="addstudentpop" :stdid="stdid" @closeAddStudent="closeAddStudent()"/>
     <admission-certificate  v-if="openadmitcert" :openadmitcert="openadmitcert" :stdid="stdid" @closeAdmitCert="closeAdmitCert()"/>
     <pay-fee v-if="openpayfee" :openpayfee="openpayfee" :stdid="stdid" @donePayFee="donePayFee" />
@@ -275,6 +348,7 @@ import {
   ArrowDown,
   Download,
   Sort,
+  Promotion,
 } from '@element-plus/icons-vue'
 import moment from 'moment';
 import { debounce } from 'lodash';
@@ -288,14 +362,15 @@ import SchoolLeavingCertificate from '@/views/students/SchoolLeavingCertificate.
 import AddStudent from '@/views/students/AddStudent.vue';
 import StudentIdcard from '@/views/students/components/StudentIdcard.vue';
 import AdmissionCertificate from '@/views/students/components/AdmissionCertificate.vue';
-import { editClass, exportStudent } from '@/api/student.js'; // Ensure exportStudent is imported
+import { editClass, exportStudent, promoteStudents } from '@/api/student.js'; // Ensure exportStudent is imported
 import HeadControls from '@/components/HeadControls.vue';
 const student = new Resource('students');
 const classes = new Resource('classes');
+import { sessionStore } from '@/store/session'
 export default {
   name: 'StudentList',
-  components: { Pagination, AddStudent,  PayFee, FeePrint, FeeDetail, HeadControls, CharacterCertificate, 
-                SchoolLeavingCertificate,AdmissionCertificate, StudentIdcard },
+  components: { Pagination, AddStudent, PayFee, FeePrint, FeeDetail, HeadControls, CharacterCertificate,
+                SchoolLeavingCertificate, AdmissionCertificate, StudentIdcard, Promotion },
   directives: { },
   filters: {
     
@@ -328,6 +403,12 @@ export default {
         multiStudent: [],
         changeClass: "",
       },
+      promoteDialogVisible: false,
+      promoteLoading: false,
+      promoteForm: {
+        targetSession: null,
+        targetClass: null,
+      },
       filtercol: [
         { col:  'adminssion_number', display: 'adminssion_number'},
         { col: 'roll_no', display: 'Roll No.' },
@@ -348,6 +429,20 @@ export default {
     };
   },
   computed: {
+    currentSessionId() {
+      return sessionStore().currentSessionId
+    },
+    availableSessions() {
+      return sessionStore().sessions
+    },
+    // Flat list of classes (no sections) for the promotion class dropdown
+    flatClasses() {
+      if (!this.classes) return []
+      return this.classes.map(c => ({ id: c.id, name: c.label }))
+    },
+  },
+  watch: {
+    currentSessionId() { this.getList() },
   },
   created() {
     this.getList();
@@ -473,6 +568,7 @@ export default {
         this.query.filter['dob_to'] = this.dobDateRange[1];
       }
       
+      if (this.currentSessionId) this.query.filter['session_id'] = this.currentSessionId
       const { data } = await student.list(this.query);
       this.listloading = false;
       this.list = data.students.data;
@@ -731,6 +827,43 @@ export default {
         });
       });
     },
+    async handlePromote() {
+      if (!this.promoteForm.targetSession) {
+        this.$message.warning('Please select a target session.');
+        return;
+      }
+
+      const payload = {
+        student_ids: this.multiStudentOption.multiStudent,
+        target_session: this.promoteForm.targetSession,
+      };
+
+      // If a target class was chosen, map every distinct current class to the new class
+      if (this.promoteForm.targetClass) {
+        const distinctClassIds = [...new Set(
+          this.list
+            .filter(s => this.multiStudentOption.multiStudent.includes(s.id))
+            .map(s => s.class_id)
+        )];
+        const classMap = {};
+        distinctClassIds.forEach(id => { classMap[id] = this.promoteForm.targetClass; });
+        payload.class_map = classMap;
+      }
+
+      this.promoteLoading = true;
+      try {
+        const { data } = await promoteStudents(payload);
+        this.$message.success(data.message || `${this.multiStudentOption.multiStudent.length} student(s) promoted successfully.`);
+        this.promoteDialogVisible = false;
+        this.promoteForm = { targetSession: null, targetClass: null };
+        this.getList();
+      } catch (err) {
+        this.$message.error('Promotion failed. Please try again.');
+      } finally {
+        this.promoteLoading = false;
+      }
+    },
+
     addClass() {
 
     },

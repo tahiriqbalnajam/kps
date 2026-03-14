@@ -143,6 +143,7 @@ const studentPro = new Resource('students');
 const attendPro = new Resource('attendance');
 import {studentAttMarked} from '@/api/attendance';
 import { debounce } from 'lodash';
+import { sessionStore } from '@/store/session'
 export default {
   name: 'StudentAttendance',
   components: { Pagination, HeadControls },
@@ -182,6 +183,7 @@ export default {
     };
   },
   computed: {
+    currentSessionId() { return sessionStore().currentSessionId },
     filterTableData() {
       return this.attendance.students.filter(
         (data) =>
@@ -292,7 +294,9 @@ export default {
       }
       
       this.student_loading = true;
-      
+      if (this.currentSessionId) this.query.filter['session_id'] = this.currentSessionId
+      else delete this.query.filter['session_id']
+
       const selectedValue = this.query.stdclass.toString();
       let classId = null;
       

@@ -414,6 +414,7 @@ import FeeVoucherPrint from './component/FeeVoucherPrint.vue'
 const studentsResource = new Resource('students')
 const classesResource = new Resource('classes')
 const feeTypesResource = new Resource('feetypes')
+import { sessionStore } from '@/store/session'
 
 export default {
   name: 'FeeVoucher',
@@ -602,6 +603,12 @@ export default {
       return hasRequiredFields
     }
   },
+  computed: {
+    currentSessionId() { return sessionStore().currentSessionId },
+  },
+  watch: {
+    currentSessionId() { this.getStudents() },
+  },
   created() {
     this.getStudents()
     this.getClasses()
@@ -646,6 +653,8 @@ export default {
               break
           }
         }
+
+        if (this.currentSessionId) filters.session_id = this.currentSessionId
 
         const queryParams = {
           ...this.query,
