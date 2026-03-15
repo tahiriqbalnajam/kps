@@ -293,20 +293,15 @@
           </el-select>
         </el-form-item>
 
-        <el-form-item label="New Class (optional — leave blank to keep existing class)">
-          <el-select
-            v-model="promoteForm.targetClass"
+        <el-form-item label="New Class / Group (optional — leave blank to keep existing)">
+          <el-tree-select
+            check-strictly
+            v-model="promoteForm.targetClassOrSection"
+            :data="classes"
             placeholder="Keep existing class"
             clearable
             style="width: 100%"
-          >
-            <el-option
-              v-for="cls in flatClasses"
-              :key="cls.id"
-              :label="cls.name"
-              :value="cls.id"
-            />
-          </el-select>
+          />
         </el-form-item>
       </el-form>
 
@@ -407,7 +402,7 @@ export default {
       promoteLoading: false,
       promoteForm: {
         targetSession: null,
-        targetClass: null,
+        targetClassOrSection: null,
       },
       filtercol: [
         { col:  'adminssion_number', display: 'adminssion_number'},
@@ -434,11 +429,6 @@ export default {
     },
     availableSessions() {
       return sessionStore().sessions
-    },
-    // Flat list of classes (no sections) for the promotion class dropdown
-    flatClasses() {
-      if (!this.classes) return []
-      return this.classes.map(c => ({ id: c.id, name: c.label }))
     },
   },
   watch: {
@@ -838,16 +828,14 @@ export default {
         target_session: this.promoteForm.targetSession,
       };
 
-      // If a target class was chosen, map every distinct current class to the new class
-      if (this.promoteForm.targetClass) {
-        const distinctClassIds = [...new Set(
-          this.list
-            .filter(s => this.multiStudentOption.multiStudent.includes(s.id))
-            .map(s => s.class_id)
-        )];
-        const classMap = {};
-        distinctClassIds.forEach(id => { classMap[id] = this.promoteForm.targetClass; });
-        payload.class_map = classMap;
+      // Parse tree-select value: 'class_5' or 'section_3'
+      const sel = this.promoteForm.targetClassOrSection;
+      if (sel) {
+        if (String(sel).startsWith('section_')) {
+          payload.target_section_id = parseInt(sel.split('_')[1]);
+        } else if (String(sel).startsWith('class_')) {
+          payload.target_class_id = parseInt(sel.split('_')[1]);
+        }
       }
 
       this.promoteLoading = true;
@@ -855,7 +843,7 @@ export default {
         const { data } = await promoteStudents(payload);
         this.$message.success(data.message || `${this.multiStudentOption.multiStudent.length} student(s) promoted successfully.`);
         this.promoteDialogVisible = false;
-        this.promoteForm = { targetSession: null, targetClass: null };
+        this.promoteForm = { targetSession: null, targetClassOrSection: null };
         this.getList();
       } catch (err) {
         this.$message.error('Promotion failed. Please try again.');

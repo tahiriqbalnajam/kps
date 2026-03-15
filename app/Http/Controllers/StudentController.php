@@ -137,31 +137,45 @@ class StudentController extends Controller
     public function promote(Request $request)
     {
         $request->validate([
-            'student_ids'    => 'required|array|min:1',
-            'student_ids.*'  => 'integer|exists:students,id',
-            'target_session' => 'required|integer|exists:class_sessions,id',
-            'class_map'      => 'nullable|array',
+            'student_ids'       => 'required|array|min:1',
+            'student_ids.*'     => 'integer|exists:students,id',
+            'target_session'    => 'required|integer|exists:class_sessions,id',
+            'target_class_id'   => 'nullable|integer|exists:classes,id',
+            'target_section_id' => 'nullable|integer|exists:sections,id',
         ]);
 
-        $studentIds    = $request->student_ids;
-        $targetSession = $request->target_session;
-        $classMap      = $request->class_map ?? [];   // [from_class_id => to_class_id]
+        $studentIds      = $request->student_ids;
+        $targetSession   = $request->target_session;
+        $targetClassId   = $request->target_class_id;
+        $targetSectionId = $request->target_section_id;
 
         DB::beginTransaction();
         try {
             $promoted = 0;
 
-            // Group students by their current class so we can apply the map efficiently
             $students = Student::whereIn('id', $studentIds)
-                ->select('id', 'class_id', 'session_id')
+                ->select('id', 'class_id', 'section_id', 'session_id')
                 ->get();
 
             foreach ($students as $student) {
-                $newClassId = $classMap[$student->class_id] ?? $student->class_id;
-                $student->update([
-                    'session_id' => $targetSession,
-                    'class_id'   => $newClassId,
-                ]);
+                $updates = ['session_id' => $targetSession];
+
+                if ($targetClassId) {
+                    $updates['class_id'] = $targetClassId;
+                }
+
+                if ($targetSectionId) {
+                    $updates['section_id'] = $targetSectionId;
+                    // If only section was chosen, derive class from the section's parent class
+                    if (!$targetClassId) {
+                        $section = \App\Models\Section::find($targetSectionId);
+                        if ($section) {
+                            $updates['class_id'] = $section->class_id;
+                        }
+                    }
+                }
+
+                $student->update($updates);
                 $promoted++;
             }
 

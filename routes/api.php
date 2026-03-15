@@ -246,19 +246,20 @@ Route::middleware(['auth.apikey'])->prefix('v1')->group(function () {
     Route::get('/check', function () {
         return response()->json(['message' => 'Secure API connection successful']);
     });
-    
+
     // Auth routes
     Route::post('auth/login', 'App\Http\Controllers\Api\AuthController@login');
     Route::post('update-device-token', 'App\Http\Controllers\Api\AuthController@updateDeviceToken');
     Route::post('test-notification', 'App\Http\Controllers\Api\AuthController@sendTestNotification');
-    
+
     // Settings routes (for school info)
     Route::get('settings', 'App\Http\Controllers\SettingsController@index');
-    
+
     // Student routes
+    Route::get('students', 'App\Http\Controllers\StudentController@index');       // list – supports filter[parent_id]
     Route::get('students/{id}', 'App\Http\Controllers\StudentController@show');
     Route::get('students/{id}/subject-wise-scores', 'App\Http\Controllers\StudentController@getSubjectWiseScores');
-    
+
     // Attendance routes
     Route::get('student_attendance_total/{id}', 'App\Http\Controllers\StudentAttendanceController@student_attendance_total');
     Route::post('attendance/summary', 'App\Http\Controllers\StudentAttendanceController@get_attendance_summry');
@@ -266,4 +267,14 @@ Route::middleware(['auth.apikey'])->prefix('v1')->group(function () {
 
     // Test Results (for widgets)
     Route::get('tests/results', 'App\Http\Controllers\TestResultController@index');
+
+    // Fee Voucher routes (mobile-friendly wrappers)
+    Route::get('fee/vouchers', 'App\Http\Controllers\FeeVoucherController@getVouchers');          // ?student_id=X
+    Route::get('fee/summary', 'App\Http\Controllers\FeeVoucherController@getStatistics');          // ?student_id=X
+    Route::get('fee/vouchers/{id}', 'App\Http\Controllers\FeeVoucherController@getVoucherDetails');
+
+    // Complaints routes
+    Route::get('complaints', 'App\Http\Controllers\ComplaintController@index');        // ?student_id=X or ?parent_id=X
+    Route::post('complaints', 'App\Http\Controllers\ComplaintController@store');
+    Route::get('complaints/{id}', 'App\Http\Controllers\ComplaintController@show');
 });

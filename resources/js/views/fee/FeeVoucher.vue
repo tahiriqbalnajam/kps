@@ -601,16 +601,16 @@ export default {
       }
       
       return hasRequiredFields
-    }
-  },
-  computed: {
+    },
     currentSessionId() { return sessionStore().currentSessionId },
   },
   watch: {
-    currentSessionId() { this.getStudents() },
+    currentSessionId(newVal) { if (newVal) this.getStudents() },
   },
   created() {
-    this.getStudents()
+    if (this.currentSessionId) {
+      this.getStudents()
+    }
     this.getClasses()
     this.getFeeTypes()
   },
@@ -661,15 +661,15 @@ export default {
           filter: filters
         }
 
-        const { data } = await studentsResource.list(queryParams)
-        this.studentsList = data.students.data.map(student => {
+        const { students } = await getFeeVoucherStudents(queryParams)
+        this.studentsList = students.data.map(student => {
           // Initialize monthly_fee with class fee if not set (checking for null/undefined to allow 0)
           if ((student.monthly_fee === null || student.monthly_fee === undefined) && student.stdclasses && student.stdclasses.monthly_fee) {
             student.monthly_fee = student.stdclasses.monthly_fee
           }
           return student
         })
-        this.total = data.students.total
+        this.total = students.total
       } catch (error) {
         console.error('Error fetching students:', error)
         this.$message.error('Failed to load students')
