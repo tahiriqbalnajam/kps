@@ -268,9 +268,9 @@ Route::middleware(['auth.apikey'])->prefix('v1')->group(function () {
     // Test Results (for widgets)
     Route::get('tests/results', 'App\Http\Controllers\TestResultController@index');
 
-    // Fee Voucher routes (mobile-friendly wrappers)
-    Route::get('fee/vouchers', 'App\Http\Controllers\FeeVoucherController@getVouchers');          // ?student_id=X
-    Route::get('fee/summary', 'App\Http\Controllers\FeeVoucherController@getStatistics');          // ?student_id=X
+    // Fee Voucher routes (mobile-friendly, filtered by student_id)
+    Route::get('fee/vouchers', 'App\Http\Controllers\Api\MobileFeeController@getStudentVouchers');  // ?student_id=X
+    Route::get('fee/summary', 'App\Http\Controllers\Api\MobileFeeController@getStudentSummary');    // ?student_id=X
     Route::get('fee/vouchers/{id}', 'App\Http\Controllers\FeeVoucherController@getVoucherDetails');
 
     // Complaints routes
