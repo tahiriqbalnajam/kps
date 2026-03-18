@@ -80,6 +80,9 @@ const activeMenu = computed(() => {
 .el-sub-menu .el-menu-item:hover {
   color:white;
 }
+.el-menu-vertical {
+  --el-menu-item-height: 40px;
+}
 .el-sub-menu__title {
   height: 40px !important;
 }

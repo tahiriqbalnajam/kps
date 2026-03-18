@@ -223,6 +223,17 @@ Route::prefix('complaints')->group(function () {
     Route::delete('/{complaint}', [App\Http\Controllers\ComplaintController::class, 'destroy']);
 });
 
+// School Diary Routes
+Route::prefix('diary')->group(function () {
+    Route::get('/',              'SchoolDiaryController@index');
+    Route::get('subjects',       'SchoolDiaryController@getSubjectsByClass');
+    Route::get('by-date',        'SchoolDiaryController@getDiaryByDate');
+    Route::get('dates',          'SchoolDiaryController@getDiaryDates');
+    Route::post('save',          'SchoolDiaryController@store');
+    Route::delete('group',       'SchoolDiaryController@deleteGroup');
+    Route::get('student-view',   'SchoolDiaryController@studentView');
+});
+
 Route::prefix('import')->group(function () {
     Route::post('upload', [ImportController::class, 'uploadCsv']);
     Route::post('process', [ImportController::class, 'processImport']);

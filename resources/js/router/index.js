@@ -461,6 +461,19 @@ export const asyncRoutes = [
     ],
   },
   {
+    path: '/diary',
+    component: Layout,
+    redirect: '/diary/manage',
+    children: [
+      {
+        path: 'manage',
+        component: () => import('@/views/diary/DiaryManage.vue'),
+        name: 'DiaryManage',
+        meta: { title: 'School Diary', bootstrapIcon: 'journal-bookmark-fill', noCache: true },
+      },
+    ],
+  },
+  {
     path: '/timetable',
     component: Layout,
     redirect: 'timetable/create',
