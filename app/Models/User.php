@@ -98,6 +98,11 @@ class User extends Authenticatable
         return $this->hasOne(Student::class);
     }
 
+    public function parent()
+    {
+        return $this->hasOne(\App\Models\Parents::class, 'user_id');
+    }
+
     /**
      * The attributes that should be cast.
      *
