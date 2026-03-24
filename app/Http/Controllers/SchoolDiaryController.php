@@ -219,13 +219,13 @@ class SchoolDiaryController extends Controller
         $sectionId = $request->get('section_id');
         $date      = $request->get('diary_date');
 
-        if (!$classId || !$sectionId || !$date) {
+        if (!$classId || !$date) {
             return response()->json(new JsonResponse(['diaries' => []]));
         }
 
         $diaries = SchoolDiary::with('subject')
             ->where('class_id', $classId)
-            ->where('section_id', $sectionId)
+            ->when($sectionId, fn($q) => $q->where('section_id', $sectionId))
             ->whereDate('diary_date', $date)
             ->whereNotNull('diary_text')
             ->where('diary_text', '!=', '')
