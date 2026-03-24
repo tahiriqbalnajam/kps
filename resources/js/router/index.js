@@ -469,7 +469,7 @@ export const asyncRoutes = [
         path: 'manage',
         component: () => import('@/views/diary/DiaryManage.vue'),
         name: 'DiaryManage',
-        meta: { title: 'School Diary', bootstrapIcon: 'journal-bookmark-fill', noCache: true },
+        meta: { title: 'School Diary', bootstrapIcon: 'journal-bookmark-fill', noCache: true, permissions: ['view menu diary']  },
       },
     ],
   },

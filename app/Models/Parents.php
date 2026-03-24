@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
+use App\Models\Role;
 
 class Parents extends Model
 {
@@ -13,9 +14,11 @@ class Parents extends Model
     protected $fillable = [
         'name',
         'phone',
+        'password',
         'address',
         'profession',
         'cnic',
+        'user_id',
     ];
 
     protected static function boot()
@@ -26,11 +29,12 @@ class Parents extends Model
             // Create user when parent is created
             $email = !empty($parent->email) ? $parent->email : $parent->phone . '@idlschool.pk';
             $user = User::create([
-                'name' => $parent->name,
-                'email' => $email,
+                'name'     => $parent->name,
+                'email'    => $email,
                 'password' => Hash::make($parent->password),
-                'role' => 'parent',
             ]);
+            $role = Role::findByName('parent');
+            $user->syncRoles($role);
             $parent->user_id = $user->id;
         });
 
@@ -40,11 +44,14 @@ class Parents extends Model
                 $user = User::find($parent->user_id);
                 if ($user) {
                     $email = !empty($parent->email) ? $parent->email : $parent->phone . '@idlschool.pk';
-                    $user->update([
+                    $updateData = [
                         'name' => $parent->name,
                         'email' => $email,
-                        'password' => Hash::make($parent->password),
-                    ]);
+                    ];
+                    if (!empty($parent->password)) {
+                        $updateData['password'] = Hash::make($parent->password);
+                    }
+                    $user->update($updateData);
                 }
             }
         });

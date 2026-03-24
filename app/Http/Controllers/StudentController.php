@@ -69,7 +69,14 @@ class StudentController extends Controller
      */
     public function store(Request $request)
     {
-        $student = $this->studentService->storeStudent($request->all());
+        $data = $request->all();
+        if (empty($data['session_id'])) {
+            $activeSession = ClassSession::getActive();
+            if ($activeSession) {
+                $data['session_id'] = $activeSession->id;
+            }
+        }
+        $student = $this->studentService->storeStudent($data);
         return response()->json(new JsonResponse(['student' => $student]));
     }
 

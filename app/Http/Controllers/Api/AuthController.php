@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Resources\UserResource;
 use App\Models\User;
+use App\Models\Parents;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -23,11 +24,24 @@ class AuthController extends BaseController
      */
     public function login(Request $request)
     {
-        $data = $request->validate([
-            'email' => 'required|email',
+        $request->validate([
+            'email' => 'required|string',
             'password' => 'required'
         ]);
-        $user = User::query()->with(['student', 'roles', 'parent'])->where('email', $request->input('email'))->first();
+
+        $identifier = trim($request->input('email'));
+
+        if (str_contains($identifier, '@')) {
+            // Login with email
+            $user = User::query()->with(['student', 'roles', 'parent'])->where('email', $identifier)->first();
+        } else {
+            // Login with phone — find parent by phone then load their user
+            $parent = Parents::where('phone', $identifier)->whereNotNull('user_id')->first();
+            $user = $parent
+                ? User::query()->with(['student', 'roles', 'parent'])->find($parent->user_id)
+                : null;
+        }
+
         if (empty($user) || !Hash::check($request->input('password'), $user->password)) {
             return responseFailed('These credentials do not match our records.', Response::HTTP_UNAUTHORIZED);
         }

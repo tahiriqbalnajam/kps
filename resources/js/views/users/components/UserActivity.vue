@@ -14,6 +14,9 @@
               <el-option v-for="item in roleOptions" :key="item" :label="item" :value="item"/>
             </el-select>
           </el-form-item>
+          <el-form-item v-if="user.roles && user.roles[0] === 'parent'" label="Phone">
+            <el-input v-model="user.phone" :disabled="disabled" placeholder="Phone number"/>
+          </el-form-item>
           
           <!-- Password change section -->
           <el-divider content-position="left">Change Password</el-divider>
@@ -133,6 +136,7 @@ const onSubmit = () => {
   let params = {
     name: props.user.name,
     email: props.user.email,
+    phone: props.user.phone,
     sex: props.user.sex,
     roles: props.user.roles
   }

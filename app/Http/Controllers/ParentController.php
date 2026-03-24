@@ -4,7 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Classes;
 use App\Models\Parents;
+use App\Models\User;
+use App\Models\Role;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\Request;
 use App\Laravue\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -33,7 +36,7 @@ class ParentController extends Controller
         $limit = Arr::get($searchParams, 'limit', static::ITEM_PER_PAGE);
         $filtercol = $request->get('filtercol');
         //DB::enableQueryLog(); // Enable query log
-        $parents = Parents::with('students')->
+        $parents = Parents::with('students', 'user:id,name,email')->
                     when($keyword && !$filtercol, function ($query) use ($keyword) {
                        return $query->where('name', 'like', '%' . $keyword . '%');
                     })
@@ -161,6 +164,37 @@ class ParentController extends Controller
                 'message' => 'Failed to update parent: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Create a user account for a parent that doesn't have one.
+     */
+    public function createAccount(Request $request, $id)
+    {
+        $request->validate([
+            'email'    => 'required|email|unique:users,email',
+            'password' => 'required|string|min:6',
+        ]);
+
+        $parent = Parents::findOrFail($id);
+
+        if ($parent->user_id) {
+            return response()->json(['success' => false, 'message' => 'Parent already has a user account.'], 422);
+        }
+
+        $user = User::create([
+            'name'     => $parent->name,
+            'email'    => $request->email,
+            'password' => Hash::make($request->password),
+        ]);
+
+        $role = Role::findByName('parent');
+        $user->syncRoles($role);
+
+        $parent->user_id = $user->id;
+        $parent->saveQuietly(); // skip boot events to avoid re-triggering user creation
+
+        return response()->json(new JsonResponse(['user' => $user]));
     }
 
     /**

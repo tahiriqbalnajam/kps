@@ -25,7 +25,7 @@
               <icon class-name="person-fill"/>
             </span>
             <el-input v-model="loginForm.email" name="email" type="text" auto-complete="on"
-                      :placeholder="$t('login.email')"/>
+                      placeholder="Email or Phone Number"/>
           </el-form-item>
           <el-form-item prop="password">
             <span class="svg-container">
@@ -72,8 +72,8 @@ export default {
   setup(props, ctx) {
     const router = useRouter()
     const validateEmail = (rule, value, callback) => {
-      if (!validEmail(value)) {
-        callback(new Error('Please enter the correct email'))
+      if (!value || value.trim().length === 0) {
+        callback(new Error('Please enter your email or phone number'))
       } else {
         callback()
       }

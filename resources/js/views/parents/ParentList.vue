@@ -51,6 +51,23 @@
       <el-table-column label="Phone" prop="phone" />
       <el-table-column label="Address" prop="address" />
       <el-table-column label="CNIC" prop="cnic" />
+      <el-table-column label="User Account">
+        <template #default="scope">
+          <router-link
+            v-if="scope.row.user"
+            :to="`/administrator/users/edit/${scope.row.user.id}`"
+            class="user-account-link"
+          >
+            {{ scope.row.user.email }}
+          </router-link>
+          <el-button
+            v-else
+            size="mini"
+            type="warning"
+            @click="handleCreateAccount(scope.row)"
+          >Create Account</el-button>
+        </template>
+      </el-table-column>
       <el-table-column label="Children" prop="children">
         <template #default="scope">
           <el-table :data=" scope.row.students" size="small">
@@ -102,11 +119,30 @@
       />
     </div>
     <add-parent v-if="addparentpop" :editnowprop="addparentpop" :parentid="parentid" @closePopUp="closePopUp()" />
+
+    <el-dialog v-model="createAccountDialog" title="Create User Account" width="400px" :close-on-click-modal="false">
+      <div v-if="createAccountParent">
+        <p>Creating account for <strong>{{ createAccountParent.name }}</strong></p>
+        <el-form ref="createAccountForm" :model="createAccountForm" :rules="createAccountRules" label-position="top">
+          <el-form-item label="Email" prop="email">
+            <el-input v-model="createAccountForm.email" placeholder="Email" />
+          </el-form-item>
+          <el-form-item label="Password" prop="password">
+            <el-input v-model="createAccountForm.password" type="password" placeholder="Password" show-password />
+          </el-form-item>
+        </el-form>
+      </div>
+      <template #footer>
+        <el-button @click="createAccountDialog = false">Cancel</el-button>
+        <el-button type="primary" :loading="createAccountLoading" @click="submitCreateAccount">Create</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 <script>
 import Pagination from '@/components/Pagination/index.vue';
 import Resource from '@/api/resource';
+import axios from 'axios';
 import AddParent from '@/views/parents/AddParent.vue';
 import HeadControls from '@/components/HeadControls.vue';
 import { debounce } from 'lodash';
@@ -136,6 +172,14 @@ export default {
       parent: {
         id: '',
         name: '',
+      },
+      createAccountDialog: false,
+      createAccountLoading: false,
+      createAccountParent: null,
+      createAccountForm: { email: '', password: '' },
+      createAccountRules: {
+        email: [{ required: true, type: 'email', message: 'Valid email required', trigger: 'blur' }],
+        password: [{ required: true, min: 6, message: 'Minimum 6 characters', trigger: 'blur' }],
       },
       filtercol: [
         { col: 'name', display: 'Name' },
@@ -201,6 +245,31 @@ export default {
     handleFilter() {
       this.getList();
     },
+    handleCreateAccount(parent) {
+      this.createAccountParent = parent;
+      this.createAccountForm.email = parent.phone + '@idlschool.pk';
+      this.createAccountForm.password = '';
+      this.createAccountDialog = true;
+    },
+    async submitCreateAccount() {
+      try {
+        await this.$refs.createAccountForm.validate();
+      } catch {
+        return;
+      }
+      this.createAccountLoading = true;
+      try {
+        await axios.post(`/api/parents/${this.createAccountParent.id}/create-account`, this.createAccountForm);
+        this.$message.success('User account created successfully');
+        this.createAccountDialog = false;
+        this.getList();
+      } catch (error) {
+        const msg = error.response?.data?.message || 'Failed to create account';
+        this.$message.error(msg);
+      } finally {
+        this.createAccountLoading = false;
+      }
+    },
     handleDownload() {
       this.downloadLoading = true;
       import('@/vendor/Export2Excel').then(excel => {
@@ -256,6 +325,16 @@ export default {
     padding: 20px;
   }
   
+  /* User account link styling */
+  .user-account-link {
+    color: #409eff;
+    text-decoration: none;
+    font-weight: 500;
+  }
+  .user-account-link:hover {
+    text-decoration: underline;
+  }
+
   /* Student name link styling */
   .student-link {
     color: #409eff;

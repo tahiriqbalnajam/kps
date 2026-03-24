@@ -6,6 +6,7 @@ use App\Http\Resources\PermissionResource;
 use App\Http\Resources\UserResource;
 use App\Models\Acl;
 use App\Models\Log;
+use App\Models\Parents;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
@@ -141,6 +142,15 @@ class UserController extends BaseController
 
         $user->name = $request->get('name');
         $user->email = $request->get('email');
+
+        if ($request->has('phone')) {
+            $user->phone = $request->get('phone');
+
+            // Sync phone to parent record if this user has the parent role
+            if ($user->hasRole('parent')) {
+                Parents::where('user_id', $user->id)->update(['phone' => $request->get('phone')]);
+            }
+        }
 
         if ($request->has('password')) {
             $validator = Validator::make($request->all(), [
