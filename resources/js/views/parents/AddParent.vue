@@ -55,7 +55,7 @@ export default {
       default: null,
     },
   },
-  emits: ['cancelAddParent'],
+  emits: ['cancelAddParent', 'closePopUp', 'parentCreated'],
   data() {
     var name = (rule, value, callback) => {
       if (!value) {
@@ -154,11 +154,12 @@ export default {
                 this.cancelAddParent();
               } else {
                 // Create new parent
-                await parentsPro.store(this.parent);
+                const response = await parentsPro.store(this.parent);
                 this.$message({
                   type: 'success',
                   message: 'Parent ' + this.parent.name + ' added successfully'
                 });
+                this.$emit('parentCreated', response.data.parent);
                 this.cancelAddParent();
               }
             } catch (error) {

@@ -250,7 +250,7 @@
       </template>
     </el-drawer>
     <!-- </el-dialog> -->
-    <add-parent v-if="addparentpop" :editnowprop="addparentpop" @closePopUp="addparentpop = !addparentpop"></add-parent>
+    <add-parent v-if="addparentpop" :editnowprop="addparentpop" @closePopUp="addparentpop = false" @parentCreated="onParentCreated"></add-parent>
     <add-class v-if="addstdclasspop" :addeditclassprop="addstdclasspop" @closeAddClass="closeAddClassPopup()"></add-class>
   </div>
 </template>
@@ -575,6 +575,11 @@ export default {
       const { data } = await stdParent.list(this.parentquery);
       this.parents = data.parents.data;
       this.parentloading = false;
+    },
+    onParentCreated(newParent) {
+      this.parents = [newParent, ...this.parents];
+      this.student.parent_id = newParent.id;
+      this.addparentpop = false;
     },
     closeAddClassPopup() {
       this.getClasses();
