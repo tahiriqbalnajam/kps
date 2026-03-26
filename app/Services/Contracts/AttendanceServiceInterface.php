@@ -15,4 +15,5 @@ interface AttendanceServiceInterface
     public function student_attendance_total(int $student_id);
 
     public function get_student_attendace_comments(int $student_id);
+    public function annual_attendance_top3(array $data);
 }

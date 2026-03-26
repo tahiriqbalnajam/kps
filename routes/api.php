@@ -93,6 +93,7 @@ Route::post('change_status', 'SmsQueueController@change_status');
 Route::post('smsqueue/bulk-test-sms', 'SmsQueueController@storeBulkTestSMS');
 Route::apiResource('dashboard', 'DashboardController');
 //student attendance
+Route::get('attendance/annual-top3', 'StudentAttendanceController@annual_attendance_top3');
 Route::apiResource('has_student_attendance', 'StudentAttendanceController@has_student_attendance');
 Route::apiResource('attendance', 'StudentAttendanceController');
 Route::post('student_attendance_marked', 'StudentAttendanceController@student_attendance_marked');

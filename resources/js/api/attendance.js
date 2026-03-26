@@ -93,3 +93,11 @@ export function getDailyAttendanceGraph(params) {
   });
 }
 
+export function getAnnualAttendanceTop3(params) {
+  return request({
+    url: '/attendance/annual-top3',
+    method: 'get',
+    params,
+  });
+}
+

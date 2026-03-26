@@ -301,6 +301,50 @@ class AttendanceService implements AttendanceServiceInterface
         return $attendancesWithComments;
     }
 
+    public function annual_attendance_top3(array $data)
+    {
+        $year = $data['year'] ?? Carbon::now()->year;
+
+        $results = DB::select("
+            SELECT
+                s.id AS student_id,
+                s.name AS student_name,
+                p.name AS parent_name,
+                cl.id AS class_id,
+                cl.name AS class_name,
+                sec.name AS section_name,
+                COALESCE(SUM(CASE WHEN sa.status = 'present' THEN 1 ELSE 0 END), 0) AS total_present,
+                COALESCE(SUM(CASE WHEN sa.status IN ('absent', 'leave') THEN 1 ELSE 0 END), 0) AS total_absent,
+                COUNT(sa.id) AS total_days,
+                ROUND(
+                    COALESCE(SUM(CASE WHEN sa.status = 'present' THEN 1 ELSE 0 END), 0) /
+                    NULLIF(COUNT(sa.id), 0) * 100, 2
+                ) AS attendance_percentage
+            FROM students s
+            LEFT JOIN student_attendances sa ON s.id = sa.student_id AND YEAR(sa.attendance_date) = ?
+            LEFT JOIN parents p ON s.parent_id = p.id
+            JOIN classes cl ON s.class_id = cl.id
+            LEFT JOIN sections sec ON s.section_id = sec.id
+            WHERE s.status = 'enable'
+            GROUP BY s.id, s.name, p.name, cl.id, cl.name, sec.id, sec.name
+            ORDER BY cl.name, attendance_percentage DESC
+        ", [$year]);
+
+        // Group by class and take top 4 per class in PHP
+        $grouped = [];
+        foreach ($results as $row) {
+            $className = $row->class_name;
+            if (!isset($grouped[$className])) {
+                $grouped[$className] = [];
+            }
+            if (count($grouped[$className]) < 4) {
+                $grouped[$className][] = $row;
+            }
+        }
+
+        return $grouped;
+    }
+
     public function get_attendance_summry($month = null)
     {
         $month = $month ?? Carbon::now()->format('Y-m');

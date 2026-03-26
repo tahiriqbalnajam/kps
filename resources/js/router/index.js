@@ -284,6 +284,12 @@ export const asyncRoutes = [
             name: 'Teacher Monthly',
             meta: { title: 'Teachers Monthly', bootstrapIcon: 'calendar-check-fill', noCache: true },
           },
+          {
+            path: 'annual-top3',
+            component: () => import('@/views/attendance/AnnualAttendanceTop3.vue'),
+            name: 'Annual Top 3',
+            meta: { title: 'Annual Attendance', bootstrapIcon: 'trophy-fill', noCache: true },
+          },
         ],
       },
       {
