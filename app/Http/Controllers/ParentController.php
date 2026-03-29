@@ -203,8 +203,21 @@ class ParentController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy(Parent $parent)
+    public function destroy($id)
     {
+        $parent = Parents::with('students')->findOrFail($id);
+
+        if ($parent->students->isNotEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This parent has ' . $parent->students->count() . ' child(ren) and cannot be deleted.',
+            ], 422);
+        }
+
+        if ($parent->user_id) {
+            User::destroy($parent->user_id);
+        }
+
         $parent->delete();
         return response()->json(new JsonResponse('Deleted successfully'));
     }

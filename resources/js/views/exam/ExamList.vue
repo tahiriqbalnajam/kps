@@ -99,6 +99,9 @@
                   <el-dropdown-item command="award-list" divided>
                     <el-icon><Document /></el-icon> Award List
                   </el-dropdown-item>
+                  <el-dropdown-item command="delete" divided style="color: #f56c6c;">
+                    <el-icon><Delete /></el-icon> Delete
+                  </el-dropdown-item>
                 </el-dropdown-menu>
               </template>
             </el-dropdown>
@@ -141,7 +144,7 @@
   </div>
 </template>
 <script>
-import { Edit, Plus, Download, DocumentAdd, List, GoldMedal, ArrowDown, Document } from '@element-plus/icons-vue';
+import { Edit, Plus, Download, DocumentAdd, List, GoldMedal, ArrowDown, Document, Delete } from '@element-plus/icons-vue';
 import { debounce } from 'lodash';  // Add this import
 import Pagination from '@/components/Pagination/index.vue';
 import HeadControls from '@/components/HeadControls.vue';
@@ -274,6 +277,27 @@ export default {
           case 'award-list':
             this.downloadAwardList(exam);
             break;
+          case 'delete':
+            this.deleteExam(exam);
+            break;
+        }
+      },
+      async deleteExam(exam) {
+        try {
+          await this.$confirm(`Delete exam "${exam.title}"? This cannot be undone.`, 'Confirm Delete', {
+            confirmButtonText: 'Delete',
+            cancelButtonText: 'Cancel',
+            type: 'warning',
+            confirmButtonClass: 'el-button--danger',
+          });
+          await examRes.destroy(exam.id);
+          this.$message.success('Exam deleted successfully');
+          this.get_Exams();
+        } catch (e) {
+          if (e !== 'cancel') {
+            const msg = e.response?.data?.message || 'Failed to delete exam';
+            this.$message.error(msg);
+          }
         }
       },
       async downloadAwardList(exam) {

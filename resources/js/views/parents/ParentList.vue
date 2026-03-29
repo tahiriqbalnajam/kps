@@ -95,7 +95,15 @@
             size="mini"
             @click="handleEdit(scope.row.id, scope.row.name)"
           >Edit</el-button>
+          <el-tooltip
+            v-if="scope.row.students && scope.row.students.length > 0"
+            :content="`Cannot delete: this parent has ${scope.row.students.length} child(ren)`"
+            placement="top"
+          >
+            <el-button size="mini" type="danger" disabled>Delete</el-button>
+          </el-tooltip>
           <el-button
+            v-else
             size="mini"
             type="danger"
             @click="handleDelete(scope.row.id, scope.row.name)"
@@ -245,11 +253,38 @@ export default {
     handleFilter() {
       this.getList();
     },
+    async handleDelete(id, name) {
+      try {
+        await this.$confirm(`Delete parent "${name}"? This cannot be undone.`, 'Confirm', {
+          confirmButtonText: 'Delete',
+          cancelButtonText: 'Cancel',
+          type: 'warning',
+        });
+        await parentsPro.destroy(id);
+        this.$message.success('Parent deleted successfully');
+        this.getList();
+      } catch (e) {
+        if (e !== 'cancel') {
+          const msg = e.response?.data?.message || 'Failed to delete parent';
+          this.$message.error(msg);
+        }
+      }
+    },
     handleCreateAccount(parent) {
       this.createAccountParent = parent;
-      this.createAccountForm.email = parent.phone + '@idlschool.pk';
+      const suggestedEmail = parent.phone + '@idlschool.pk';
+      // Check if any other parent in the loaded list already uses this email
+      const emailTaken = this.parents.some(
+        p => p.id !== parent.id && p.user && p.user.email === suggestedEmail
+      );
+      this.createAccountForm.email = emailTaken ? '' : suggestedEmail;
       this.createAccountForm.password = '';
       this.createAccountDialog = true;
+      if (emailTaken) {
+        this.$nextTick(() => {
+          this.$message.warning(`Email "${suggestedEmail}" is already in use. Please enter a different email.`);
+        });
+      }
     },
     async submitCreateAccount() {
       try {
@@ -264,7 +299,10 @@ export default {
         this.createAccountDialog = false;
         this.getList();
       } catch (error) {
-        const msg = error.response?.data?.message || 'Failed to create account';
+        const errors = error.response?.data?.errors;
+        const msg = (errors && errors.email && errors.email[0])
+          || error.response?.data?.message
+          || 'Failed to create account';
         this.$message.error(msg);
       } finally {
         this.createAccountLoading = false;
