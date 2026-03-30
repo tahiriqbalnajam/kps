@@ -444,7 +444,7 @@ async function openEditDrawer(row) {
   form.value = {
     class_id:    row.class_id,
     section_id:  row.section_id,
-    diary_date:  row.diary_date,
+    diary_date:  row.diary_date ? String(row.diary_date).substring(0, 10) : null,
     class_name:  row.class_name,
     section_name: row.section_name,
     entries:     [],

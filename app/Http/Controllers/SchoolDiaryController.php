@@ -61,7 +61,7 @@ class SchoolDiaryController extends Controller
             return [
                 'class_id'      => $row->class_id,
                 'section_id'    => $row->section_id,
-                'diary_date'    => $row->diary_date,
+                'diary_date'    => $row->diary_date ? $row->diary_date->format('Y-m-d') : null,
                 'class_name'    => $classMap->get($row->class_id, '—'),
                 'section_name'  => $sectionMap->get($row->section_id, '—'),
                 'subject_count' => $row->subject_count,
