@@ -125,30 +125,33 @@ export default {
     async initializeEditMode(exam) {
       this.isEditMode = true;
       this.examForm.title = exam.title;
-      this.selectedClass = exam.class_id;
-      
-      // First fetch subjects for the class
+      // selectedClass is set AFTER form population to prevent handleClassChange
+      // from triggering a fetchSubjects that overwrites the mapped values with zeros
+
       await this.fetchSubjects(exam.class_id);
-      
-      // Then fetch exam subjects
+
       try {
         const response = await examRes.get(exam.id);
         const examWithSubjects = response.data.exam.exam_subjects;
-        
-        // Map existing exam subjects to form
-        if (examWithSubjects.length) {
+
+        if (examWithSubjects && examWithSubjects.length) {
           this.examForm.subjects = this.subjects.map(subject => {
-            const existingSubject = examWithSubjects.find(s => s.subject_id === subject.id);
+            // use == to avoid int/string type mismatch between the two API responses
+            const existingSubject = examWithSubjects.find(s => s.subject_id == subject.id);
             return {
               subject_id: subject.id,
               total_marks: existingSubject ? existingSubject.total_marks : 0,
-              skip_in_report: existingSubject.skip == 1 ? true : false,
+              skip_in_report: existingSubject ? existingSubject.skip == 1 : false,
             };
           });
         }
       } catch (error) {
         ElMessage.error('Failed to fetch exam details');
       }
+
+      // Set after form is fully populated so @change on el-tree-select
+      // does not race against and overwrite the mapped subject data
+      this.selectedClass = exam.class_id;
     },
     async submitExam() {
       try {

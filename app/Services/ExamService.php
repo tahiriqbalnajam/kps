@@ -127,18 +127,41 @@ class ExamService implements ExamServiceInterface
             'section_id' => $data['section_id'] ?? null,
         ]);
 
-        // Update or create subjects
         foreach ($data['subjects'] as $subject) {
-            ExamSubject::updateOrCreate(
-                [
-                    'exam_id' => $id,
-                    'subject_id' => $subject['subject_id']
-                ],
-                [
+            $existing = ExamSubject::where('exam_id', $id)
+                ->where('subject_id', $subject['subject_id'])
+                ->first();
+
+            if ($subject['skip_in_report']) {
+                if ($existing) {
+                    // Keep the row so skip state is preserved on future edits,
+                    // but wipe results so totals are not inflated
+                    $existing->examResults()->delete();
+                    $existing->update(['skip' => true, 'total_marks' => $subject['total_marks']]);
+                } else {
+                    // Brand-new subject immediately marked skip — store it so it re-opens correctly
+                    ExamSubject::create([
+                        'exam_id'     => $id,
+                        'subject_id'  => $subject['subject_id'],
+                        'total_marks' => $subject['total_marks'],
+                        'skip'        => true,
+                    ]);
+                }
+            } elseif ($existing) {
+                // Un-skipping or updating an existing subject — preserve its exam_results
+                $existing->update([
                     'total_marks' => $subject['total_marks'],
-                    'skip' => $subject['skip_in_report'],
-                ]
-            );
+                    'skip'        => false,
+                ]);
+            } else {
+                // Genuinely new subject added to the exam
+                ExamSubject::create([
+                    'exam_id'     => $id,
+                    'subject_id'  => $subject['subject_id'],
+                    'total_marks' => $subject['total_marks'],
+                    'skip'        => false,
+                ]);
+            }
         }
 
         return $exam;
