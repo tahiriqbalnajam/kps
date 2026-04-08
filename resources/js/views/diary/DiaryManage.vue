@@ -320,6 +320,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Edit, Delete, View, Reading } from '@element-plus/icons-vue'
 import { getDiaryList, getDiaryByDate, saveDiary, deleteDiaryGroup } from '@/api/diary'
 import request from '@/utils/request'
+import moment from 'moment'
 
 // ─── State ────────────────────────────────────────────────────────────────────
 const classes         = ref([])
@@ -444,7 +445,7 @@ async function openEditDrawer(row) {
   form.value = {
     class_id:    row.class_id,
     section_id:  row.section_id,
-    diary_date:  row.diary_date ? String(row.diary_date).substring(0, 10) : null,
+    diary_date:  row.diary_date ? moment(row.diary_date).format('YYYY-MM-DD') : null,
     class_name:  row.class_name,
     section_name: row.section_name,
     entries:     [],
@@ -567,12 +568,12 @@ async function confirmDelete(row) {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function formatDate(d) {
   if (!d) return ''
-  return new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+  return moment(d).format('DD MMM, YYYY')
 }
 
 function formatDateTime(d) {
   if (!d) return ''
-  return new Date(d).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+  return moment(d).format('DD MMM, YYYY HH:mm')
 }
 
 function filterNonEmpty(obj) {

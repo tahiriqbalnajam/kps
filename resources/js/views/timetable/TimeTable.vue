@@ -1,38 +1,88 @@
 <template>
-  <el-table :data="tableData" border stripe max-height="650">
-    <!-- Column for Class/Section Names -->
-    <el-table-column label="Classes" width="120" fixed>
-      <template v-slot="scope">
-        {{ scope.row.displayName }}
-      </template>
-    </el-table-column>
+  <div>
+    <!-- Toolbar -->
+    <div style="margin-bottom: 12px; display: flex; gap: 10px; align-items: center;">
+      <el-button-group>
+        <el-button
+          :type="viewMode === 'class' ? 'primary' : 'default'"
+          @click="viewMode = 'class'"
+          icon="el-icon-s-grid"
+        >Class View</el-button>
+        <el-button
+          :type="viewMode === 'teacher' ? 'primary' : 'default'"
+          @click="viewMode = 'teacher'"
+          icon="el-icon-user"
+        >Teacher View</el-button>
+      </el-button-group>
+      <el-button type="success" icon="el-icon-printer" @click="printTimetable">Print</el-button>
+    </div>
 
-    <!-- Columns for Periods -->
-    <el-table-column v-for="(period, columnIndex) in periods" :key="columnIndex" align="center">
-      <template #header="scope">
-        {{ period.title }}<br> <span style='font-size:9px'>({{ period.start }} - {{ period.end }})</span>
-      </template>
-      <template v-slot="scope">
-        <div
-          class="slot"
-          @click="openPopup(scope.$index, columnIndex)"
-          v-html="getSlotData(scope.$index, columnIndex) "
+    <!-- Class View -->
+    <div v-if="viewMode === 'class'" id="printable-timetable">
+      <h3 class="print-title">Timetable</h3>
+      <el-table :data="tableData" border stripe max-height="650" class="tt-table">
+        <el-table-column label="Classes" width="140" fixed>
+          <template v-slot="scope">{{ scope.row.displayName }}</template>
+        </el-table-column>
+        <el-table-column
+          v-for="(period, columnIndex) in periods"
+          :key="columnIndex"
+          align="center"
+          min-width="120"
         >
-        </div>
-      </template>
-    </el-table-column>
-  </el-table>
+          <template #header>
+            {{ period.title }}<br>
+            <span style="font-size:9px">({{ period.start }} - {{ period.end }})</span>
+          </template>
+          <template v-slot="scope">
+            <div
+              class="slot"
+              @click="openPopup(scope.$index, columnIndex)"
+              v-html="getSlotData(scope.$index, columnIndex)"
+            ></div>
+          </template>
+        </el-table-column>
+      </el-table>
+    </div>
 
-  <slot-popup
-    v-if="showPopup"
-    :teachers="teachers"
-    :subjects="subjects"
-    :disabledTeachers="disabledTeachers"
-    :disabledSubjects="disabledSubjects"
-    :selectedSlotData="selectedSlotData"
-    @close="closePopup"
-    @save="saveSlot"
-  />
+    <!-- Teacher View -->
+    <div v-if="viewMode === 'teacher'" id="printable-timetable">
+      <h3 class="print-title">Timetable — Teacher View</h3>
+      <el-table :data="teacherViewData" border stripe max-height="650" class="tt-table">
+        <!-- Teacher name in leftmost column -->
+        <el-table-column label="Teacher" width="150" align="center" fixed>
+          <template v-slot="scope">
+            <b>{{ scope.row.teacherName }}</b>
+          </template>
+        </el-table-column>
+        <el-table-column
+          v-for="(period, colIdx) in periods"
+          :key="'p-' + colIdx"
+          align="center"
+          min-width="130"
+        >
+          <template #header>
+            {{ period.title }}<br>
+            <span style="font-size:9px">({{ period.start }} - {{ period.end }})</span>
+          </template>
+          <template v-slot="scope">
+            <div class="slot-teacher" v-html="scope.row.periods[colIdx] || ''"></div>
+          </template>
+        </el-table-column>
+      </el-table>
+    </div>
+
+    <slot-popup
+      v-if="showPopup"
+      :teachers="teachers"
+      :subjects="subjects"
+      :disabledTeachers="disabledTeachers"
+      :disabledSubjects="disabledSubjects"
+      :selectedSlotData="selectedSlotData"
+      @close="closePopup"
+      @save="saveSlot"
+    />
+  </div>
 </template>
 
 <script>
@@ -52,9 +102,10 @@ export default {
   components: { SlotPopup },
   data() {
     return {
+      viewMode: 'class', // 'class' or 'teacher'
       classes: [],
       sections: [],
-      tableData: [], // Combined classes and sections data for display
+      tableData: [],
       periods: [],
       teachers: [],
       subjects: [],
@@ -63,8 +114,36 @@ export default {
       selectedSlotData: null,
       disabledTeachers: [],
       disabledSubjects: [],
-      timetable: [], // Create a matrix for the timetable
+      timetable: [],
     };
+  },
+  computed: {
+    teacherViewData() {
+      // Build teacher-indexed rows: each row = one teacher, columns = periods
+      const map = {}; // teacherId -> { teacherName, periods: [html per period] }
+
+      this.tableData.forEach((row, rowIndex) => {
+        if (!this.timetable[rowIndex]) return;
+        this.periods.forEach((period, colIndex) => {
+          const slot = this.timetable[rowIndex][colIndex];
+          if (!slot || !slot.teacher) return;
+
+          const tid = slot.teacher;
+          if (!map[tid]) {
+            map[tid] = {
+              teacherName: this.getTeacherNameById(tid),
+              periods: this.periods.map(() => ''),
+            };
+          }
+          const className = row.displayName;
+          const subjectName = this.getSubjectNameById(slot.subject);
+          map[tid].periods[colIndex] =
+            '<b>' + subjectName + '</b><br><span style="font-size:10px">' + className + '</span>';
+        });
+      });
+
+      return Object.values(map).sort((a, b) => a.teacherName.localeCompare(b.teacherName));
+    },
   },
   created() {
     this.getTeachers();
@@ -73,28 +152,46 @@ export default {
     this.getPeriods();
     this.getSections();
   },
-  mounted() {
-    // Table initialization will happen through watchers when data is ready
-  },
   watch: {
-    classes() {
-      this.prepareTableData();
-    },
-    sections() {
-      this.prepareTableData();
-    },
+    classes() { this.prepareTableData(); },
+    sections() { this.prepareTableData(); },
     periods() {
-      if (this.tableData.length && this.periods.length) {
-        this.setTimeTable();
-      }
+      if (this.tableData.length && this.periods.length) this.setTimeTable();
     },
-    tableData(newTableData) {
-      if (newTableData.length && this.periods.length) {
-        this.setTimeTable();
-      }
-    }
+    tableData(newData) {
+      if (newData.length && this.periods.length) this.setTimeTable();
+    },
   },
   methods: {
+    printTimetable() {
+      const content = document.getElementById('printable-timetable').innerHTML;
+      const title = this.viewMode === 'teacher' ? 'Timetable — Teacher View' : 'Timetable';
+      const win = window.open('', '_blank');
+      win.document.write(`<!DOCTYPE html>
+<html>
+<head>
+  <title>${title}</title>
+  <style>
+    @page { size: A4 landscape; margin: 10mm; }
+    body { font-family: Arial, sans-serif; font-size: 14px; }
+    h3 { text-align: center; font-size: 20px; margin-bottom: 10px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border: 1px solid #333; padding: 8px 6px; text-align: center; font-size: 13px; }
+    th { background: #f0f0f0; font-size: 13px; font-weight: bold; }
+    b { font-size: 13px; }
+    span { font-size: 11px; }
+    .slot, .slot-teacher { min-height: 40px; }
+    /* Hide Element UI wrappers, keep table content */
+    .el-table__body-wrapper, .el-table__header-wrapper { overflow: visible !important; }
+  </style>
+</head>
+<body>${content}</body>
+</html>`);
+      win.document.close();
+      win.focus();
+      setTimeout(() => { win.print(); win.close(); }, 400);
+    },
+
     async getTeachers() {
       const { data } = await teacherRes.list();
       this.teachers = data.teachers.data;
@@ -118,28 +215,20 @@ export default {
       this.prepareTableData();
     },
     prepareTableData() {
-      // Only proceed if both classes and sections are loaded
       if (!this.classes.length) return;
-      
-      let tableData = [];
-      
-      // Group sections by class_id
+
       const sectionsByClass = {};
       if (this.sections && this.sections.length) {
         this.sections.forEach(section => {
-          if (!sectionsByClass[section.class_id]) {
-            sectionsByClass[section.class_id] = [];
-          }
+          if (!sectionsByClass[section.class_id]) sectionsByClass[section.class_id] = [];
           sectionsByClass[section.class_id].push(section);
         });
       }
-      
-      // Create table rows for each class and its sections
+
+      const tableData = [];
       this.classes.forEach(cls => {
         const classSections = sectionsByClass[cls.id] || [];
-        
         if (classSections.length > 0) {
-          // Add each section as a row
           classSections.forEach(section => {
             tableData.push({
               id: `section-${section.id}`,
@@ -147,56 +236,33 @@ export default {
               classId: cls.id,
               sectionId: section.id,
               displayName: `${cls.name} - ${section.name}`,
-              refData: section
+              refData: section,
             });
           });
         } else {
-          // Add the class itself as a row
           tableData.push({
             id: `class-${cls.id}`,
             type: 'class',
             classId: cls.id,
             sectionId: null,
             displayName: cls.name,
-            refData: cls
+            refData: cls,
           });
         }
       });
-      
+
       this.tableData = tableData;
-      
-      console.log('Table data prepared:', this.tableData.length, 'rows');
-      console.log('Periods available:', this.periods.length);
-      
-      // Initialize timetable after preparing tableData
-      if (this.tableData.length && this.periods.length) {
-        this.setTimeTable();
-      }
+      if (this.tableData.length && this.periods.length) this.setTimeTable();
     },
     setTimeTable() {
-      // Initialize with empty objects to prevent undefined errors
       if (this.tableData.length > 0 && this.periods.length > 0) {
-        console.log('Setting up timetable matrix:', this.tableData.length, 'x', this.periods.length);
         this.timetable = this.tableData.map(() => this.periods.map(() => ({})));
-        // Load slots after timetable structure is ready
-        console.log('Loading timetable slots now...');
         this.loadTimetableSlots();
       }
     },
-    getSummaries(param) {
-      const { columns, data } = param
-      const sums = [];
-
-      columns.forEach((column, index) => {
-        sums[index] = 'N'
-      })
-      return sums;
-    },
     openPopup(rowIndex, columnIndex) {
       this.selectedSlot = { rowIndex, columnIndex };
-      // Store current slot data to pass to popup for editing
       this.selectedSlotData = this.timetable[rowIndex][columnIndex] || {};
-      
       this.updateDisabledOptions(rowIndex, columnIndex);
       this.showPopup = true;
     },
@@ -209,44 +275,29 @@ export default {
       const { rowIndex, columnIndex } = this.selectedSlot;
       const currentRow = this.tableData[rowIndex];
       const currentPeriod = this.periods[columnIndex];
-      
-      // Prepare slot data for API
+
       const requestData = {
         class_id: currentRow.classId,
         section_id: currentRow.sectionId,
         period_id: currentPeriod.id,
         subject_id: data.subject,
         teacher_id: data.teacher,
-        day_of_week: 'monday' // For now, using Monday. You might want to add day selection
+        day_of_week: 'monday',
       };
 
       try {
         let response;
-        
-        // Check if slot already exists
         const existingSlot = this.timetable[rowIndex] && this.timetable[rowIndex][columnIndex];
-        
+
         if (existingSlot && existingSlot.id) {
-          // Update existing slot
           response = await timetableSlotRes.update(existingSlot.id, requestData);
-          console.log('Updated slot response:', response);
         } else {
-          // Create new slot
           response = await timetableSlotRes.store(requestData);
-          console.log('Created slot response:', response);
         }
-        
-        // Ensure timetable structure exists
-        if (!this.timetable[rowIndex]) {
-          this.timetable[rowIndex] = [];
-        }
-        
-        // Update local timetable with the response data
-        // Handle different response structures
+
+        if (!this.timetable[rowIndex]) this.timetable[rowIndex] = [];
+
         const slotData = response.slot || response.data?.slot;
-        console.log('Slot data to save:', slotData);
-        console.log('Saving to position:', { rowIndex, columnIndex });
-        
         this.timetable[rowIndex][columnIndex] = {
           id: slotData.id,
           subject: data.subject,
@@ -256,117 +307,45 @@ export default {
           class_id: currentRow.classId,
           section_id: currentRow.sectionId,
           period_id: currentPeriod.id,
-          day_of_week: 'monday'
+          day_of_week: 'monday',
         };
-        
-        console.log('Updated timetable[' + rowIndex + '][' + columnIndex + ']:', this.timetable[rowIndex][columnIndex]);
-        
-        // Force reactivity update
+
         this.$forceUpdate();
-        
-        // Close popup and show success message
         this.closePopup();
-        this.saveTimetable(); // Save for backward compatibility
-        
+        this.saveTimetable();
         this.$message.success('Timetable slot saved successfully');
       } catch (error) {
         console.error('Error saving slot:', error);
         this.$message.error('Failed to save timetable slot');
       }
     },
-    async getTimeTable() {
-      try {
-        // Try to load from new timetable_slots structure first
-        await this.loadTimetableSlots();
-        
-        // Fallback to old structure if needed
-        const data = await ttRes.list();
-        
-        if (data && data.timetable && data.timetable.timetable) {
-          const parsedData = JSON.parse(data.timetable.timetable);
-          
-          // Only use old data if new structure is empty
-          if (this.isTimetableEmpty() && Array.isArray(parsedData) && parsedData.length > 0) {
-            if (parsedData.length !== this.tableData.length || 
-                (parsedData[0] && parsedData[0].length !== this.periods.length)) {
-              this.setTimeTable();
-            } else {
-              this.timetable = parsedData;
-            }
-          }
-        } else if (this.isTimetableEmpty()) {
-          this.setTimeTable();
-        }
-      } catch (error) {
-        console.error("Error loading timetable:", error);
-        this.setTimeTable();
-      }
-    },
-    
     async loadTimetableSlots() {
       try {
-        // Validate that table structure is ready
-        if (!this.tableData || this.tableData.length === 0) {
-          console.log('TableData not ready, skipping slot loading');
-          return;
-        }
-        
-        if (!this.periods || this.periods.length === 0) {
-          console.log('Periods not ready, skipping slot loading');
-          return;
-        }
-        
-        console.log('Loading slots with tableData:', this.tableData.length, 'periods:', this.periods.length);
-        
-        // Load all timetable slots
+        if (!this.tableData || this.tableData.length === 0) return;
+        if (!this.periods || this.periods.length === 0) return;
+
         const response = await timetableSlotRes.list();
-        console.log('Timetable slots response:', response); // Debug log
-        
-        // Handle different possible response structures
         let slots = [];
-        console.log('Full response structure:', response); // More detailed debug
-        
+
         if (response && response.slots) {
           slots = response.slots;
-          console.log('Found slots in response.slots');
         } else if (response && response.data && response.data.slots) {
           slots = response.data.slots;
-          console.log('Found slots in response.data.slots');
         } else if (response && response.data && Array.isArray(response.data)) {
           slots = response.data;
-          console.log('Found slots in response.data (array)');
-        } else {
-          console.log('No slots found in expected locations');
         }
-        
-        console.log('Processed slots:', slots); // Debug log
-        console.log('Current tableData:', this.tableData); // Debug log
-        console.log('Current periods:', this.periods); // Debug log
-        
-        // Populate the timetable matrix with the loaded slots
-        slots.forEach((slot, index) => {
-          console.log(`Processing slot ${index}:`, slot); // Debug each slot
-          
-          // Find the row index for this class/section
+
+        slots.forEach(slot => {
           const rowIndex = this.tableData.findIndex(row => {
             if (slot.section_id) {
-              const match = row.type === 'section' && row.sectionId === slot.section_id;
-              console.log(`Checking section match for slot ${index}: row.sectionId=${row.sectionId}, slot.section_id=${slot.section_id}, match=${match}`);
-              return match;
+              return row.type === 'section' && row.sectionId === slot.section_id;
             } else {
-              const match = row.type === 'class' && row.classId === slot.class_id && !row.sectionId;
-              console.log(`Checking class match for slot ${index}: row.classId=${row.classId}, slot.class_id=${slot.class_id}, match=${match}`);
-              return match;
+              return row.type === 'class' && row.classId === slot.class_id && !row.sectionId;
             }
           });
-          
-          // Find the column index for this period
-          const columnIndex = this.periods.findIndex(period => period.id === slot.period_id);
-          
-          console.log(`Slot ${index} mapping: rowIndex=${rowIndex}, columnIndex=${columnIndex}`);
-          
+          const columnIndex = this.periods.findIndex(p => p.id === slot.period_id);
+
           if (rowIndex !== -1 && columnIndex !== -1) {
-            console.log(`Setting timetable[${rowIndex}][${columnIndex}] with slot:`, slot);
             this.timetable[rowIndex][columnIndex] = {
               id: slot.id,
               subject: slot.subject_id,
@@ -376,109 +355,77 @@ export default {
               class_id: slot.class_id,
               section_id: slot.section_id,
               period_id: slot.period_id,
-              day_of_week: slot.day_of_week
+              day_of_week: slot.day_of_week,
             };
-          } else {
-            console.log(`Slot ${index} not mapped: rowIndex=${rowIndex}, columnIndex=${columnIndex}`);
           }
         });
       } catch (error) {
-        console.error("Error loading timetable slots:", error);
+        console.error('Error loading timetable slots:', error);
       }
     },
-    
     isTimetableEmpty() {
       if (!this.timetable || this.timetable.length === 0) return true;
-      
-      for (let row of this.timetable) {
+      for (const row of this.timetable) {
         if (row && Array.isArray(row)) {
-          for (let slot of row) {
-            if (slot && (slot.subject || slot.teacher)) {
-              return false;
-            }
+          for (const slot of row) {
+            if (slot && (slot.subject || slot.teacher)) return false;
           }
         }
       }
       return true;
     },
     saveTimetable() {
-      ttRes.update('1',{timetable: this.timetable});
+      ttRes.update('1', { timetable: this.timetable });
     },
     getTeacherNameById(id) {
-      const teacher = this.teachers.find(teacher => teacher.id === id);
-      if (teacher)
-       return  teacher?.name;
-      
-      return '';
+      const teacher = this.teachers.find(t => t.id === id);
+      return teacher ? teacher.name : '';
     },
     getSubjectNameById(id) {
-      const subject = this.subjects.find(subject => subject.id === id);
-      if (subject)
-        return  subject.title;
-     
-      return '';
+      const subject = this.subjects.find(s => s.id === id);
+      return subject ? subject.title : '';
     },
     getSlotData(rowIndex, columnIndex) {
-      // Add safety checks
-      if (!this.timetable || !this.timetable[rowIndex] || !this.timetable[rowIndex][columnIndex]) {
-        return '';
-      }
-      
+      if (!this.timetable || !this.timetable[rowIndex] || !this.timetable[rowIndex][columnIndex]) return '';
       const slot = this.timetable[rowIndex][columnIndex];
-      if (!slot) return '';
-      
-      return slot.teacher && slot.subject && slot.teacher !== '' && slot.subject !== ''
-        ? '<b>'+this.getSubjectNameById(slot.subject)+
-          '</b><br><span style="font-size:10px">'+
-            this.getTeacherNameById(slot.teacher)+
-            '</span>'
-        : '';
+      if (!slot || !slot.teacher || !slot.subject) return '';
+      return '<b>' + this.getSubjectNameById(slot.subject) +
+        '</b><br><span style="font-size:10px">' + this.getTeacherNameById(slot.teacher) + '</span>';
     },
     updateDisabledOptions(rowIndex, columnIndex) {
-      // Add safety checks
       if (!this.timetable || !this.timetable[rowIndex]) {
         this.disabledTeachers = [];
         this.disabledSubjects = [];
         return;
       }
-      
+
       const selectedTeachers = [];
       const selectedSubjects = [];
       const currentRow = this.tableData[rowIndex];
 
-      // Check horizontally: if a teacher is already assigned for this period
       for (let i = 0; i < this.tableData.length; i++) {
-        // Don't disable the currently selected teacher for the same row
         if (i !== rowIndex && this.timetable[i] && this.timetable[i][columnIndex]) {
           const period = this.timetable[i][columnIndex];
           if (period && period.teacher) selectedTeachers.push(period.teacher);
         }
       }
-      
-      // Check vertically: if a subject is already assigned to this class/section for the day
-      // Only check within the same class/section combination
+
       for (let i = 0; i < this.periods.length; i++) {
-        // Don't disable the currently selected subject for the same slot
         if (i !== columnIndex && this.timetable[rowIndex] && this.timetable[rowIndex][i]) {
           const slot = this.timetable[rowIndex][i];
           if (slot && slot.subject) {
-            // Check if this is the same class/section combination
-            const currentSlot = this.timetable[rowIndex][columnIndex];
-            const isSameClassSection = currentRow.type === 'section' 
+            const isSameClassSection = currentRow.type === 'section'
               ? (slot.section_id === currentRow.sectionId && slot.class_id === currentRow.classId)
               : (slot.class_id === currentRow.classId && !slot.section_id);
-            
-            if (isSameClassSection) {
-              selectedSubjects.push(slot.subject);
-            }
+            if (isSameClassSection) selectedSubjects.push(slot.subject);
           }
         }
       }
 
       this.disabledTeachers = selectedTeachers;
       this.disabledSubjects = selectedSubjects;
-    }
-  }
+    },
+  },
 };
 </script>
 
@@ -487,5 +434,20 @@ export default {
   cursor: pointer;
   height: 50px;
   text-align: center;
+}
+.slot-teacher {
+  min-height: 40px;
+  text-align: center;
+}
+.print-title {
+  display: none;
+}
+@media print {
+  .print-title {
+    display: block;
+    text-align: center;
+    font-size: 22px;
+    margin-bottom: 12px;
+  }
 }
 </style>

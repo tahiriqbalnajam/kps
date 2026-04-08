@@ -464,6 +464,12 @@ export const asyncRoutes = [
         name: 'Complaints',
         meta: { title: 'Complaints', bootstrapIcon: 'exclamation-triangle-fill', noCache: true },
       },
+      {
+        path: 'announcements',
+        component: () => import('@/views/communication/AnnouncementManage.vue'),
+        name: 'Announcements',
+        meta: { title: 'Announcements', bootstrapIcon: 'megaphone-fill', noCache: true },
+      },
     ],
   },
   {

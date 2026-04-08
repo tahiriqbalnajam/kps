@@ -236,6 +236,17 @@ Route::prefix('diary')->group(function () {
     Route::get('student-view',   'SchoolDiaryController@studentView');
 });
 
+// Announcements Routes
+Route::prefix('announcements')->group(function () {
+    Route::get('/',            [App\Http\Controllers\AnnouncementController::class, 'index']);
+    Route::post('/',           [App\Http\Controllers\AnnouncementController::class, 'store']);
+    Route::get('/public',      [App\Http\Controllers\AnnouncementController::class, 'publicList']);
+    Route::get('/{id}',        [App\Http\Controllers\AnnouncementController::class, 'show']);
+    Route::put('/{id}',        [App\Http\Controllers\AnnouncementController::class, 'update']);
+    Route::patch('/{id}/toggle', [App\Http\Controllers\AnnouncementController::class, 'toggle']);
+    Route::delete('/{id}',     [App\Http\Controllers\AnnouncementController::class, 'destroy']);
+});
+
 Route::prefix('import')->group(function () {
     Route::post('upload', [ImportController::class, 'uploadCsv']);
     Route::post('process', [ImportController::class, 'processImport']);
