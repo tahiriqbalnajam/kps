@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Classes;
 use App\Models\Section;
 use App\Models\SchoolDiary;
+use App\Models\FeeVoucher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Laravue\JsonResponse;
@@ -218,9 +219,24 @@ class SchoolDiaryController extends Controller
         $classId   = $request->get('class_id');
         $sectionId = $request->get('section_id');
         $date      = $request->get('diary_date');
+        $studentId = $request->get('student_id');
 
         if (!$classId || !$date) {
             return response()->json(new JsonResponse(['diaries' => []]));
+        }
+
+        if ($studentId && FeeVoucher::where('student_id', $studentId)
+                ->whereIn('status', ['unpaid', 'partially_paid'])
+                ->exists()
+        ) {
+            return response()->json(new JsonResponse([
+                'diaries' => [[
+                    'subject_id'    => null,
+                    'subject_title' => 'Outstanding Dues',
+                    'diary_text'    => 'Your school diary is currently unavailable due to outstanding fee dues. Please clear your dues to regain access. Contact the school administration for further assistance.',
+                    'diary_date'    => $date,
+                ]],
+            ]));
         }
 
         $diaries = SchoolDiary::with('subject')
