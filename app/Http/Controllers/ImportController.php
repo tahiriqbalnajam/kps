@@ -167,15 +167,16 @@ class ImportController extends Controller
                              ->first();
 
         if (!$parent) {
-            // Create new parent
-            $parent = Parents::create([
-                'name' => $record['parent_name'],
-                'cnic' => $record['parent_cnic'],
-                'phone' => $record['parent_phone'] ?? null,
+            $parent = new Parents([
+                'name'    => $record['parent_name'],
+                'cnic'    => $record['parent_cnic'],
+                'phone'   => $record['parent_phone'] ?? null,
                 'address' => $record['parent_address'] ?? null,
-                'email' => $record['parent_email'] ?? null,
-                'password' => bcrypt($record['password']), // Add password field
             ]);
+            // Set password directly (not fillable) so the creating hook can use it
+            // without it ever being persisted to the parents table
+            $parent->password = $record['password'];
+            $parent->save();
         }
 
         // Find class

@@ -15,6 +15,7 @@
         "laravel/ui": "^4.2",
         "league/fractal": "^0.20.1",
         "maatwebsite/excel": "^3.1",
+        "php-ai/php-ml": "^0.10.0",
         "spatie/laravel-permission": "^5.10",
         "spatie/laravel-query-builder": "^5.6",
         "tightenco/parental": "^1.3",

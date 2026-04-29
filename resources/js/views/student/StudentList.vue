@@ -120,7 +120,7 @@
   <el-table
           :data="list"
           height="600"
-          stripe 
+          stripe
           style="width: 100%"
           v-loading="listloading"
           @selection-change="handleSelectionChange"
@@ -128,7 +128,22 @@
           size="small"
         >
         <el-table-column type="selection" width="55" />
-       
+
+        <el-table-column label="Roll #" prop="roll_no" width="80">
+          <template #default="scope">
+            <el-input
+              v-if="editRollId === scope.row.id"
+              v-model="editRollValue"
+              size="small"
+              :ref="(el) => { rollInputRef = el; }"
+              @blur="saveRollNo(scope.row)"
+              @keyup.enter="saveRollNo(scope.row)"
+              @keyup.esc="cancelRollEdit"
+            />
+            <span v-else @click="startEditRoll(scope.row)" class="roll-no-text">{{ scope.row.roll_no || '-' }}</span>
+          </template>
+        </el-table-column>
+
         <el-table-column label="Adm #" prop="adminssion_number">
           <template #default="scope">
             <el-badge is-dot class="item" v-if="scope.row.action_required == 'Yes'">
@@ -156,7 +171,11 @@
         </el-table-column>
         <el-table-column label="Parent" prop="parents.name" />
         <el-table-column label="Phone" prop="parents.phone" />
-        <el-table-column label="Class" prop="stdclasses.name" />
+        <el-table-column label="Class">
+          <template #default="scope">
+            {{ scope.row.stdclasses?.name }}<span v-if="scope.row.section?.name" class="section-text"> - {{ scope.row.section.name }}</span>
+          </template>
+        </el-table-column>
         <el-table-column label="Gender" prop="gender" />
         <el-table-column label="Fee" prop="monthly_fee" />
         <el-table-column label="DOB">
@@ -292,6 +311,9 @@ export default {
       showcharactercertificate: false,
       showschoolleavingcertificate: false,
       openadmitcert: false,
+      editRollId: null,
+      editRollValue: '',
+      rollInputRef: null,
       multiStudentOption:{
         multiStudent: [],
         changeClass: "",
@@ -321,6 +343,31 @@ export default {
     this.getClasses();
   },
   methods: {
+    startEditRoll(row) {
+      this.editRollId = row.id;
+      this.editRollValue = row.roll_no ?? '';
+      this.$nextTick(() => {
+        this.rollInputRef?.focus();
+      });
+    },
+    async saveRollNo(row) {
+      if (this.editRollId === null) return;
+      const rowId = row.id;
+      const value = this.editRollValue;
+      this.editRollId = null;
+      this.editRollValue = '';
+      try {
+        await student.update(rowId, { roll_no: value });
+        row.roll_no = value;
+        this.$message.success('Roll number updated.');
+      } catch (e) {
+        this.$message.error('Failed to save roll number.');
+      }
+    },
+    cancelRollEdit() {
+      this.editRollId = null;
+      this.editRollValue = '';
+    },
     async handleSizeChange (val) {
       console.log(`每页 ${val} 条`);
       this.query.limit = val
@@ -870,6 +917,24 @@ export default {
     width: 100%;
     justify-content: space-around;
   }
+}
+
+/* Section text in class column */
+.section-text {
+  font-size: 10px;
+  color: #909399;
+}
+
+/* Roll No inline edit */
+.roll-no-text {
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 3px;
+  transition: background 0.2s;
+}
+.roll-no-text:hover {
+  background: #ecf5ff;
+  color: #409eff;
 }
 
 /* Enhanced Input Styles */

@@ -140,7 +140,20 @@
           size="small"
         >
         <el-table-column type="selection" width="55" />
-        <el-table-column label="Roll #" prop="roll_no" width="80" />
+        <el-table-column label="Roll #" prop="roll_no" width="80">
+          <template #default="scope">
+            <el-input
+              v-if="editRollId === scope.row.id"
+              v-model="editRollValue"
+              size="small"
+              :ref="(el) => { rollInputRef = el; }"
+              @blur="saveRollNo(scope.row)"
+              @keyup.enter="saveRollNo(scope.row)"
+              @keyup.esc="cancelRollEdit"
+            />
+            <span v-else @click="startEditRoll(scope.row)" class="roll-no-text">{{ scope.row.roll_no || '-' }}</span>
+          </template>
+        </el-table-column>
         <el-table-column label="Adm #" prop="adminssion_number">
           <template #default="scope">
             <el-badge is-dot class="item" v-if="scope.row.action_required == 'Yes'">
@@ -151,25 +164,75 @@
                 </template>
               </el-popover>
             </el-badge>
-            <span v-else>{{  scope.row.adminssion_number }}</span>
+            <template v-else>
+              <el-input
+                v-if="isEditing(scope.row.id, 'adminssion_number')"
+                v-model="editCell.value"
+                size="small"
+                :ref="(el) => { cellInputRef = el; }"
+                @blur="saveCell(scope.row)"
+                @keyup.enter="saveCell(scope.row)"
+                @keyup.esc="cancelCell"
+              />
+              <span v-else @click="startEdit(scope.row, 'adminssion_number', scope.row.adminssion_number)" class="editable-cell">{{ scope.row.adminssion_number }}</span>
+            </template>
           </template>
         </el-table-column>
         <el-table-column label="Name" prop="">
-            <template #default="scope">
-              <el-link :href="'#/students/report/'+ scope.row.id">
-                <el-popover trigger="hover" placement="top">
-                  <p>B Form# {{ scope.row.b_form }}</p>
-                  <template #reference>
-                    {{ scope.row.name }}
-                  </template>
-                </el-popover>
-              </el-link>
-            </template>
+          <template #default="scope">
+            <el-input
+              v-if="isEditing(scope.row.id, 'name')"
+              v-model="editCell.value"
+              size="small"
+              :ref="(el) => { cellInputRef = el; }"
+              @blur="saveCell(scope.row)"
+              @keyup.enter="saveCell(scope.row)"
+              @keyup.esc="cancelCell"
+            />
+            <span v-else @click="startEdit(scope.row, 'name', scope.row.name)" class="editable-cell">
+              <el-popover trigger="hover" placement="top">
+                <p>B Form# {{ scope.row.b_form }}</p>
+                <template #reference>
+                  <el-link :href="'#/students/report/'+ scope.row.id" @click.prevent>{{ scope.row.name }}</el-link>
+                </template>
+              </el-popover>
+            </span>
+          </template>
         </el-table-column>
         <el-table-column label="Parent" prop="parents.name" />
-        <el-table-column label="Phone" prop="parents.phone" />
-        <el-table-column label="Class" prop="stdclasses.name" />
-        <el-table-column label="Fee" prop="monthly_fee" />
+        <el-table-column label="Phone" prop="parents.phone">
+          <template #default="scope">
+            <el-input
+              v-if="isEditing(scope.row.id, 'parents.phone')"
+              v-model="editCell.value"
+              size="small"
+              :ref="(el) => { cellInputRef = el; }"
+              @blur="saveCell(scope.row)"
+              @keyup.enter="saveCell(scope.row)"
+              @keyup.esc="cancelCell"
+            />
+            <span v-else @click="startEdit(scope.row, 'parents.phone', scope.row.parents?.phone)" class="editable-cell">{{ scope.row.parents?.phone }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="Class">
+          <template #default="scope">
+            {{ scope.row.stdclasses?.name }}<span v-if="scope.row.section?.name" class="section-text"> - {{ scope.row.section.name }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="Fee" prop="monthly_fee">
+          <template #default="scope">
+            <el-input
+              v-if="isEditing(scope.row.id, 'monthly_fee')"
+              v-model="editCell.value"
+              size="small"
+              :ref="(el) => { cellInputRef = el; }"
+              @blur="saveCell(scope.row)"
+              @keyup.enter="saveCell(scope.row)"
+              @keyup.esc="cancelCell"
+            />
+            <span v-else @click="startEdit(scope.row, 'monthly_fee', scope.row.monthly_fee)" class="editable-cell">{{ scope.row.monthly_fee }}</span>
+          </template>
+        </el-table-column>
         <el-table-column 
           label="DOB" 
           prop="dob"
@@ -221,6 +284,9 @@
                   <el-dropdown-item icon="el-icon-delete" :command="'schoolleaving~'+scope.row.id">School Leaving Certificat</el-dropdown-item>
                   <el-dropdown-item icon="el-icon-delete" :command="'delete~'+scope.row.id">Delete Student</el-dropdown-item>
                   <el-dropdown-item icon="el-icon-delete" :command="'qrcode~'+scope.row.id">QRCode</el-dropdown-item>
+                  <el-dropdown-item divided :command="'aireport~'+scope.row.id">
+                    Generate AI Report
+                  </el-dropdown-item>
                 </el-dropdown-menu>
               </template>
             </el-dropdown>
@@ -327,8 +393,14 @@
     <fee-print v-if="openfeeprint" :feeid="feeid" :openfeeprint="openfeeprint" @doneFeePrint="doneFeePrint" />
     <student-idcard v-if="showIDCard"
       :showcardprop="showIDCard"
-      @closeIdcard="closeIdcard"  
+      @closeIdcard="closeIdcard"
       :stdid="studentid" />
+
+    <student-progress-report
+      v-if="progressReportStudentId"
+      v-model="showProgressReport"
+      :student-id="progressReportStudentId"
+    />
   </div>
 </template>
 <script>
@@ -357,15 +429,17 @@ import SchoolLeavingCertificate from '@/views/students/SchoolLeavingCertificate.
 import AddStudent from '@/views/students/AddStudent.vue';
 import StudentIdcard from '@/views/students/components/StudentIdcard.vue';
 import AdmissionCertificate from '@/views/students/components/AdmissionCertificate.vue';
+import StudentProgressReport from '@/views/students/StudentProgressReport.vue';
 import { editClass, exportStudent, promoteStudents } from '@/api/student.js'; // Ensure exportStudent is imported
 import HeadControls from '@/components/HeadControls.vue';
 const student = new Resource('students');
 const classes = new Resource('classes');
+const parents = new Resource('parents');
 import { sessionStore } from '@/store/session'
 export default {
   name: 'StudentList',
   components: { Pagination, AddStudent, PayFee, FeePrint, FeeDetail, HeadControls, CharacterCertificate,
-                SchoolLeavingCertificate, AdmissionCertificate, StudentIdcard, Promotion },
+                SchoolLeavingCertificate, AdmissionCertificate, StudentIdcard, Promotion, StudentProgressReport },
   directives: { },
   filters: {
     
@@ -421,6 +495,13 @@ export default {
         morefilters: [],
       },
       dobDateRange: null,
+      editRollId: null,
+      editRollValue: '',
+      rollInputRef: null,
+      editCell: { rowId: null, field: null, value: '' },
+      cellInputRef: null,
+      showProgressReport: false,
+      progressReportStudentId: null,
     };
   },
   computed: {
@@ -439,6 +520,58 @@ export default {
     this.getClasses();
   },
   methods: {
+    startEditRoll(row) {
+      this.editRollId = row.id;
+      this.editRollValue = row.roll_no ?? '';
+      this.$nextTick(() => {
+        this.rollInputRef?.focus();
+      });
+    },
+    async saveRollNo(row) {
+      if (this.editRollId === null) return;
+      const rowId = row.id;
+      const value = this.editRollValue;
+      this.editRollId = null;
+      this.editRollValue = '';
+      try {
+        await student.update(rowId, { roll_no: value });
+        row.roll_no = value;
+        this.$message.success('Roll number updated.');
+      } catch (e) {
+        this.$message.error('Failed to save roll number.');
+      }
+    },
+    cancelRollEdit() {
+      this.editRollId = null;
+      this.editRollValue = '';
+    },
+    isEditing(rowId, field) {
+      return this.editCell.rowId === rowId && this.editCell.field === field;
+    },
+    startEdit(row, field, value) {
+      this.editCell = { rowId: row.id, field, value: value ?? '' };
+      this.$nextTick(() => this.cellInputRef?.focus());
+    },
+    async saveCell(row) {
+      if (this.editCell.rowId === null) return;
+      const { field, value } = this.editCell;
+      this.editCell = { rowId: null, field: null, value: '' };
+      try {
+        if (field === 'parents.phone') {
+          await parents.update(row.parents.id, { phone: value });
+          row.parents.phone = value;
+        } else {
+          await student.update(row.id, { [field]: value });
+          row[field] = value;
+        }
+        this.$message.success('Updated.');
+      } catch (e) {
+        this.$message.error('Failed to save.');
+      }
+    },
+    cancelCell() {
+      this.editCell = { rowId: null, field: null, value: '' };
+    },
     async handleSizeChange (val) {
       console.log(`每页 ${val} 条`);
       this.query.limit = val
@@ -502,6 +635,10 @@ export default {
       }
       if (method == 'qrcode') {
         this.generateStudentQRCode(id);
+      }
+      if (method == 'aireport') {
+        this.progressReportStudentId = id;
+        this.showProgressReport = true;
       }
     },
     debounceInput: debounce(function (e) {
@@ -1078,6 +1215,40 @@ export default {
     width: 100%;
     justify-content: space-around;
   }
+}
+
+/* Section text in class column */
+.section-text {
+  font-size: 10px;
+  color: #909399;
+}
+
+/* Inline editable cells */
+.roll-no-text,
+.editable-cell {
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 3px;
+  transition: background 0.2s;
+  display: inline-block;
+  min-width: 20px;
+}
+.roll-no-text:hover,
+.editable-cell:hover {
+  background: #ecf5ff;
+  color: #409eff;
+}
+
+/* Roll No inline edit */
+.roll-no-text {
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 3px;
+  transition: background 0.2s;
+}
+.roll-no-text:hover {
+  background: #ecf5ff;
+  color: #409eff;
 }
 
 /* Enhanced Input Styles */

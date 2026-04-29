@@ -23,6 +23,7 @@ Route::apiResource('students', 'StudentController');
 Route::post('students/export', 'StudentController@exportStudents'); // New route for export
 Route::post('students/promote', 'StudentController@promote'); // Promote students to a new session
 Route::get('students/{id}/subject-wise-scores', 'StudentController@getSubjectWiseScores');
+Route::get('students/{id}/progress-report', 'StudentReportController@generateReport');
 //classes
 Route::apiResource('classes', 'ClassesController');
 Route::post('classes/bulk-update-priority', 'ClassesController@bulkUpdatePriority');

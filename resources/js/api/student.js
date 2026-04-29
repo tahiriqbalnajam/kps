@@ -38,3 +38,10 @@ export function promoteStudents(data) {
     data,
   });
 }
+
+export function getProgressReport(id) {
+  return request({
+    url: '/students/' + id + '/progress-report',
+    method: 'get',
+  });
+}

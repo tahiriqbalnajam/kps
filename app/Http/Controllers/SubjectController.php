@@ -74,6 +74,13 @@ class SubjectController extends Controller
      */
     public function destroy($id)
     {
+        $assigned = \App\Models\SubjectToClass::where('subject_id', $id)->exists();
+        if ($assigned) {
+            return response()->json(
+                new JsonResponse([], 'Cannot delete: subject is assigned to one or more classes.'),
+                422
+            );
+        }
         Subject::destroy($id);
         return response()->json(new JsonResponse(['msg' => 'Deleted successfully.']));
     }

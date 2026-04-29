@@ -29,7 +29,7 @@ class StudentService implements StudentServiceInterface
                 'is_orphan','cast','previous_school','monthly_fee','sibling','religion',
                 'pef_admission','nadra_pending','action_required','action_details','status',
                 'parents.id','parents.name','parent.phone','stdclasses.id','stdclasses.name'])
-            ->with('parents', 'stdclasses', 'class_session')
+            ->with('parents', 'stdclasses', 'section', 'class_session')
             ->allowedFilters([
                 AllowedFilter::exact('id'),
                 AllowedFilter::exact('parent_id'),
@@ -118,7 +118,7 @@ class StudentService implements StudentServiceInterface
                 'is_orphan','cast','previous_school','monthly_fee','sibling','religion',
                 'pef_admission','nadra_pending','action_required','action_details','status',
                 'parents.id','parents.name','parent.phone','stdclasses.id','stdclasses.name'])
-            ->with('parents', 'stdclasses', 'class_session')
+            ->with('parents', 'stdclasses', 'section', 'class_session')
             ->allowedFilters([
                 AllowedFilter::exact('id'),
                 AllowedFilter::exact('parent_id'),

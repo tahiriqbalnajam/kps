@@ -12,18 +12,18 @@
       <el-table-column label="ID" prop="id" />
       <el-table-column label="Title" prop="title" />
       <el-table-column align="right">
-        <template slot="header" slot-scope="scope">
+        <template #header>
           <el-input ref="search" v-model="query.keyword" size="mini" placeholder="Type to search" v-on:input="debounceInput" />
         </template>
-        <template slot-scope="scope">
+        <template #default="scope">
           <el-button
             size="mini"
-            @click="handleEdit(scope.row.id, scope.row.name)"
+            @click="handleEdit(scope.row.id)"
           >Edit</el-button>
           <el-button
             size="mini"
             type="danger"
-            @click="handleDelete(scope.row.id, scope.row.name)"
+            @click="handleDelete(scope.row.id, scope.row.title)"
           >Delete</el-button>
         </template>
       </el-table-column>
@@ -43,7 +43,7 @@
     />
     <el-drawer
       title="Edit Subject"
-      :modelValue="editnow"
+      v-model="editnow"
       direction="rtl"
       custom-class="demo-drawer"
       ref="drawer"
@@ -82,11 +82,11 @@ export default {
       formLabelWidth: '250',
       subject: {
         id: '',
-        name: '',
+        title: '',
       },
       resetsubject: {
         id: '',
-        name: '',
+        title: '',
       },
       query: {
         page: 1,
@@ -121,23 +121,25 @@ export default {
     async search_data() {
       await this.getList();
     },
-    async handleEdit(id, name) {
+    async handleEdit(id) {
       const { data } = await subjectsPro.get(id);
       this.subject = data.subject;
       this.editnow = true;
     },
-    async handleDelete(id, name) {
+    async handleDelete(id, title) {
       this.$confirm('Do you really want to delete?', 'Warning', {
         confirmButtonText: 'OK',
         cancelButtonText: 'Cancel',
         type: 'warning'
       }).then(async () => {
-        await subjectsPro.destroy(id);
-        this.getList();
-        this.message({
-          type: 'success',
-          message: name + ' Delete successfully'
-        });
+        try {
+          await subjectsPro.destroy(id);
+          this.getList();
+          this.$message({ type: 'success', message: title + ' deleted successfully' });
+        } catch (error) {
+          const msg = error.response?.data?.error || 'Delete failed';
+          this.$message({ type: 'error', message: msg });
+        }
       });
     },
     async onSubmit() {

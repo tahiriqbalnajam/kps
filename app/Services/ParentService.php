@@ -55,7 +55,13 @@ class ParentService implements ParentServiceInterface
             ]);
         }
 
-        return Parents::create($data);
+        $parent = new Parents($data);
+        // Set password directly so the creating hook can read it (not in $fillable)
+        if (!empty($data['password'])) {
+            $parent->password = $data['password'];
+        }
+        $parent->save();
+        return $parent;
     }
 
     /**
@@ -80,7 +86,12 @@ class ParentService implements ParentServiceInterface
             }
         }
         
-        $parent->update($data);
+        $parent->fill($data);
+        // Set password directly so the updating hook can read it (not in $fillable)
+        if (!empty($data['password'])) {
+            $parent->password = $data['password'];
+        }
+        $parent->save();
         return $parent;
     }
 

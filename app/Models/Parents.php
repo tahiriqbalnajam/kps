@@ -14,7 +14,6 @@ class Parents extends Model
     protected $fillable = [
         'name',
         'phone',
-        'password',
         'address',
         'profession',
         'cnic',
@@ -26,12 +25,17 @@ class Parents extends Model
         parent::boot();
 
         static::creating(function ($parent) {
-            // Create user when parent is created
+            // Capture plain password set directly on the instance, then remove it
+            // so it is never written to the parents table
+            $plainPassword = $parent->getAttributes()['password'] ?? null;
+            unset($parent->password);
+
             $email = !empty($parent->email) ? $parent->email : $parent->phone . '@idlschool.pk';
-            $user = User::create([
+            $user  = User::create([
                 'name'     => $parent->name,
                 'email'    => $email,
-                'password' => Hash::make($parent->password),
+                'phone'    => $parent->phone,
+                'password' => Hash::make($plainPassword ?? str_pad($parent->phone, 8, '0')),
             ]);
             $role = Role::findByName('parent');
             $user->syncRoles($role);
@@ -39,21 +43,26 @@ class Parents extends Model
         });
 
         static::updating(function ($parent) {
-            // Update user when parent is updated
-            if ($parent->user_id) {
-                $user = User::find($parent->user_id);
-                if ($user) {
-                    $email = !empty($parent->email) ? $parent->email : $parent->phone . '@idlschool.pk';
-                    $updateData = [
-                        'name' => $parent->name,
-                        'email' => $email,
-                    ];
-                    if (!empty($parent->password)) {
-                        $updateData['password'] = Hash::make($parent->password);
-                    }
-                    $user->update($updateData);
-                }
+            if (!$parent->user_id) return;
+
+            $user = User::find($parent->user_id);
+            if (!$user) return;
+
+            $email      = !empty($parent->email) ? $parent->email : $parent->phone . '@idlschool.pk';
+            $updateData = [
+                'name'  => $parent->name,
+                'email' => $email,
+                'phone' => $parent->phone,
+            ];
+
+            // Allow callers to trigger a password reset by setting ->password on the parent
+            $plainPassword = $parent->getAttributes()['password'] ?? null;
+            if (!empty($plainPassword)) {
+                $updateData['password'] = Hash::make($plainPassword);
+                unset($parent->password);
             }
+
+            $user->update($updateData);
         });
     }
 
