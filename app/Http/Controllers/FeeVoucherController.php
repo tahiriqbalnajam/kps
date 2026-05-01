@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Database\QueryException;
 use App\Models\Settings;
 use Carbon\Carbon;
 use Spatie\QueryBuilder\QueryBuilder;
@@ -155,14 +156,29 @@ class FeeVoucherController extends Controller
                 ], 422);
             }
 
-            DB::beginTransaction();
-            
             $savedVouchers = [];
-            $voucherPrefix = 'FV-' . now()->format('ymd') . strtoupper(substr(uniqid(), -2));
-            
-            foreach ($request->vouchers as $index => $voucherData) {
-                $voucher = FeeVoucher::create([
-                    'voucher_number' => $voucherPrefix . '-' . str_pad($index + 1, 3, '0', STR_PAD_LEFT),
+            $maxRetries = 3;
+            $voucherCreated = false;
+            $datePrefix = 'IDL-' . now()->format('ymd');
+
+            for ($retry = 0; $retry < $maxRetries && !$voucherCreated; $retry++) {
+                try {
+                    DB::beginTransaction();
+
+                    // Lock the latest voucher for today to prevent race conditions
+                    $lastVoucher = FeeVoucher::where('voucher_number', 'like', $datePrefix . '-%')
+                        ->orderBy('voucher_number', 'desc')
+                        ->lockForUpdate()
+                        ->value('voucher_number');
+
+                    $lastSeq = 0;
+                    if ($lastVoucher && preg_match('/-(\d{3})$/', $lastVoucher, $m)) {
+                        $lastSeq = (int) $m[1];
+                    }
+
+                    foreach ($request->vouchers as $index => $voucherData) {
+                        $voucher = FeeVoucher::create([
+                            'voucher_number' => $datePrefix . '-' . str_pad($lastSeq + $index + 1, 3, '0', STR_PAD_LEFT),
                     'student_id' => $voucherData['student_id'],
                     'student_name' => $voucherData['student_name'],
                     'admission_number' => $voucherData['admission_number'],
@@ -188,14 +204,28 @@ class FeeVoucherController extends Controller
                 $savedVouchers[] = $voucher;
             }
             
-            DB::commit();
-            
-            return response()->json([
-                'success' => true,
-                'message' => count($savedVouchers) . ' vouchers generated successfully',
-                'saved_vouchers' => $savedVouchers
-            ]);
-            
+                    DB::commit();
+                    $voucherCreated = true;
+
+                    return response()->json([
+                        'success' => true,
+                        'message' => count($savedVouchers) . ' vouchers generated successfully',
+                        'saved_vouchers' => $savedVouchers
+                    ]);
+
+                } catch (\Illuminate\Database\QueryException $e) {
+                    DB::rollBack();
+                    // Retry only on duplicate key errors
+                    if ($e->getCode() != 23000 || $retry >= $maxRetries - 1) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Failed to generate vouchers: ' . $e->getMessage()
+                        ], 500);
+                    }
+                    // Otherwise continue to retry with a fresh sequence lookup
+                    $savedVouchers = [];
+                }
+            }
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
@@ -963,6 +993,247 @@ class FeeVoucherController extends Controller
                 'success' => false,
                 'message' => 'Failed to check existing vouchers',
                 'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Generate fee reports (8 types)
+     */
+    public function reports(Request $request)
+    {
+        try {
+            $type = (int) $request->input('type', 1);
+            $dateFrom = $request->input('date_from');
+            $dateTo = $request->input('date_to');
+            $className = $request->input('class_name');
+            $status = $request->input('status');
+            $studentId = $request->input('student_id');
+            $voucherType = $request->input('voucher_type');
+            $groupBy = $request->input('group_by', 'daily'); // daily, weekly, monthly
+
+            $query = FeeVoucher::query();
+
+            // Common filters
+            if ($dateFrom && $dateTo) {
+                $query->whereBetween('generated_at', [$dateFrom, $dateTo]);
+            }
+            if ($className) {
+                $query->byClass($className);
+            }
+
+            $summary = [];
+            $records = [];
+
+            switch ($type) {
+                case 1: // Voucher Generation Report
+                    if ($voucherType) {
+                        $query->where('voucher_type', $voucherType);
+                    }
+
+                    $baseQuery = clone $query;
+                    $summary = [
+                        'total_vouchers' => (clone $baseQuery)->count(),
+                        'total_amount' => round((clone $baseQuery)->sum('total_with_fine'), 2),
+                        'total_fee_amount' => round((clone $baseQuery)->sum('fee_amount'), 2),
+                        'total_fine_amount' => round((clone $baseQuery)->sum('fine_amount'), 2),
+                        'by_type' => (clone $baseQuery)->selectRaw('voucher_type, count(*) as count, sum(total_with_fine) as total')
+                            ->groupBy('voucher_type')->get(),
+                        'by_class' => (clone $baseQuery)->selectRaw('class_name, count(*) as count, sum(total_with_fine) as total')
+                            ->groupBy('class_name')->get(),
+                    ];
+
+                    $records = $query->orderBy('generated_at', 'desc')
+                        ->paginate($request->input('per_page', 25));
+                    break;
+
+                case 2: // Due vs Paid Report
+                    if ($status) {
+                        $query->where('status', $status);
+                    }
+
+                    $baseQuery = clone $query;
+                    $summary = [
+                        'total_vouchers' => (clone $baseQuery)->count(),
+                        'total_amount' => round((clone $baseQuery)->sum('total_with_fine'), 2),
+                        'total_paid' => round((clone $baseQuery)->sum('paid_amount'), 2),
+                        'total_remaining' => round((clone $baseQuery)->sum('total_with_fine') - (clone $baseQuery)->sum('paid_amount'), 2),
+                        'by_status' => (clone $baseQuery)->selectRaw("status, count(*) as count, sum(total_with_fine) as total, sum(paid_amount) as paid")
+                            ->groupBy('status')->get(),
+                        'on_time_count' => (clone $baseQuery)->where('status', 'paid')
+                            ->whereRaw('payment_date <= due_date')->count(),
+                        'late_count' => (clone $baseQuery)->where('status', 'paid')
+                            ->whereRaw('payment_date > due_date')->count(),
+                    ];
+
+                    $records = $query->orderBy('generated_at', 'desc')
+                        ->paginate($request->input('per_page', 25));
+                    break;
+
+                case 3: // Overdue Defaulters Report
+                    $query->whereIn('status', ['unpaid', 'partially_paid'])
+                        ->where('due_date', '<', now()->toDateString());
+
+                    if ($className) {
+                        $query->byClass($className);
+                    }
+
+                    $baseQuery = clone $query;
+                    $now = now()->toDateString();
+
+                    $summary = [
+                        'total_defaulters' => (clone $baseQuery)->count(),
+                        'total_outstanding' => round((clone $baseQuery)->sum('total_with_fine') - (clone $baseQuery)->sum('paid_amount'), 2),
+                        'aging_1_30' => (clone $baseQuery)->where('due_date', '>=', now()->subDays(30)->toDateString())->count(),
+                        'aging_31_60' => (clone $baseQuery)->where('due_date', '<', now()->subDays(30)->toDateString())
+                            ->where('due_date', '>=', now()->subDays(60)->toDateString())->count(),
+                        'aging_60_plus' => (clone $baseQuery)->where('due_date', '<', now()->subDays(60)->toDateString())->count(),
+                        'by_class' => (clone $baseQuery)->selectRaw('class_name, count(*) as count, sum(total_with_fine - paid_amount) as outstanding')
+                            ->groupBy('class_name')->get(),
+                    ];
+
+                    $records = $query->with('student')
+                        ->orderBy('due_date', 'asc')
+                        ->paginate($request->input('per_page', 25));
+                    break;
+
+                case 4: // Collection Report
+                    $query->where('status', 'paid')
+                        ->whereNotNull('payment_date');
+
+                    if ($dateFrom && $dateTo) {
+                        $query->whereBetween('payment_date', [$dateFrom, $dateTo]);
+                    }
+
+                    $baseQuery = clone $query;
+
+                    // Determine group format based on group_by param
+                    $dateFormat = match ($groupBy) {
+                        'weekly' => '%x-%v',
+                        'monthly' => '%Y-%m',
+                        default => '%Y-%m-%d',
+                    };
+
+                    $summary = [
+                        'total_collected' => round((clone $baseQuery)->sum('paid_amount'), 2),
+                        'total_transactions' => (clone $baseQuery)->count(),
+                        'avg_transaction' => round((clone $baseQuery)->avg('paid_amount'), 2),
+                        'by_period' => (clone $baseQuery)->selectRaw(
+                            "DATE_FORMAT(payment_date, '{$dateFormat}') as period, count(*) as count, sum(paid_amount) as total"
+                        )->groupBy('period')->orderBy('period')->get(),
+                        'by_class' => (clone $baseQuery)->selectRaw('class_name, sum(paid_amount) as total, count(*) as count')
+                            ->groupBy('class_name')->get(),
+                    ];
+
+                    $records = $query->orderBy('payment_date', 'desc')
+                        ->paginate($request->input('per_page', 25));
+                    break;
+
+                case 5: // Cancellation / Adjustment Report
+                    $query->where('status', 'cancelled');
+
+                    $baseQuery = clone $query;
+                    $summary = [
+                        'total_cancelled' => (clone $baseQuery)->count(),
+                        'total_amount' => round((clone $baseQuery)->sum('total_with_fine'), 2),
+                        'by_class' => (clone $baseQuery)->selectRaw('class_name, count(*) as count, sum(total_with_fine) as total')
+                            ->groupBy('class_name')->get(),
+                        'by_month' => (clone $baseQuery)->selectRaw("DATE_FORMAT(generated_at, '%Y-%m') as month, count(*) as count")
+                            ->groupBy('month')->orderBy('month')->get(),
+                    ];
+
+                    $records = $query->orderBy('generated_at', 'desc')
+                        ->paginate($request->input('per_page', 25));
+                    break;
+
+                case 6: // Discount & Concession Report
+                    // Note: No dedicated discount column exists. This report identifies
+                    // vouchers with fee_amount = 0 or custom_amount significantly lower than standard
+                    $query->where(function ($q) {
+                        $q->where('fee_amount', 0)
+                          ->orWhere('voucher_type', 'custom');
+                    });
+
+                    $baseQuery = clone $query;
+                    $summary = [
+                        'total_discounted' => (clone $baseQuery)->count(),
+                        'total_fee_waived' => round((clone $baseQuery)->sum('fee_amount'), 2),
+                        'by_class' => (clone $baseQuery)->selectRaw('class_name, count(*) as count, sum(fee_amount) as waived')
+                            ->groupBy('class_name')->get(),
+                    ];
+
+                    $records = $query->orderBy('generated_at', 'desc')
+                        ->paginate($request->input('per_page', 25));
+                    break;
+
+                case 7: // Fine / Late Fee Report
+                    $baseQuery = clone $query;
+                    $summary = [
+                        'total_fines_applied' => round((clone $baseQuery)->sum('fine_amount'), 2),
+                        'vouchers_with_fines' => (clone $baseQuery)->where('fine_amount', '>', 0)->count(),
+                        'fines_paid' => round((clone $baseQuery)->where('status', 'paid')->where('fine_amount', '>', 0)->sum('fine_amount'), 2),
+                        'fines_unpaid' => round((clone $baseQuery)->whereIn('status', ['unpaid', 'partially_paid', 'cancelled'])->where('fine_amount', '>', 0)->sum('fine_amount'), 2),
+                        'by_class' => (clone $baseQuery)->where('fine_amount', '>', 0)
+                            ->selectRaw('class_name, count(*) as count, sum(fine_amount) as total_fines')
+                            ->groupBy('class_name')->get(),
+                        'frequent_late_payers' => (clone $baseQuery)->where('fine_amount', '>', 0)
+                            ->selectRaw('student_id, student_name, class_name, parent_phone, count(*) as late_count, sum(fine_amount) as total_fines')
+                            ->groupBy('student_id', 'student_name', 'class_name', 'parent_phone')
+                            ->orderBy('late_count', 'desc')
+                            ->limit(10)->get(),
+                    ];
+
+                    $records = $query->where('fine_amount', '>', 0)
+                        ->orderBy('generated_at', 'desc')
+                        ->paginate($request->input('per_page', 25));
+                    break;
+
+                case 8: // Student Ledger / Statement
+                    if (!$studentId) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'student_id is required for student ledger'
+                        ], 422);
+                    }
+
+                    $query->where('student_id', $studentId);
+
+                    $baseQuery = clone $query;
+                    $summary = [
+                        'student_name' => (clone $baseQuery)->value('student_name'),
+                        'class_name' => (clone $baseQuery)->value('class_name'),
+                        'admission_number' => (clone $baseQuery)->value('admission_number'),
+                        'parent_name' => (clone $baseQuery)->value('parent_name'),
+                        'total_charged' => round((clone $baseQuery)->sum('total_with_fine'), 2),
+                        'total_paid' => round((clone $baseQuery)->sum('paid_amount'), 2),
+                        'balance' => round((clone $baseQuery)->sum('total_with_fine') - (clone $baseQuery)->sum('paid_amount'), 2),
+                        'total_vouchers' => (clone $baseQuery)->count(),
+                        'paid_vouchers' => (clone $baseQuery)->where('status', 'paid')->count(),
+                        'unpaid_vouchers' => (clone $baseQuery)->whereIn('status', ['unpaid', 'partially_paid'])->count(),
+                    ];
+
+                    $records = $query->orderBy('generated_at', 'desc')->get();
+                    break;
+
+                default:
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Invalid report type'
+                    ], 422);
+            }
+
+            return response()->json([
+                'success' => true,
+                'type' => $type,
+                'summary' => $summary,
+                'records' => $records,
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error generating fee report: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to generate report: ' . $e->getMessage()
             ], 500);
         }
     }

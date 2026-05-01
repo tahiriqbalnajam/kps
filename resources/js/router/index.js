@@ -180,25 +180,25 @@ export const asyncRoutes = [
       },
       {
         path: 'syllabus',
-        meta: { title: 'syllabus', bootstrapIcon: 'person-workspace', noCache: true, permissions: ['view menu classes'] },
+        meta: { title: 'Syllabus', bootstrapIcon: 'person-workspace', noCache: true, permissions: ['view menu classes'] },
         children: [
           {
             path: 'repository',
-            name: 'SyllabusRepository',
+            name: 'SyllabusSetup',
             component: () => import('@/views/syllabus/SyllabusRepository.vue'),
-            meta: { title: 'Syllabus Repository', icon: 'el-icon-folder' }
+            meta: { title: 'Syllabus Setup', noCache: true }
           },
           {
             path: 'tracking',
-            name: 'SyllabusTrackingEntry',
+            name: 'SyllabusProgress',
             component: () => import('@/views/syllabus/SyllabusTrackingEntry.vue'),
-            meta: { title: 'Syllabus Tracking', icon: 'el-icon-timer' }
+            meta: { title: 'Mark Progress', noCache: true }
           },
           {
             path: 'completion',
-            name: 'SyllabusCompletionTracker',
+            name: 'SyllabusReport',
             component: () => import('@/views/syllabus/SyllabusCompletionTracker.vue'),
-            meta: { title: 'Syllabus Completion', icon: 'el-icon-check' }
+            meta: { title: 'Completion Report', noCache: true }
           }
         ]
       },
@@ -346,6 +346,12 @@ export const asyncRoutes = [
             component: () => import('@/views/fee/FeeManage.vue'),
             name: 'Manage',
             meta: { title: 'Manage', bootstrapIcon: 'list-check', noCache: true },
+          },
+          {
+            path: 'reports',
+            component: () => import('@/views/fee/FeeReports.vue'),
+            name: 'Reports',
+            meta: { title: 'Reports', bootstrapIcon: 'file-earmark-bar-graph', noCache: true },
           },
         ],
       },

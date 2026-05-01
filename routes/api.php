@@ -4,8 +4,6 @@ use App\Models\Acl;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ImportController;
 use App\Http\Controllers\SyllabusController;
-use App\Http\Controllers\SyllabusTrackingController;
-use App\Http\Controllers\SyllabusCompletionController;
 use Illuminate\Contracts\Routing\Registrar as RouteContract;
 
 /*
@@ -75,6 +73,7 @@ Route::prefix('fee/voucher')->group(function () {
     Route::post('settings', 'FeeVoucherController@saveSettings');
     Route::post('print', 'FeeVoucherController@printVouchers');
     Route::post('remind', 'FeeVoucherController@sendReminders');
+    Route::get('reports', 'FeeVoucherController@reports');
     Route::get('{id}', 'FeeVoucherController@getVoucherDetails');
     Route::put('{id}/status', 'FeeVoucherController@updateStatus');
     Route::delete('{id}', 'FeeVoucherController@deleteVoucher');
@@ -184,18 +183,19 @@ Route::namespace('Api')->group(function() {
 });
 
 Route::prefix('syllabus')->group(function () {
-    Route::get('repository', [SyllabusController::class, 'index']);
-    Route::post('repository', [SyllabusController::class, 'store']);
-    Route::put('repository/{id}', [SyllabusController::class, 'update']);
-    Route::delete('repository/{id}', [SyllabusController::class, 'destroy']);
+    Route::get('subjects/{classId}', [SyllabusController::class, 'getSubjectsByClass']);
 
-    Route::get('tracking', [SyllabusTrackingController::class, 'index']);
-    Route::post('tracking', [SyllabusTrackingController::class, 'store']);
-    Route::put('tracking/{id}', [SyllabusTrackingController::class, 'update']);
-    Route::delete('tracking/{id}', [SyllabusTrackingController::class, 'destroy']);
+    Route::get('chapters', [SyllabusController::class, 'getChapters']);
+    Route::post('chapters', [SyllabusController::class, 'storeChapter']);
+    Route::put('chapters/{id}', [SyllabusController::class, 'updateChapter']);
+    Route::delete('chapters/{id}', [SyllabusController::class, 'destroyChapter']);
 
-    Route::get('completion', [SyllabusCompletionController::class, 'index']);
-    Route::put('completion/{id}', [SyllabusCompletionController::class, 'markCompletion']);
+    Route::post('topics', [SyllabusController::class, 'storeTopic']);
+    Route::put('topics/{id}', [SyllabusController::class, 'updateTopic']);
+    Route::delete('topics/{id}', [SyllabusController::class, 'destroyTopic']);
+    Route::put('topics/{id}/toggle', [SyllabusController::class, 'toggleTopic']);
+
+    Route::get('report', [SyllabusController::class, 'report']);
 });
 
 Route::get('/orders', function () {

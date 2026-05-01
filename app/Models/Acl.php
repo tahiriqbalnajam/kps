@@ -20,10 +20,12 @@ final class Acl
     const PERMISSION_VIEW_MENU_PERMISSION = 'view menu permission';
     const PERMISSION_VIEW_MENU_ADMINISTRATOR = 'view menu administrator';
     const PERMISSION_VIEW_MENU_CHARTS = 'view menu charts';
+    const PERMISSION_VIEW_MENU_STUDENTS = 'view menu students';
 
     const PERMISSION_USER_MANAGE = 'manage user';
     const PERMISSION_ARTICLE_MANAGE = 'manage article';
     const PERMISSION_PERMISSION_MANAGE = 'manage permission';
+    const PERMISSION_STUDENTS_MANAGE = 'manage students';
 
     /**
      * @param array $exclusives Exclude some permissions from the list

@@ -128,6 +128,15 @@ export function sendVoucherReminders(payload) {
   })
 }
 
+// Get fee reports (8 types)
+export function getFeeReports(params) {
+  return request({
+    url: '/fee/voucher/reports',
+    method: 'get',
+    params
+  })
+}
+
 // Check for existing vouchers
 export function checkExistingVouchers(data) {
   return request({
