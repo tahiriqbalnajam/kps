@@ -38,6 +38,13 @@
         .badge-dry { background: #1e3a5f; color: #93c5fd; }
 
         .counts { font-size: 0.85rem; color: #64748b; margin-bottom: 0.5rem; }
+        .toggle-btn { padding: 0.3rem 0.8rem; border-radius: 6px; border: none; font-size: 0.75rem; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-block; }
+        .btn-activate { background: #065f46; color: #6ee7b7; }
+        .btn-activate:hover { background: #047857; }
+        .btn-deactivate { background: #7f1d1d; color: #fca5a5; }
+        .btn-deactivate:hover { background: #991b1b; }
+        .badge-active { background: #064e3b; color: #6ee7b7; }
+        .badge-inactive { background: #451a03; color: #fdba74; }
     </style>
 </head>
 <body>
@@ -48,6 +55,43 @@
                 <p class="subtitle">Run queries across all tenant databases</p>
             </div>
             <a href="{{ route('super.logout') }}" class="logout" onclick="return confirm('Leave super admin?')">Logout</a>
+        </div>
+
+        <div class="card">
+            <h2>Databases ({{ $databases->count() }})</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>User</th>
+                        <th>Database</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($databases as $db)
+                        <tr>
+                            <td>{{ $loop->iteration }}</td>
+                            <td>{{ $db->subdomain }}</td>
+                            <td style="font-family: monospace; font-size: 0.8rem;">{{ $db->db }}</td>
+                            <td>
+                                @if ($db->is_active)
+                                    <span class="badge badge-active">Active</span>
+                                @else
+                                    <span class="badge badge-inactive">Inactive</span>
+                                @endif
+                            </td>
+                            <td>
+                                <a href="{{ route('super.toggle', $db->id) }}"
+                                   class="toggle-btn {{ $db->is_active ? 'btn-deactivate' : 'btn-activate' }}">
+                                    {{ $db->is_active ? 'Deactivate' : 'Activate' }}
+                                </a>
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
         </div>
 
         <div class="card">

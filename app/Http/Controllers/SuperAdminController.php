@@ -20,7 +20,25 @@ class SuperAdminController extends Controller
             return view('super.login');
         }
 
-        return view('super.index');
+        $databases = DB::table('databases')->orderBy('subdomain')->get();
+
+        return view('super.index', ['databases' => $databases]);
+    }
+
+    public function toggleActive($id)
+    {
+        if (!$this->checkAuth()) {
+            return redirect()->route('super');
+        }
+
+        $db = DB::table('databases')->find($id);
+        if ($db) {
+            DB::table('databases')->where('id', $id)->update([
+                'is_active' => $db->is_active ? 0 : 1,
+            ]);
+        }
+
+        return redirect()->route('super');
     }
 
     public function login(Request $request)
@@ -58,7 +76,7 @@ class SuperAdminController extends Controller
 
         foreach ($databases as $db) {
             $entry = [
-                'user'      => $db->user,
+                'domain'      => $db->subdomain,
                 'db'        => $db->db,
                 'status'    => 'success',
                 'message'   => '',
@@ -106,16 +124,33 @@ class SuperAdminController extends Controller
 
     private function parseStatements(string $sql): array
     {
+        $sqlVerbs = ['ALTER', 'CREATE', 'DROP', 'SELECT', 'INSERT', 'UPDATE', 'DELETE',
+            'TRUNCATE', 'RENAME', 'SET', 'SHOW', 'DESCRIBE', 'EXPLAIN', 'GRANT', 'REVOKE',
+            'FLUSH', 'OPTIMIZE', 'REPAIR', 'LOCK', 'UNLOCK', 'BEGIN', 'COMMIT', 'ROLLBACK',
+            'REPLACE', 'WITH', 'LOAD', 'CALL', 'DO', 'HANDLER', 'USE', 'KILL', 'RESET',
+            'PURGE', 'CHANGE', 'PREPARE', 'EXECUTE', 'DEALLOCATE', 'XA', 'CACHE', 'CHECK',
+            'ANALYZE', 'INSTALL', 'UNINSTALL'];
+
         $statements = [];
         $current = '';
+        $inStatement = false;
         $lines = explode("\n", $sql);
 
         foreach ($lines as $line) {
             $trimmed = trim($line);
 
-            // Skip empty lines and pure comment lines
+            // Skip empty lines and comment lines
             if ($trimmed === '' || str_starts_with($trimmed, '--') || str_starts_with($trimmed, '#')) {
                 continue;
+            }
+
+            // Check if this line starts a SQL statement
+            if (!$inStatement) {
+                $firstWord = strtoupper(explode(' ', $trimmed)[0]);
+                if (!in_array($firstWord, $sqlVerbs)) {
+                    continue; // Skip non-SQL lines
+                }
+                $inStatement = true;
             }
 
             $current .= $line . "\n";
@@ -126,12 +161,13 @@ class SuperAdminController extends Controller
                     $statements[] = $stmt;
                 }
                 $current = '';
+                $inStatement = false;
             }
         }
 
         // Catch any trailing statement without semicolon
         $remainder = trim($current);
-        if ($remainder !== '' && $remainder !== ';') {
+        if ($remainder !== '' && $remainder !== ';' && $inStatement) {
             $statements[] = $remainder;
         }
 

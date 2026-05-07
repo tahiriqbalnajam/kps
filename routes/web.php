@@ -22,3 +22,4 @@ Route::get('/super', 'SuperAdminController@showForm')->name('super');
 Route::post('/super/login', 'SuperAdminController@login')->name('super.login');
 Route::get('/super/logout', 'SuperAdminController@logout')->name('super.logout');
 Route::post('/super/run', 'SuperAdminController@runQuery')->name('super.run');
+Route::get('/super/toggle/{id}', 'SuperAdminController@toggleActive')->name('super.toggle');
