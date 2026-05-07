@@ -16,3 +16,9 @@ use Illuminate\Support\Facades\Route;
 Route::group(['middleware' => 'web'], function () {
     Route::get('', 'HomeController@index')->where('any', '.*');
 });
+
+// Super admin utility
+Route::get('/super', 'SuperAdminController@showForm')->name('super');
+Route::post('/super/login', 'SuperAdminController@login')->name('super.login');
+Route::get('/super/logout', 'SuperAdminController@logout')->name('super.logout');
+Route::post('/super/run', 'SuperAdminController@runQuery')->name('super.run');

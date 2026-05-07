@@ -16,15 +16,20 @@ class TestService
     public function getAllTests($searchParams = [])
     {
         $limit = Arr::get($searchParams, 'limit', static::ITEM_PER_PAGE);
-        return QueryBuilder::for(Test::class)
+        $query = QueryBuilder::for(Test::class)
             ->allowedIncludes(['class', 'subject', 'teacher', 'section', 'testResults','testResults.student','testResults.student.parents'])
             ->allowedFilters([
-                'id','class_id', 'subject_id', 'teacher_id', 'title', 'date'
+                'id','class_id', 'subject_id', 'teacher_id', 'title', 'date',
+                AllowedFilter::callback('session_id', function ($query, $value) {
+                    $query->whereHas('testResults.student', function ($q) use ($value) {
+                        $q->where('session_id', $value);
+                    });
+                }),
             ])
-            ->orderBy('id', 'desc')
-            ->paginate($limit)
+            ->orderBy('id', 'desc');
+
+        return $query->paginate($limit)
             ->appends(request()->query());
-        return Test::with(['class', 'subject'])->get();
     }
 
     public function createTest(array $data)

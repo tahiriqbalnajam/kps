@@ -80,6 +80,7 @@
 import Resource from '@/api/resource';
 import moment from 'moment';
 import { fetchExamSubjects, getSubjectsMarksByExamId } from '@/api/exam';
+import { sessionStore } from '@/store/session';
 
 const studentRes = new Resource('students');
 const settingsResource = new Resource('settings');
@@ -113,6 +114,11 @@ export default {
         filter: {},
       },
     }
+  },
+  computed: {
+    currentSessionId() {
+      return sessionStore().currentSessionId;
+    },
   },
   watch: {
     viewMarksListVisible(val) {
@@ -149,10 +155,11 @@ export default {
       this.query = {
         exam_id: this.exam.id,
         class_id: this.exam.class_id,
-        filter: this.exam.section_id 
-          ? { section_id: this.exam.section_id } 
+        filter: this.exam.section_id
+          ? { section_id: this.exam.section_id }
           : { stdclass: this.exam.class_id },
       };
+      if (this.currentSessionId) this.query.filter.session_id = this.currentSessionId;
     },
     async fetchData() {
       try {

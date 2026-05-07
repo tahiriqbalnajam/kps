@@ -162,27 +162,33 @@ class ExamController extends Controller
         return response()->json(new JsonResponse(['exam' => $exam]));
     }
 
-    public function getExamReports($examId)
+    public function getExamReports(Request $request, $examId)
     {
-        $reportData = $this->examService->getExamReports($examId);
+        $sessionId = $request->get('session_id');
+        $reportData = $this->examService->getExamReports($examId, $sessionId);
         return response()->json(new JsonResponse($reportData));
     }
 
-    public function getAwardList($examId)
+    public function getAwardList(Request $request, $examId)
     {
         try {
             $exam = Exam::with(['classes', 'examSubjects.subject'])->findOrFail($examId);
-            
+
             // Get students for this exam's class/section
             $studentsQuery = \App\Models\Student::with('parents')
                 ->where('class_id', $exam->class_id)
                 ->where('status', 'enable');
-            
+
             // Filter by section if exam has a section_id
             if ($exam->section_id) {
                 $studentsQuery->where('section_id', $exam->section_id);
             }
-            
+
+            // Filter by session_id
+            if ($sessionId = $request->get('session_id')) {
+                $studentsQuery->where('session_id', $sessionId);
+            }
+
             $students = $studentsQuery->orderBy('roll_no')
                 ->get();
 

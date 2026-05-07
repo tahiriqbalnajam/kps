@@ -93,6 +93,7 @@
 </template>
 <script>
 import Resource from '@/api/resource.js';
+import { sessionStore } from '@/store/session';
 const classes = new Resource('classes');
 let tests = new Resource('tests');
 const students = new Resource('students');
@@ -228,6 +229,9 @@ export default {
     }
   },
   computed: {
+    currentSessionId() {
+      return sessionStore().currentSessionId;
+    },
     filterTableData() {
       if(this.test?.students?.length)
         return this.test.students.filter(
@@ -278,10 +282,12 @@ export default {
         stdclass: classId,
         status: 'enable'
       };
-      
+
       if (sectionId) {
         this.query.filter['section_id'] = sectionId;
       }
+
+      if (this.currentSessionId) this.query.filter['session_id'] = this.currentSessionId;
       
       this.query.fields = {
         'students': 'id,name,roll_no,parent_id,class_id,parent.id, parent.name, class.id, class.name',

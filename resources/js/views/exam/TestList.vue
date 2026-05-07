@@ -7,6 +7,7 @@
   import { ElNotification, ElMessage, ElMessageBox } from 'element-plus'
   import moment from 'moment';
   import { Message } from '@element-plus/icons-vue';
+  import { sessionStore } from '@/store/session';
   const tests = new Resource('tests');
   const test_result = new Resource('tests-result');
   const classes = new Resource('classes');
@@ -63,6 +64,11 @@
         tableHeight: 500, // Default height
       };
   },
+  computed: {
+    currentSessionId() {
+      return sessionStore().currentSessionId;
+    },
+  },
   created() {
     this.get_Exams();
     this.getClasses();
@@ -76,6 +82,11 @@
   beforeUnmount() {
     window.removeEventListener('resize', this.calculateTableHeight);
   },
+  watch: {
+    currentSessionId() {
+      this.get_Exams();
+    },
+  },
   methods: {
     calculateTableHeight() {
       // Calculate available height: window height minus header, filters, pagination, and margins
@@ -85,6 +96,7 @@
     },
     async get_Exams() {
       this.query.include = 'class,subject,teacher,section';
+      if (this.currentSessionId) this.query.filter.session_id = this.currentSessionId;
       this.listloading = true;
       const { data } = await tests.list(this.query);
       this.listloading = false;

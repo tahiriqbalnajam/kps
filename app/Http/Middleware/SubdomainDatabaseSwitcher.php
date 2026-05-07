@@ -12,6 +12,11 @@ class SubdomainDatabaseSwitcher
 {
     public function handle(Request $request, Closure $next)
     {
+        // Skip subdomain switching for super admin and other exempt paths
+        if ($request->is('super*')) {
+            return $next($request);
+        }
+
         $host = $request->getHost();
         $subdomain = explode('.', $host)[0];
 

@@ -84,9 +84,10 @@ export function getSubjectsMarksByExamId(exam_id) {
   });
 }
 
-export function getExamReports(examId) {
+export function getExamReports(examId, params = {}) {
   return request({
     url: `/exams/${examId}/reports`,
     method: 'get',
+    params,
   });
 }

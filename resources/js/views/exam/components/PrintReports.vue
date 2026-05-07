@@ -134,6 +134,7 @@
 <script>
 import { getExamReports } from '@/api/exam';
 import Resource from '@/api/resource';
+import { sessionStore } from '@/store/session';
 
 export default {
   name: 'PrintReports',
@@ -154,6 +155,11 @@ export default {
       settingsResource: new Resource('settings'),
     };
   },
+  computed: {
+    currentSessionId() {
+      return sessionStore().currentSessionId;
+    },
+  },
   created() {
     if (this.printReportsVisible && this.exam) {
       this.fetchData();
@@ -163,8 +169,10 @@ export default {
     async fetchData() {
       try {
         this.loading = true;
+        const params = {};
+        if (this.currentSessionId) params.session_id = this.currentSessionId;
         const [reportsData, settingsData] = await Promise.all([
-          getExamReports(this.exam.id),
+          getExamReports(this.exam.id, params),
           this.settingsResource.list()
         ]);
         

@@ -156,6 +156,7 @@ import PrintReports from './components/PrintReports.vue';
 import AwardListPrint from './components/AwardListPrint.vue';
 import moment from 'moment';
 import { transformClassesToTree } from '@/utils/classHelper';
+import { sessionStore } from '@/store/session';
 const examRes = new Resource('exams');
 const classRes = new Resource('classes');
 
@@ -199,9 +200,19 @@ export default {
           },
         };
     },
+    computed: {
+      currentSessionId() {
+        return sessionStore().currentSessionId;
+      },
+    },
     created() {
       this.get_Exams();
       this.getClasses();
+    },
+    watch: {
+      currentSessionId() {
+        this.get_Exams();
+      },
     },
     methods: {
       changeDate(date) {
@@ -303,8 +314,11 @@ export default {
       async downloadAwardList(exam) {
         try {
           this.$message.info('Loading award list...');
-          
-          const response = await fetch(`/api/exams/${exam.id}/award-list`, {
+
+          const url = new URL(`/api/exams/${exam.id}/award-list`, window.location.origin);
+          if (this.currentSessionId) url.searchParams.set('session_id', this.currentSessionId);
+
+          const response = await fetch(url.toString(), {
             method: 'GET',
             headers: {
               'Authorization': `Bearer ${localStorage.getItem('token')}`,

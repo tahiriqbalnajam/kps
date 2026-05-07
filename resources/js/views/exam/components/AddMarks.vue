@@ -61,6 +61,7 @@
 <script>
 import Resource from '@/api/resource';
 import { fetchExamSubjects, getSubjectsMarksByExamId, examMarks  } from '@/api/exam';
+import { sessionStore } from '@/store/session';
 export default {
   name: 'AddMarks',
   props: {
@@ -81,6 +82,11 @@ export default {
         filter: {},
       },
     };
+  },
+  computed: {
+    currentSessionId() {
+      return sessionStore().currentSessionId;
+    },
   },
   computed: {
     totalPossibleMarks() {
@@ -108,6 +114,8 @@ export default {
       } else {
         this.query.filter.stdclass = this.class_id;
       }
+
+      if (this.currentSessionId) this.query.filter.session_id = this.currentSessionId;
 
       const { data: studentData } = await studentRes.list(this.query);
       const { data: subjectData } = await fetchExamSubjects(this.exam.id);

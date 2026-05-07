@@ -177,16 +177,19 @@ class ExamService implements ExamServiceInterface
         return ExamResult::where('exam_id', $id)->get();
     }
 
-    public function getExamReports(int $examId)
+    public function getExamReports(int $examId, $sessionId = null)
     {
         $exam = Exam::with(['classes', 'examSubjects' => function ($query) {
     $query->where('skip', false);
 }, 'examSubjects.subject'])->findOrFail($examId);
-        
+
         // Filter students by section_id if it exists, otherwise by class_id
         $studentsQuery = Student::with('parents')->where('class_id', $exam->class_id);
         if ($exam->section_id) {
             $studentsQuery->where('section_id', $exam->section_id);
+        }
+        if ($sessionId) {
+            $studentsQuery->where('session_id', $sessionId);
         }
         $students = $studentsQuery->get();
         
