@@ -140,6 +140,7 @@ Route::get('/exams/{id}/subjects/marks', 'ExamController@getExamById');
 Route::post('/exams/marks', 'ExamController@addExamMarks');
 Route::get('exams/{id}/reports', 'ExamController@getExamReports');
 Route::get('exams/{id}/award-list', 'ExamController@getAwardList');
+Route::get('exams/{id}/datesheet', 'ExamController@getDateSheet');
 
 //test
 Route::apiResource('examstest', 'ExamTestController');

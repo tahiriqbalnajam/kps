@@ -9,7 +9,7 @@ class Exam extends Model
 {
     protected $table = 'exams';
     
-    protected $fillable = ['title', 'class_id', 'section_id', 'skip'];
+    protected $fillable = ['title', 'class_id', 'section_id', 'skip', 'start_date', 'end_date'];
 
     public function examSubjects()
     {

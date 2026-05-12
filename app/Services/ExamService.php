@@ -41,6 +41,8 @@ class ExamService implements ExamServiceInterface
                 'title' => $data['title'],
                 'class_id' => $data['class_id'],
                 'section_id' => $data['section_id'] ?? null,
+                'start_date' => $data['start_date'] ?? null,
+                'end_date' => $data['end_date'] ?? null,
             ]);
     
             foreach ($data['subjects'] as $subject) {
@@ -49,6 +51,7 @@ class ExamService implements ExamServiceInterface
                     'subject_id' => $subject['subject_id'],
                     'total_marks' => $subject['total_marks'],
                     'skip' => $subject['skip_in_report'],
+                    'exam_date' => $subject['exam_date'] ?? null,
                 ]);
             }
     
@@ -125,6 +128,8 @@ class ExamService implements ExamServiceInterface
             'title' => $data['title'],
             'class_id' => $data['class_id'],
             'section_id' => $data['section_id'] ?? null,
+            'start_date' => $data['start_date'] ?? null,
+            'end_date' => $data['end_date'] ?? null,
         ]);
 
         foreach ($data['subjects'] as $subject) {
@@ -137,7 +142,7 @@ class ExamService implements ExamServiceInterface
                     // Keep the row so skip state is preserved on future edits,
                     // but wipe results so totals are not inflated
                     $existing->examResults()->delete();
-                    $existing->update(['skip' => true, 'total_marks' => $subject['total_marks']]);
+                    $existing->update(['skip' => true, 'total_marks' => $subject['total_marks'], 'exam_date' => $subject['exam_date'] ?? null]);
                 } else {
                     // Brand-new subject immediately marked skip — store it so it re-opens correctly
                     ExamSubject::create([
@@ -145,6 +150,7 @@ class ExamService implements ExamServiceInterface
                         'subject_id'  => $subject['subject_id'],
                         'total_marks' => $subject['total_marks'],
                         'skip'        => true,
+                        'exam_date'   => $subject['exam_date'] ?? null,
                     ]);
                 }
             } elseif ($existing) {
@@ -152,6 +158,7 @@ class ExamService implements ExamServiceInterface
                 $existing->update([
                     'total_marks' => $subject['total_marks'],
                     'skip'        => false,
+                    'exam_date'   => $subject['exam_date'] ?? null,
                 ]);
             } else {
                 // Genuinely new subject added to the exam
@@ -160,6 +167,7 @@ class ExamService implements ExamServiceInterface
                     'subject_id'  => $subject['subject_id'],
                     'total_marks' => $subject['total_marks'],
                     'skip'        => false,
+                    'exam_date'   => $subject['exam_date'] ?? null,
                 ]);
             }
         }

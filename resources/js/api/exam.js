@@ -91,3 +91,10 @@ export function getExamReports(examId, params = {}) {
     params,
   });
 }
+
+export function fetchDateSheet(examId) {
+  return request({
+    url: `/exams/${examId}/datesheet`,
+    method: 'get',
+  });
+}

@@ -7,20 +7,42 @@
     @close="closeDrawer"
   >
     <div class="drawer-header">
-      <el-form :model="examForm" ref="examForm" label-width="120px" inline>
-        <el-form-item label="Class" prop="class_id">
-          <el-tree-select
-            v-model="selectedClass"
-            :data="classes"
-            placeholder="Select Class/Section"
-            @change="handleClassChange"
-            style="width: 250px"
-            check-strictly
-          />
-        </el-form-item>
-        <el-form-item label="Exam Title" prop="title">
-          <el-input v-model="examForm.title" />
-        </el-form-item>
+      <h3 class="drawer-title">{{ isEditMode ? 'Edit Exam' : 'Add Exam' }}</h3>
+      <el-form :model="examForm" ref="examForm" label-position="top">
+        <el-row :gutter="16">
+          <el-col :span="8">
+            <el-form-item label="Class" prop="class_id">
+              <el-tree-select
+                v-model="selectedClass"
+                :data="classes"
+                placeholder="Select Class/Section"
+                @change="handleClassChange"
+                style="width: 100%"
+                check-strictly
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="Exam Title" prop="title">
+              <el-input v-model="examForm.title" placeholder="e.g. Mid Term" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="Date Range" prop="date_range">
+              <el-date-picker
+                v-model="examForm.date_range"
+                type="daterange"
+                range-separator="—"
+                start-placeholder="Start"
+                end-placeholder="End"
+                format="YYYY-MM-DD"
+                value-format="YYYY-MM-DD"
+                clearable
+                style="width: 100%"
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
       </el-form>
     </div>
     <el-table :data="subjects" style="width: 100%">
@@ -28,6 +50,18 @@
       <el-table-column label="Total Marks">
         <template #default="scope">
           <el-input-number v-model="examForm.subjects[scope.$index].total_marks" :min="0" />
+        </template>
+      </el-table-column>
+      <el-table-column label="Exam Date" width="180">
+        <template #default="scope">
+          <el-date-picker
+            v-model="examForm.subjects[scope.$index].exam_date"
+            type="date"
+            placeholder="Pick date"
+            format="YYYY-MM-DD"
+            value-format="YYYY-MM-DD"
+            clearable
+          />
         </template>
       </el-table-column>
       <el-table-column label="Skip in Report">
@@ -72,6 +106,7 @@ export default {
         title: '',
         class_id: null,
         section_id: null,
+        date_range: null,
         subjects: [],
       },
       isEditMode: false,
@@ -115,7 +150,7 @@ export default {
         this.subjects = response.data.classubj.subjects;
         this.examForm.subjects = this.subjects.map(subject => ({
           subject_id: subject.id,
-          total_marks: 0,
+          total_marks: 0, exam_date: null,
           skip_in_report: false,
         }));
       } catch (error) {
@@ -125,6 +160,9 @@ export default {
     async initializeEditMode(exam) {
       this.isEditMode = true;
       this.examForm.title = exam.title;
+      if (exam.start_date || exam.end_date) {
+        this.examForm.date_range = [exam.start_date, exam.end_date];
+      }
       // selectedClass is set AFTER form population to prevent handleClassChange
       // from triggering a fetchSubjects that overwrites the mapped values with zeros
 
@@ -141,6 +179,7 @@ export default {
             return {
               subject_id: subject.id,
               total_marks: existingSubject ? existingSubject.total_marks : 0,
+              exam_date: existingSubject ? existingSubject.exam_date : null,
               skip_in_report: existingSubject ? existingSubject.skip == 1 : false,
             };
           });
@@ -160,6 +199,10 @@ export default {
         
         this.examForm.class_id = classId;
         this.examForm.section_id = sectionId;
+        if (this.examForm.date_range) {
+          this.examForm.start_date = this.examForm.date_range[0] || null;
+          this.examForm.end_date = this.examForm.date_range[1] || null;
+        }
         
         if (this.isEditMode && this.examToEdit) {
           await examRes.update(this.examToEdit.id, this.examForm);
@@ -203,6 +246,7 @@ export default {
         title: '',
         class_id: null,
         section_id: null,
+        date_range: null,
         subjects: [],
       };
       this.selectedClass = null;
@@ -217,11 +261,13 @@ export default {
 
 <style scoped>
 .drawer-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   padding: 20px;
   border-bottom: 1px solid #ebeef5;
+}
+.drawer-title {
+  margin: 0 0 15px 0;
+  font-size: 18px;
+  color: #303133;
 }
 .drawer-footer {
   display: flex;

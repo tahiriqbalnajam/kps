@@ -1,65 +1,58 @@
 <template>
   <div class="app-container">
-    <div class="filter-container">
-      <head-controls>
-        <el-row :gutter="20" justify="space-between">
-          <el-col :span="14">
-            <el-form :inline="true" :model="query">
-              <el-form-item>
-                <el-input
-                  v-model="query.filter.title"
-                  placeholder="Search by exam title"
-                  clearable
-                  @input="handleSearch"
-                />
-              </el-form-item>
-              <el-form-item>
-                <el-tree-select
-                  v-model="query.filter.class_id" 
-                  :data="classes"
-                  placeholder="Select Class/Section"
-                  clearable
-                  @change="handleSearch"
-                  style="width: 250px"
-                  check-strictly
-                />
-              </el-form-item>
-              <el-form-item>
-                <el-date-picker
-                  v-model="query.filter.created_at"
-                  type="date"
-                  placeholder="Select date"
-                  format="YYYY-MM-DD"
-                  value-format="YYYY-MM-DD"
-                  clearable
-                  @change="handleSearch"
-                />
-              </el-form-item>
-            </el-form>
-          </el-col>
-          <el-col :span="4"  :xs="6" :sm="6" :md="6" :lg="6" :xl="6">
-            <el-row justify="end">
-              <el-col :span="6" :xs="6" :sm="6" :md="6" :lg="6" :xl="4">
-                <el-tooltip content="Add Exam" placement="top">
-                  <el-button class="filter-item" type="success" @click="addExamFunc()">
-                    <el-icon :size="15"><Plus /></el-icon>
-                  </el-button>
-                </el-tooltip>
-              </el-col>
-              <el-col :span="6"  :xs="6" :sm="6" :md="6" :lg="6" :xl="4">
-                <el-tooltip content="Students Excel" placement="top">
-                  <el-button class="filter-item" :loading="downloadLoading"  type="danger" :icon="Search"  @click="handleDownload">
-                    <el-icon><Download /></el-icon>
-                  </el-button>
-                </el-tooltip>
-              </el-col>
-              <el-col :span="6"  :xs="6" :sm="6" :md="6" :lg="6" :xl="4">
-              </el-col>
-            </el-row>
-          </el-col>
-        </el-row>
-      </head-controls>
-      <el-alert title="Record Update" type="success" v-if="alertRec"> </el-alert>
+    <div class="compact-filter-header">
+      <div class="filter-section">
+        <div class="search-controls">
+          <el-input
+            v-model="query.filter.title"
+            placeholder="Search by exam title..."
+            clearable
+            @input="handleSearch"
+            size="default"
+          >
+            <template #prefix>
+              <el-icon><Search /></el-icon>
+            </template>
+          </el-input>
+        </div>
+
+        <div class="filter-controls">
+          <el-tree-select
+            v-model="query.filter.class_id"
+            :data="classes"
+            placeholder="Select Class/Section"
+            clearable
+            @change="handleSearch"
+            check-strictly
+            size="default"
+          />
+
+          <el-date-picker
+            v-model="query.filter.created_at"
+            type="date"
+            placeholder="Select date"
+            format="YYYY-MM-DD"
+            value-format="YYYY-MM-DD"
+            clearable
+            @change="handleSearch"
+            size="default"
+          />
+        </div>
+      </div>
+
+      <div class="action-section">
+        <el-tooltip content="Add Exam" placement="top">
+          <el-button type="success" @click="addExamFunc()" size="default" class="action-btn">
+            <el-icon><Plus /></el-icon>
+          </el-button>
+        </el-tooltip>
+
+        <el-tooltip content="Export Excel" placement="top">
+          <el-button :loading="downloadLoading" type="primary" @click="handleDownload" size="default" class="action-btn">
+            <el-icon><Download /></el-icon>
+          </el-button>
+        </el-tooltip>
+      </div>
     </div>
     <el-card class="box-card">
       <testing />
@@ -89,6 +82,9 @@
                   </el-dropdown-item>
                   <el-dropdown-item command="add-marks">
                     <el-icon><DocumentAdd /></el-icon> Add Marks
+                  </el-dropdown-item>
+                  <el-dropdown-item command="datesheet">
+                    <el-icon><Calendar /></el-icon> View Datesheet
                   </el-dropdown-item>
                   <el-dropdown-item command="view-marks">
                     <el-icon><List /></el-icon> View Marks
@@ -133,27 +129,33 @@
     <add-marks v-if="addMarksVisible" :addMarksVisible="addMarksVisible" :exam="selectedExam" :class_id="selectedExam.class_id" @close="addMarksVisible = false" />
     <view-marks-list v-if="viewMarksListVisible" :viewMarksListVisible="viewMarksListVisible" :exam="selectedExam" @close="viewMarksListVisible = false" />
     <print-reports v-if="printReportsVisible" :printReportsVisible="printReportsVisible" :exam="selectedExam" @close="printReportsVisible = false" />
-    <award-list-print 
-      v-if="awardListVisible" 
+    <award-list-print
+      v-if="awardListVisible"
       v-model="awardListVisible"
-      :examData="awardListData.exam" 
+      :examData="awardListData.exam"
       :students="awardListData.students"
       :totalPossibleMarks="awardListData.totalPossibleMarks"
-      @close="awardListVisible = false" 
+      @close="awardListVisible = false"
+    />
+    <date-sheet-print
+      v-if="datesheetVisible"
+      v-model="datesheetVisible"
+      :exam="datesheetData.exam"
+      :school="datesheetData.school"
     />
   </div>
 </template>
 <script>
-import { Edit, Plus, Download, DocumentAdd, List, GoldMedal, ArrowDown, Document, Delete } from '@element-plus/icons-vue';
+import { Edit, Plus, Download, DocumentAdd, List, GoldMedal, ArrowDown, Document, Delete, Calendar, Search } from '@element-plus/icons-vue';
 import { debounce } from 'lodash';  // Add this import
 import Pagination from '@/components/Pagination/index.vue';
-import HeadControls from '@/components/HeadControls.vue';
 import Resource from '@/api/resource';
 import AddExam from './components/AddExam.vue';
 import AddMarks from './components/AddMarks.vue';
 import ViewMarksList from './components/ViewMarksList.vue';
 import PrintReports from './components/PrintReports.vue';
 import AwardListPrint from './components/AwardListPrint.vue';
+import DateSheetPrint from './components/DateSheetPrint.vue';
 import moment from 'moment';
 import { transformClassesToTree } from '@/utils/classHelper';
 import { sessionStore } from '@/store/session';
@@ -164,12 +166,12 @@ export default {
     name: 'ExamList',
     components: {
         Pagination,
-        HeadControls,
         AddExam,
         AddMarks,
         ViewMarksList,
         PrintReports,
         AwardListPrint,
+        DateSheetPrint,
     },
     data() {
         return {
@@ -181,6 +183,11 @@ export default {
           viewMarksListVisible: false,
           printReportsVisible: false,
           awardListVisible: false,
+          datesheetVisible: false,
+          datesheetData: {
+            exam: {},
+            school: {},
+          },
           awardListData: {
             exam: {},
             students: [],
@@ -288,9 +295,39 @@ export default {
           case 'award-list':
             this.downloadAwardList(exam);
             break;
+          case 'datesheet':
+            this.openDateSheet(exam);
+            break;
           case 'delete':
             this.deleteExam(exam);
             break;
+        }
+      },
+      async openDateSheet(exam) {
+        try {
+          const url = new URL(`/api/exams/${exam.id}/datesheet`, window.location.origin);
+          const response = await fetch(url.toString(), {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`,
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+            },
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to load date sheet');
+          }
+
+          const result = await response.json();
+          this.datesheetData = {
+            exam: result.data.exam,
+            school: result.data.school,
+          };
+          this.datesheetVisible = true;
+        } catch (error) {
+          console.error('Error loading date sheet:', error);
+          this.$message.error('Failed to load date sheet');
         }
       },
       async deleteExam(exam) {
@@ -353,14 +390,69 @@ export default {
 };
 </script>
 
-<style  scoped>
-.rdata_result_examname {
-    /* border: none !important; */
-    box-shadow: none;
+<style scoped>
+.compact-filter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: white;
+  padding: 12px 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 16px;
+  border: 1px solid #e4e7ed;
 }
-.el-form-item {
-  margin-bottom: 10px;
-  margin-right: 10px;
+
+.filter-section {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex: 1;
+  flex-wrap: wrap;
+}
+
+.search-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.search-controls .el-input {
+  width: 280px;
+  min-width: 200px;
+}
+
+.filter-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.filter-controls .el-tree-select {
+  width: 220px;
+}
+
+.filter-controls .el-date-picker {
+  width: 180px;
+}
+
+.action-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 16px;
+}
+
+.action-btn {
+  min-width: 44px;
+  height: 36px;
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.action-btn:hover {
+  transform: translateY(-1px);
 }
 </style>
 

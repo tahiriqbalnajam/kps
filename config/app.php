@@ -17,6 +17,8 @@ return [
 
     'api_key' => env('API_KEY', '12345678'),
 
+    'super_password' => env('SUPER_PASSWORD', 'admin123'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Environment

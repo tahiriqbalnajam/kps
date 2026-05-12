@@ -169,6 +169,20 @@ class ExamController extends Controller
         return response()->json(new JsonResponse($reportData));
     }
 
+    public function getDateSheet($examId)
+    {
+        $exam = Exam::with(['examSubjects.subject', 'classes', 'section'])->findOrFail($examId);
+
+        $settings = DB::table('settings')
+            ->whereIn('setting_key', ['school_name', 'address', 'phone', 'school_email', 'website', 'school_logo', 'tagline'])
+            ->pluck('setting_value', 'setting_key');
+
+        return response()->json(new JsonResponse([
+            'exam' => $exam,
+            'school' => $settings,
+        ]));
+    }
+
     public function getAwardList(Request $request, $examId)
     {
         try {
