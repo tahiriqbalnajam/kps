@@ -455,14 +455,14 @@ export default {
       },
       voucherForm: {
         dueDate: null,
-        fineAmount: 100,
+        fineAmount: 0,
         voucherType: 'monthly',
         feeMonth: null,
         customAmount: 0,
         selectedFeeTypes: [],
         feeTypeAmounts: {}, // Store custom amounts for each fee type
         notes: '',
-        includePending: false
+        includePending: true
       },
       pendingVouchers: [],
       loadingPending: false
@@ -757,14 +757,14 @@ export default {
     resetVoucherForm() {
       this.voucherForm = {
         dueDate: null,
-        fineAmount: 100,
+        fineAmount: 0,
         voucherType: 'monthly',
         feeMonth: null,
         customAmount: 0,
         selectedFeeTypes: [],
         feeTypeAmounts: {},
         notes: '',
-        includePending: false
+        includePending: true
       }
       this.pendingVouchers = []
       this.duplicateWarning.show = false
