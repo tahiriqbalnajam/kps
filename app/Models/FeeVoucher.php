@@ -126,9 +126,14 @@ class FeeVoucher extends Model
     }
 
     // Computed remaining balance (not stored; always derived from live DB values)
+    // Fine only applies after due date
     public function getRemainingAmountAttribute(): float
     {
-        return max(0, round((float) $this->total_with_fine - (float) ($this->paid_amount ?? 0), 2));
+        $isOverdue = $this->due_date && $this->due_date < now()->toDateString();
+        $relevantTotal = $isOverdue
+            ? (float) $this->total_with_fine
+            : (float) $this->fee_amount;
+        return max(0, round($relevantTotal - (float) ($this->paid_amount ?? 0), 2));
     }
 
     public function getFormattedVoucherNumberAttribute()

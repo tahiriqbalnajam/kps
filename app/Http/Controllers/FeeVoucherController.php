@@ -260,15 +260,24 @@ class FeeVoucherController extends Controller
                 AllowedFilter::callback('paid_to', function ($query, $value) {
                     $query->whereDate('payment_date', '<=', $value);
                 }),
-                // Specific column filters with prefix matching (performance improved)
+                // Name search using FULLTEXT index (index-backed, word-level matching)
                 AllowedFilter::callback('student_name', function ($query, $value) {
-                    $query->where('student_name', 'LIKE', "{$value}%");
+                    $query->whereRaw(
+                        "MATCH(student_name) AGAINST(? IN BOOLEAN MODE)",
+                        ['+' . $value . '*']
+                    );
                 }),
                 AllowedFilter::callback('name', function ($query, $value) {
-                    $query->where('student_name', 'LIKE', "{$value}%");
+                    $query->whereRaw(
+                        "MATCH(student_name) AGAINST(? IN BOOLEAN MODE)",
+                        ['+' . $value . '*']
+                    );
                 }),
                 AllowedFilter::callback('parent_name', function ($query, $value) {
-                    $query->where('parent_name', 'LIKE', "{$value}%");
+                    $query->whereRaw(
+                        "MATCH(parent_name) AGAINST(? IN BOOLEAN MODE)",
+                        ['+' . $value . '*']
+                    );
                 }),
                 AllowedFilter::callback('voucher_number', function ($query, $value) {
                     $query->where('voucher_number', 'LIKE', "{$value}%");
@@ -278,13 +287,15 @@ class FeeVoucherController extends Controller
                         $q->where('roll_no', 'LIKE', "{$value}%");
                     });
                 }),
-                // Generic search as fallback (expensive but flexible)
+                // Generic search: FULLTEXT for names, prefix LIKE for indexed identifiers
                 AllowedFilter::callback('search', function ($query, $value) {
                     $query->where(function ($q) use ($value) {
-                        $q->where('voucher_number', 'LIKE', "{$value}%")
-                          ->orWhere('student_name', 'LIKE', "{$value}%")
+                        $q->whereRaw(
+                            "MATCH(student_name, parent_name) AGAINST(? IN BOOLEAN MODE)",
+                            ['+' . $value . '*']
+                        )
+                          ->orWhere('voucher_number', 'LIKE', "{$value}%")
                           ->orWhere('admission_number', 'LIKE', "{$value}%")
-                          ->orWhere('parent_name', 'LIKE', "{$value}%")
                           ->orWhere('parent_phone', 'LIKE', "{$value}%");
                     });
                 }),
@@ -383,14 +394,19 @@ class FeeVoucherController extends Controller
                     ]);
                 }
 
-                $totalAmount  = round((float) $voucher->total_with_fine, 2);
+                // Fine only applies after due date
+                $dueDate     = $voucher->due_date;
+                $today       = now()->toDateString();
+                $fineApplies = $dueDate && $today > $dueDate;
+                $targetAmount = round((float) ($fineApplies ? $voucher->total_with_fine : $voucher->fee_amount), 2);
+
                 $alreadyPaid  = round((float) ($voucher->paid_amount ?? 0), 2);
                 $newPayment   = round((float) ($request->paid_amount ?? 0), 2);
                 $paymentDate  = $request->payment_date ?? now()->toDateString();
 
                 if ($newPayment > 0) {
                     // --- Overpayment guard ---
-                    $remaining = round($totalAmount - $alreadyPaid, 2);
+                    $remaining = round($targetAmount - $alreadyPaid, 2);
                     if ($newPayment > $remaining + 0.005) {
                         DB::rollBack();
                         return response()->json([
@@ -404,9 +420,9 @@ class FeeVoucherController extends Controller
                     $newCumulativeTotal = round($alreadyPaid + $newPayment, 2);
 
                     // --- Auto-determine status (ignores the request `status` field) ---
-                    if ($newCumulativeTotal >= $totalAmount - 0.005) {
+                    if ($newCumulativeTotal >= $targetAmount - 0.005) {
                         $resolvedStatus     = 'paid';
-                        $newCumulativeTotal = $totalAmount; // remove float dust
+                        $newCumulativeTotal = $targetAmount; // remove float dust
                     } else {
                         $resolvedStatus = 'partially_paid';
                     }
@@ -445,7 +461,7 @@ class FeeVoucherController extends Controller
                 DB::commit();
 
                 $freshVoucher     = $voucher->fresh();
-                $remainingAfter   = round($totalAmount - (float) ($freshVoucher->paid_amount ?? 0), 2);
+                $remainingAfter   = round($targetAmount - (float) ($freshVoucher->paid_amount ?? 0), 2);
 
                 $message = match ($resolvedStatus) {
                     'paid'           => 'Voucher marked as fully paid',
@@ -541,9 +557,11 @@ class FeeVoucherController extends Controller
             if ($request->filled('search')) {
                 $search = $request->search;
                 $query->where(function($q) use ($search) {
-                    $q->where('student_name', 'like', "%{$search}%")
-                      ->orWhere('voucher_number', 'like', "%{$search}%")
-                      ->orWhere('parent_name', 'like', "%{$search}%");
+                    $q->whereRaw(
+                        "MATCH(student_name, parent_name) AGAINST(? IN BOOLEAN MODE)",
+                        ['+' . $search . '*']
+                    )
+                      ->orWhere('voucher_number', 'like', "{$search}%");
                 });
             }
             
@@ -563,15 +581,13 @@ class FeeVoucherController extends Controller
                 $voucher->parent_phone = $voucher->parent_phone ?? '';
                 $voucher->parent_email = $voucher->parent_email ?? '';
                 
-                // Calculate total amount with fine for display
-                // Check if voucher is overdue
+                // Fine only applies after due date
                 $isOverdue = $voucher->due_date < now()->toDateString();
-                
-                // Remaining balance = total_with_fine minus what has already been paid.
-                // total_with_fine already includes fine_amount regardless of overdue status.
                 $paidAmount  = round(floatval($voucher->paid_amount ?? 0), 2);
-                $totalAmount = round(floatval($voucher->total_with_fine), 2);
-                $voucher->remaining_amount      = max(0, $totalAmount - $paidAmount);
+                $relevantTotal = $isOverdue
+                    ? round(floatval($voucher->total_with_fine), 2)
+                    : round(floatval($voucher->fee_amount), 2);
+                $voucher->remaining_amount      = max(0, $relevantTotal - $paidAmount);
                 $voucher->total_amount_with_fine = $voucher->remaining_amount; // backward-compat alias
                 
                 // Also set the amount field for backward compatibility
@@ -677,9 +693,14 @@ class FeeVoucherController extends Controller
                 'total_amount_collected' => $payQueryForSum->sum('paid_amount'),
                 
                 // Pending: Amount remaining from vouchers GENERATED in this period.
-                // COALESCE handles NULL paid_amount (unpaid vouchers) so the subtraction is correct.
+                // Fine only applies to overdue vouchers (due_date < today).
                 'pending_amount' => $genQueryPending->whereIn('status', ['unpaid', 'partially_paid'])
-                                        ->sum(DB::raw('COALESCE(total_with_fine, 0) - COALESCE(paid_amount, 0)'))
+                                        ->sum(DB::raw("
+                                            CASE
+                                                WHEN due_date < CURDATE() THEN COALESCE(total_with_fine, 0) - COALESCE(paid_amount, 0)
+                                                ELSE COALESCE(fee_amount, 0) - COALESCE(paid_amount, 0)
+                                            END
+                                        "))
             ];
 
             return response()->json([
@@ -904,7 +925,7 @@ class FeeVoucherController extends Controller
                     'school_email' => $settingsCollection->get('school_email', ''),
                     'school_website' => $settingsCollection->get('website', ''),               // Map website to school_website
                     'school_tagline' => $settingsCollection->get('tagline', ''),               // Add tagline
-                    'default_fine_amount' => (int) $settingsCollection->get('default_fine_amount', 100),
+                    'default_fine_amount' => (int) $settingsCollection->get('default_fine_amount', 0),
                     'default_due_days' => (int) $settingsCollection->get('default_due_days', 30)
                 ]
             ]);
@@ -1057,7 +1078,9 @@ class FeeVoucherController extends Controller
                         'total_vouchers' => (clone $baseQuery)->count(),
                         'total_amount' => round((clone $baseQuery)->sum('total_with_fine'), 2),
                         'total_paid' => round((clone $baseQuery)->sum('paid_amount'), 2),
-                        'total_remaining' => round((clone $baseQuery)->sum('total_with_fine') - (clone $baseQuery)->sum('paid_amount'), 2),
+                        'total_remaining' => round((clone $baseQuery)->sum(DB::raw("
+                            CASE WHEN due_date < CURDATE() THEN COALESCE(total_with_fine, 0) ELSE COALESCE(fee_amount, 0) END
+                        ")) - (clone $baseQuery)->sum('paid_amount'), 2),
                         'by_status' => (clone $baseQuery)->selectRaw("status, count(*) as count, sum(total_with_fine) as total, sum(paid_amount) as paid")
                             ->groupBy('status')->get(),
                         'on_time_count' => (clone $baseQuery)->where('status', 'paid')
@@ -1206,7 +1229,9 @@ class FeeVoucherController extends Controller
                         'parent_name' => (clone $baseQuery)->value('parent_name'),
                         'total_charged' => round((clone $baseQuery)->sum('total_with_fine'), 2),
                         'total_paid' => round((clone $baseQuery)->sum('paid_amount'), 2),
-                        'balance' => round((clone $baseQuery)->sum('total_with_fine') - (clone $baseQuery)->sum('paid_amount'), 2),
+                        'balance' => round((clone $baseQuery)->sum(DB::raw("
+                            CASE WHEN due_date < CURDATE() THEN COALESCE(total_with_fine, 0) ELSE COALESCE(fee_amount, 0) END
+                        ")) - (clone $baseQuery)->sum('paid_amount'), 2),
                         'total_vouchers' => (clone $baseQuery)->count(),
                         'paid_vouchers' => (clone $baseQuery)->where('status', 'paid')->count(),
                         'unpaid_vouchers' => (clone $baseQuery)->whereIn('status', ['unpaid', 'partially_paid'])->count(),
