@@ -35,9 +35,15 @@ class ParentController extends Controller
         $searchParams = $request->all();
         $limit = Arr::get($searchParams, 'limit', static::ITEM_PER_PAGE);
         $filtercol = $request->get('filtercol');
+        $hasApp = $request->boolean('has_app');
         //DB::enableQueryLog(); // Enable query log
-        $parents = Parents::with('students', 'user:id,name,email')->
-                    when($keyword && !$filtercol, function ($query) use ($keyword) {
+        $parents = Parents::with('students', 'user:id,name,email,phone')->
+                    when($hasApp, function ($query) {
+                        return $query->whereHas('user', function ($q) {
+                            $q->whereNotNull('player_id');
+                        });
+                    })
+                    ->when($keyword && !$filtercol, function ($query) use ($keyword) {
                        return $query->where('name', 'like', '%' . $keyword . '%');
                     })
                     ->when($all || ($filtercol == 'name' && !empty($keyword)), function ($query) use ($all, $keyword) {
@@ -185,6 +191,7 @@ class ParentController extends Controller
         $user = User::create([
             'name'     => $parent->name,
             'email'    => $request->email,
+            'phone'    => $parent->phone,
             'password' => Hash::make($request->password),
         ]);
 
@@ -195,6 +202,76 @@ class ParentController extends Controller
         $parent->saveQuietly(); // skip boot events to avoid re-triggering user creation
 
         return response()->json(new JsonResponse(['user' => $user]));
+    }
+
+    /**
+     * Bulk create user accounts for all parents without one.
+     */
+    public function bulkCreateAccounts(Request $request)
+    {
+        $request->validate([
+            'password' => 'required|string|min:6',
+        ]);
+
+        $parents = Parents::whereNull('user_id')->get();
+
+        if ($parents->isEmpty()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'All parents already have user accounts.',
+                'created' => 0,
+                'skipped' => 0,
+            ]);
+        }
+
+        $role = Role::findByName('parent');
+        $created = 0;
+        $skippedNoPhone = 0;
+        $skippedEmailExists = 0;
+
+        foreach ($parents as $parent) {
+            if (empty($parent->phone)) {
+                $skippedNoPhone++;
+                continue;
+            }
+
+            $phone = preg_replace('/[^0-9]/', '', $parent->phone);
+            $email = $phone . '@idlschool.pk';
+
+            if (User::where('email', $email)->exists()) {
+                $skippedEmailExists++;
+                continue;
+            }
+
+            $user = User::create([
+                'name'     => $parent->name,
+                'email'    => $email,
+                'phone'    => $parent->phone,
+                'password' => Hash::make($request->password),
+            ]);
+
+            $user->syncRoles($role);
+
+            $parent->user_id = $user->id;
+            $parent->saveQuietly();
+
+            $created++;
+        }
+
+        $skipped = $skippedNoPhone + $skippedEmailExists;
+        $parts = [];
+        if ($created > 0) $parts[] = "{$created} created";
+        if ($skippedNoPhone > 0) $parts[] = "{$skippedNoPhone} skipped (no phone)";
+        if ($skippedEmailExists > 0) $parts[] = "{$skippedEmailExists} skipped (email exists)";
+
+        return response()->json([
+            'success' => true,
+            'message' => implode(', ', $parts) ?: 'No accounts to create.',
+            'created' => $created,
+            'skipped' => $skipped,
+            'skipped_no_phone' => $skippedNoPhone,
+            'skipped_email_exists' => $skippedEmailExists,
+        ]);
     }
 
     /**

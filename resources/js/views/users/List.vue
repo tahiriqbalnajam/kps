@@ -1,21 +1,28 @@
 <template>
   <div class="app-container scroll-y">
-    <div class="filter-container">
-      <el-input v-model="params.keyword" :placeholder="t('user.name') + '/' + t('user.email')" style="width: 200px;" class="filter-item"
-                @keyup.enter.native="handleFilter"/>
-      <el-select v-model="params.role" :placeholder="t('roles.name')" clearable style="width: 90px; margin-right: 5px;"
-                 class="filter-item"
-                 @change="handleFilter">
-        <el-option v-for="item in roles" :key="item" :label="uppercaseFirst(item)" :value="item"/>
-      </el-select>
-      <el-button class="filter-item" type="primary" :icon="Search" @click="handleFilter">
-        {{ t('table.search') }}
-      </el-button>
-      <el-button class="filter-item" type="primary" :icon="Plus"
-                 @click="handleCreate">
-        {{ t('table.add') }}
-      </el-button>
-    </div>
+    <head-controls>
+      <div class="header-flex">
+        <div class="header-left">
+          <el-input v-model="params.keyword" :placeholder="t('user.name') + '/' + t('user.email')" class="filter-item"
+                    @keyup.enter="handleFilter"/>
+          <el-select v-model="params.role" :placeholder="t('roles.name')" clearable class="filter-item"
+                     @change="handleFilter">
+            <el-option v-for="item in roles" :key="item" :label="uppercaseFirst(item)" :value="item"/>
+          </el-select>
+          <el-button class="filter-item" type="primary" :icon="Search" @click="handleFilter">
+            {{ t('table.search') }}
+          </el-button>
+          <el-checkbox v-model="params.has_app" @change="handleFilter" border class="filter-item">
+            App Installed
+          </el-checkbox>
+        </div>
+        <div class="header-right">
+          <el-button type="primary" :icon="Plus" @click="handleCreate">
+            {{ t('table.add') }}
+          </el-button>
+        </div>
+      </div>
+    </head-controls>
 
     <custom-table :table-data="tableData" :table-column="basicColumn" :table-option="tableOption"
                   :pagination="pagination" :paginate="true" :page-sizes="pageSizes" :loading="loading"
@@ -116,6 +123,7 @@
 <script>
 import CustomTable from '@/components/CustomTable.vue'
 import ElSvgItem from "@/components/Item/ElSvgItem.vue"
+import HeadControls from '@/components/HeadControls.vue'
 import UserResource from '@/api/user'
 import Resource from '@/api/resource'
 import RoleResource from '@/api/role'
@@ -128,7 +136,7 @@ import {Search, Plus} from '@element-plus/icons-vue'
 import dayjs from 'dayjs'
 
 export default {
-  components: {CustomTable, ElSvgItem},
+  components: {CustomTable, ElSvgItem, HeadControls},
   setup() {
     const {t} = useI18n({useScope: 'global'})
     const userResource = new UserResource()
@@ -176,6 +184,7 @@ export default {
         per_page: 10,
         keyword: '',
         role: '',
+        has_app: false,
       },
       roles: [],
       nonAdminRoles: [],
@@ -529,6 +538,38 @@ export default {
   text-align: left;
   padding-top: 0;
   margin-left: 150px;
+}
+
+.header-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 0 15px 15px 0;
+}
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.header-left .el-input {
+  width: 200px;
+}
+.header-left .el-select {
+  width: 110px;
+}
+.header-left .el-input,
+.header-left .el-select,
+.header-left .el-button,
+.header-left .el-checkbox {
+  flex-shrink: 0;
+}
+.header-right {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
 }
 
 .app-container {

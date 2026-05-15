@@ -115,10 +115,13 @@ class SuperAdminController extends Controller
             $results[] = $entry;
         }
 
+        $databaseList = DB::table('databases')->orderBy('subdomain')->get();
+
         return view('super.index', [
-            'results' => $results,
-            'query'   => $sql,
-            'dryRun'  => $dryRun,
+            'databases' => $databaseList,
+            'results'   => $results,
+            'query'     => $sql,
+            'dryRun'    => $dryRun,
         ]);
     }
 

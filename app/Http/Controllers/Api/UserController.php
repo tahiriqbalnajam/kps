@@ -43,6 +43,9 @@ class UserController extends BaseController
                     $q->where('name', $params['role']);
                 });
             })
+            ->when(filter_var($params['has_app'] ?? false, FILTER_VALIDATE_BOOLEAN), function (Builder $query) {
+                $query->whereNotNull('player_id');
+            })
             ->when(!empty($params['keyword']), function (Builder $query) use ($params) {
                 $query->where(function ($q) use ($params) {
                     $q->where('name', 'like', '%' . $params['keyword'] . '%')
