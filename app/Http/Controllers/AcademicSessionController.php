@@ -41,11 +41,14 @@ class AcademicSessionController extends Controller
             'description' => 'nullable|string|max:255',
         ]);
 
+        // Auto-activate if no active session exists
+        $hasActive = ClassSession::where('is_active', true)->exists();
+
         $session = ClassSession::create([
             'name'        => $request->name,
             'start_date'  => $request->start_date,
             'end_date'    => $request->end_date,
-            'is_active'   => false,
+            'is_active'   => !$hasActive, // auto-activate if no active session exists
             'description' => $request->description,
         ]);
 
