@@ -8,7 +8,7 @@
               <el-row :gutter="20">
                 <el-col :xs="8" :sm="8" :md="8" :lg="8" :xl ="8">
                   <el-select v-model="query.filtercol" placeholder="Filter" class="filter-item">
-                    <el-option v-for="filter in filtercol" :key="filter.col" :label="filter.display | uppercaseFirst" :value="filter.col" />
+                    <el-option v-for="filter in filtercol" :key="filter.col" :label="filter.display" :value="filter.col" />
                   </el-select>
                 </el-col>
                 <el-col :xs="8" :sm="8" :md="8" :lg="8" :xl ="8">
@@ -316,7 +316,7 @@ export default {
       search: '',
       formLabelWidth: '150px',
       filtercol: [
-        { col: 'name', display: 'Student Name' },
+        { col: 'name', display: 'Name' },
         { col: 'cnic', display: 'CNIC' },
         { col: 'phone', display: 'Phone#' },
         { col: 'all', display: 'All' },
@@ -479,33 +479,16 @@ export default {
     handleDownload() {
       this.downloadLoading = true;
       import('@/vendor/Export2Excel').then(excel => {
-        const tHeader = ['Name', 'Gender', 'DOB','CNIC','Pay','Phone','address'];
-        const filterVal = ['name', 'gender', 'dob','cnic','pay','phone','address'];
-        const list = this.formateData(this.list);
-        const data = this.formatJson(filterVal, list);
+        const tHeader = ['Name', 'Gender', 'DOB', 'CNIC', 'Pay', 'Phone', 'Address'];
+        const filterVal = ['name', 'gender', 'dob', 'cnic', 'pay', 'phone', 'address'];
+        const data = this.formatJson(filterVal, this.list);
         excel.export_json_to_excel({
           header: tHeader,
           data,
-          filename: 'paid_fee_today',
+          filename: 'teachers_list',
         });
+        this.downloadLoading = false;
       });
-    },
-    formateData(data) {
-      const formatedData = data.map(record => (
-        {
-          roll_no: record.roll_no,
-          name: record.name,
-          parent_name: record.parents.name,
-          phone: record.parents.phone,
-          class: record.stdclasses.name,
-          gender: record.gender,
-          fee: record.monthly_fee,
-          dob: record.dob,
-        }
-      )
-      );
-      this.downloadLoading = false;
-      return formatedData;
     },
     formatJson(filterVal, jsonData) {
       return jsonData.map(v => filterVal.map(j => {
