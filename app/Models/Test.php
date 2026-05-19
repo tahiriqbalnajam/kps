@@ -14,6 +14,7 @@ class Test extends Model
         'title',
         'date',
         'total_marks',
+        'session_id',
     ];
 
     // Relationships

@@ -20,11 +20,7 @@ class TestService
             ->allowedIncludes(['class', 'subject', 'teacher', 'section', 'testResults','testResults.student','testResults.student.parents'])
             ->allowedFilters([
                 'id','class_id', 'subject_id', 'teacher_id', 'title', 'date',
-                AllowedFilter::callback('session_id', function ($query, $value) {
-                    $query->whereHas('testResults.student', function ($q) use ($value) {
-                        $q->where('session_id', $value);
-                    });
-                }),
+                AllowedFilter::exact('session_id'),
             ])
             ->orderBy('id', 'desc');
 
@@ -114,6 +110,7 @@ class TestService
             'title' => 'required|string|max:255',
             'date' => 'required|date',
             'total_marks' => 'required|numeric',
+            'session_id' => 'nullable|integer',
         ])->validate();
     }
 

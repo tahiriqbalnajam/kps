@@ -25,6 +25,11 @@ class ExamService implements ExamServiceInterface
             ->allowedFilters([
                 'id', 'title', 'class_id', 'created_at',
                 AllowedFilter::exact('class_id'),
+                AllowedFilter::callback('session_id', function ($query, $value) {
+                    $query->whereHas('examResults.student', function ($q) use ($value) {
+                        $q->where('session_id', $value);
+                    });
+                }),
             ])
             ->orderBy('id', 'desc');
 

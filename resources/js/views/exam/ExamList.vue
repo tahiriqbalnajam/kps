@@ -235,6 +235,7 @@ export default {
       },
       async get_Exams() {
         this.Loading = true;
+        if (this.currentSessionId) this.query.filter.session_id = this.currentSessionId;
         const { data } = await examRes.list(this.query);
         this.Loading = false;
         this.examdata = data.exams.data;

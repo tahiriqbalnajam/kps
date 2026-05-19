@@ -14,20 +14,41 @@
 </template>
 
 <script setup>
+import { reactive, toRefs, onMounted } from 'vue'
 import setting from '@/settings'
 import favicon from '@/assets/login/favicon.ico'
+import Resource from '@/api/resource'
+
 defineProps({
   collapse: {
     type: Boolean,
     required: true
   }
 })
+
 const resData = reactive({
   title: setting.title,
   logo: favicon
 })
-//export to page for
+
 const { title, logo } = toRefs(resData)
+
+const settingsResource = new Resource('settings')
+
+onMounted(async () => {
+  try {
+    const { data } = await settingsResource.list()
+    const settings = data.settings
+    if (settings.school_name) {
+      resData.title = settings.school_name
+    }
+    if (settings.school_logo) {
+      resData.logo = '/' + settings.school_logo
+    }
+  } catch {
+    // Fall back to defaults
+  }
+})
 </script>
 
 <style lang="scss">
