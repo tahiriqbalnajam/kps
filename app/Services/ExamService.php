@@ -25,6 +25,12 @@ class ExamService implements ExamServiceInterface
             ->allowedFilters([
                 'id', 'title', 'class_id', 'created_at',
                 AllowedFilter::exact('class_id'),
+                AllowedFilter::callback('end_date', function ($query, $value) {
+                    $query->where(function ($q) use ($value) {
+                        $q->where('end_date', '>=', $value)
+                          ->orWhereNull('end_date');
+                    });
+                }),
             ])
             ->orderBy('id', 'desc');
 

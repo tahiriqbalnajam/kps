@@ -303,4 +303,8 @@ Route::middleware(['auth.apikey'])->prefix('v1')->group(function () {
     Route::get('complaints', 'App\Http\Controllers\ComplaintController@index');        // ?student_id=X or ?parent_id=X
     Route::post('complaints', 'App\Http\Controllers\ComplaintController@store');
     Route::get('complaints/{id}', 'App\Http\Controllers\ComplaintController@show');
+
+    // Exam routes
+    Route::get('exams', 'App\Http\Controllers\ExamController@index');                  // ?filter[class_id]=X
+    Route::get('exams/{id}/datesheet', 'App\Http\Controllers\ExamController@getDateSheet');
 });
