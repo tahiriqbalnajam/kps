@@ -6,6 +6,8 @@ use App\Models\Classes;
 use App\Models\Section;
 use App\Models\SchoolDiary;
 use App\Models\FeeVoucher;
+use App\Models\Student;
+use App\Models\SmsQueue;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Laravue\JsonResponse;
@@ -177,6 +179,67 @@ class SchoolDiaryController extends Controller
                         ->whereDate('diary_date', $date)
                         ->where('diary_text', '!=', '')
                         ->count();
+
+        // Send push notification to parents of students in this class/section
+        try {
+            $studentsQuery = Student::where('class_id', $classId)
+                ->where('status', 'enable');
+
+            if ($sectionId) {
+                $studentsQuery->where('section_id', $sectionId);
+            }
+
+            $parentUserIds = $studentsQuery->whereNotNull('parent_id')
+                ->with('parents.user')
+                ->get()
+                ->pluck('parents.user.id')
+                ->filter()
+                ->unique()
+                ->values();
+
+            if ($parentUserIds->isNotEmpty()) {
+                $users = \App\Models\User::whereIn('id', $parentUserIds)
+                    ->whereNotNull('player_id')
+                    ->get();
+
+                if ($users->isNotEmpty()) {
+                    $playerIds = $users->pluck('player_id')->toArray();
+                    $className = $class ? $class->name : '';
+                    $sectionName = $section ? $section->name : '';
+                    $formattedDate = Carbon::parse($date)->format('d M Y');
+                    $title = 'New Diary Entry';
+                    $body = "Diary has been updated for {$className}";
+                    if ($sectionName) {
+                        $body .= " ({$sectionName})";
+                    }
+                    $body .= " on {$formattedDate}. Check the app for details.";
+
+                    \OneSignal::sendNotificationToUser(
+                        $body,
+                        $playerIds,
+                        $url = null,
+                        $data = null,
+                        $buttons = null,
+                        $schedule = null,
+                        $title
+                    );
+
+                    foreach ($users as $user) {
+                        $sms = new SmsQueue();
+                        $sms->message = $body;
+                        $sms->channel = 'push';
+                        $sms->phone = $user->email ?? $user->phone ?? '';
+                        $sms->status = 'sent';
+                        if ($user->student) {
+                            $sms->student_id = $user->student->id;
+                        }
+                        $sms->save();
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            // Push failure should not block the diary save response
+        }
 
         return response()->json(new JsonResponse([
             'message' => 'Diary saved successfully',

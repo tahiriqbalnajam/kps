@@ -102,6 +102,12 @@ class StudentController extends Controller
     public function update(Request $request, Student $student)
     {
         $input = $request->all();
+        if (empty($input['session_id'])) {
+            $activeSession = ClassSession::getActive();
+            if ($activeSession) {
+                $input['session_id'] = $activeSession->id;
+            }
+        }
         $this->studentService->updateStudent($student, $input);
         return response()->json(new JsonResponse(['student' => $student]));
     }

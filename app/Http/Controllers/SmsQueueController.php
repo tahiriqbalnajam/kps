@@ -66,11 +66,12 @@ class SmsQueueController extends Controller
                 if (empty($pushUsers)) {
                     try {
                         \OneSignal::sendNotificationToAll(
-                            $message, 
-                            $url = null, 
-                            $data = null, 
-                            $buttons = null, 
-                            $schedule = null
+                            $message,
+                            $url = null,
+                            $data = null,
+                            $buttons = null,
+                            $schedule = null,
+                            $headings = 'School Notification'
                         );
                         
                         // Log to DB
@@ -108,12 +109,13 @@ class SmsQueueController extends Controller
                     
                     try {
                         \OneSignal::sendNotificationToUser(
-                            $message, 
-                            $playerIds, 
-                            $url = null, 
-                            $data = null, 
-                            $buttons = null, 
-                            $schedule = null
+                            $message,
+                            $playerIds,
+                            $url = null,
+                            $data = null,
+                            $buttons = null,
+                            $schedule = null,
+                            $headings = 'School Notification'
                         );
 
                         // Log to DB for each user

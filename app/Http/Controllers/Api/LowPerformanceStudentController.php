@@ -12,6 +12,7 @@ class LowPerformanceStudentController extends Controller
     {
         $classId = $request->query('class_id');
         $sectionId = $request->query('section_id');
+        $sessionId = $request->query('session_id');
         $threshold = (float) $request->query('threshold', 50);
 
         // Single optimized query: aggregate at DB level, 
@@ -46,6 +47,10 @@ class LowPerformanceStudentController extends Controller
 
         if ($sectionId) {
             $query->where('students.section_id', $sectionId);
+        }
+
+        if ($sessionId) {
+            $query->where('students.session_id', $sessionId);
         }
 
         $results = $query->get();

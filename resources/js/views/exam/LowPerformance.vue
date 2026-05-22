@@ -85,17 +85,20 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import Resource from '@/api/resource';
 import request from '@/utils/request';
 import { useRouter } from 'vue-router';
 import { School, Search } from '@element-plus/icons-vue';
+import { sessionStore } from '@/store/session';
 
 const router = useRouter();
 const classResource = new Resource('classes');
 const loading = ref(false);
 const classList = ref([]);
 const groupedData = ref({});
+
+const currentSessionId = computed(() => sessionStore().currentSessionId);
 
 const filter = ref({
   class_id: '',
@@ -123,6 +126,7 @@ const fetchData = async () => {
   loading.value = true;
   try {
     const params = { threshold: filter.value.threshold };
+    if (currentSessionId.value) params.session_id = currentSessionId.value;
     if (filter.value.class_id) {
       const selectedValue = filter.value.class_id.toString();
       if (selectedValue.startsWith('class_')) {

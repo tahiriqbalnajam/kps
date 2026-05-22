@@ -261,6 +261,7 @@ import AddParent from '@/views/parents/AddParent.vue';
 const stdRes = new Resource('students');
 var stdClass = new Resource('classes');
 var stdParent = new Resource('parents');
+var sessionRes = new Resource('academic-sessions');
 export default {
   name: 'AddStudent',
   components: {AddClass, AddParent },
@@ -389,6 +390,7 @@ export default {
         name: '',
         parent_id: '',
         class_id: '',
+        session_id: '',
         dob: '',
         b_form: '',
         gender: 'Male',
@@ -408,6 +410,7 @@ export default {
         name: '',
         parent_id: '',
         class_id: '',
+        session_id: '',
         dob: '',
         b_form: '',
         gender: 'Male',
@@ -438,8 +441,9 @@ export default {
       this.getStudent();
     },
   },
-  created() {
+  async created() {
     this.getClasses();
+    await this.getActiveSession();
     //if (this.stdid !== null) {
       this.getStudent();
     //}
@@ -553,6 +557,17 @@ export default {
       data = await stdParent.get(this.student.parent_id);
       this.parents = [data.data.parent];
     },
+    async getActiveSession() {
+      try {
+        const { data } = await sessionRes.get('active');
+        if (data.session) {
+          this.student.session_id = data.session.id;
+          this.resetStudent.session_id = data.session.id;
+        }
+      } catch (e) {
+        // If the active endpoint fails, the backend fallback will handle it
+      }
+    },
     async getClasses() {
       const { data } = await stdClass.list({ include: 'sections' });
       // Transform the data to include formatted id_value
@@ -589,6 +604,7 @@ export default {
         name: '',
         parent_id: '',
         class_id: '',
+        session_id: '',
         dob: '',
         gender: 'Male',
         monthly_fee: '',

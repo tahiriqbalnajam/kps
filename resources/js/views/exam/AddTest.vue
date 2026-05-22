@@ -384,7 +384,9 @@ export default {
                 }
               }
               
-              if (this.editid) {
+              if (this.currentSessionId) testData.session_id = this.currentSessionId;
+
+            if (this.editid) {
                 const { data } = await tests.update(this.editid, testData);
                 this.$message({
                   message: 'Test updated successfully',

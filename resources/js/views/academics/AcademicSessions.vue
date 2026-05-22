@@ -29,9 +29,24 @@
       style="margin-bottom:16px;"
     />
     <el-alert
+      v-else-if="sessions.length > 0"
+      title="No active session. At least one session must be active at all times."
+      type="error"
+      :closable="false"
+      show-icon
+      style="margin-bottom:16px;"
+    >
+      <template #default>
+        <p style="margin:0 0 8px;">Students added without an active session will have a null session ID. Please fix this immediately.</p>
+        <el-button type="primary" size="small" @click="fixActiveSession">
+          Activate Most Recent Session
+        </el-button>
+      </template>
+    </el-alert>
+    <el-alert
       v-else
-      title="No active session. Please set one as active."
-      type="warning"
+      title="No sessions exist. Create a session to get started."
+      type="info"
       :closable="false"
       show-icon
       style="margin-bottom:16px;"
@@ -320,6 +335,19 @@ export default {
       try {
         await request({ url: `/academic-sessions/${row.id}/set-active`, method: 'post' })
         ElMessage.success(`"${row.name}" is now the active session`)
+        this.getList()
+        this.loadActiveSession()
+      } catch (_) {
+        ElMessage.error('Failed to set active session')
+      }
+    },
+
+    async fixActiveSession() {
+      if (this.sessions.length === 0) return
+      const mostRecent = this.sessions[0] // ordered by id desc
+      try {
+        await request({ url: `/academic-sessions/${mostRecent.id}/set-active`, method: 'post' })
+        ElMessage.success(`"${mostRecent.name}" is now the active session`)
         this.getList()
         this.loadActiveSession()
       } catch (_) {

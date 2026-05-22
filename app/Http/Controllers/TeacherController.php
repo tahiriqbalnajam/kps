@@ -27,7 +27,7 @@ class TeacherController extends Controller
 
     private $column_select = array('id','class_id', 'name', 'designation','teacher_special_id', 'father_name','father_cnic',
                                     'doj','education', 'experience', 'gender',
-                                    'pay', 'cnic', 'address', 'phone','status');
+                                    'pay', 'cnic', 'address', 'phone','status', 'dob');
 
     public function index(Request $request)
     {

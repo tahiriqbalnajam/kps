@@ -25,10 +25,16 @@ class ExamService implements ExamServiceInterface
             ->allowedFilters([
                 'id', 'title', 'class_id', 'created_at',
                 AllowedFilter::exact('class_id'),
+
                 AllowedFilter::callback('end_date', function ($query, $value) {
                     $query->where(function ($q) use ($value) {
                         $q->where('end_date', '>=', $value)
                           ->orWhereNull('end_date');
+                    });
+                }),
+                AllowedFilter::callback('session_id', function ($query, $value) {
+                    $query->whereHas('examResults.student', function ($q) use ($value) {
+                        $q->where('session_id', $value);
                     });
                 }),
             ])

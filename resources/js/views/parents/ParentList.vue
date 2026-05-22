@@ -2,44 +2,45 @@
   <div class="app-container">
     <div class="filter-container">
         <head-controls>
-            <el-row :gutter="20" justify="space-between">
-              <el-col :span="12">
-                <el-row :gutter="20">
-                  <el-col :span="6">
-                    <el-select v-model="query.filtercol" placeholder="Class" class="filter-item">
-                      <el-option v-for="filter in filtercol" :key="filter.col" :label="filter.display | uppercaseFirst" :value="filter.col" />
-                    </el-select>
-                  </el-col>
-                  <el-col :span="10">
-                    <el-input v-model="query.keyword" placeholder="Parent info" class="filter-item" v-on:input="debounceInput" />
-                  </el-col>
-                  <el-col :span="6">
-                    <el-button  class="filter-item" type="primary" :icon="Search"  @click="handleFilter">
-                      {{ $t('table.search') }}
+            <div class="header-flex">
+              <div class="header-left">
+                <el-select v-model="query.filtercol" placeholder="Class" class="filter-item">
+                  <el-option v-for="filter in filtercol" :key="filter.col" :label="filter.display" :value="filter.col" />
+                </el-select>
+                <el-input v-model="query.keyword" placeholder="Parent info" class="filter-item" v-on:input="debounceInput" />
+                <el-button class="filter-item" type="primary" :icon="Search" @click="handleFilter">
+                  {{ $t('table.search') }}
+                </el-button>
+                <el-checkbox v-model="query.has_app" @change="handleFilter" border class="filter-item">
+                  App Installed
+                </el-checkbox>
+              </div>
+              <div class="header-right">
+                <el-button-group>
+                  <el-tooltip content="Add Parent" placement="top">
+                    <el-button type="info" @click="addparentpop = true">
+                      <el-icon :size="15"><Plus /></el-icon>
                     </el-button>
-                  </el-col>
-                </el-row>
-              </el-col>
-              <el-col :span="12">
-                <el-row justify="end">
-                  <el-col :span="3">
-                    <el-tooltip content="Add Parent" placement="top">
-                      <el-button class="filter-item" style="margin-left: 10px;" type="info" :icon="Plus" @click="addparentpop = true" >
-                        <el-icon :size="15"><Plus /></el-icon>
-                      </el-button>
-                    </el-tooltip>
-                  </el-col>
-                  <el-col :span="3">
-                    <el-tooltip content="Parent Excel" placement="top">
-                      <el-button class="filter-item" :loading="downloadLoading"  type="danger" :icon="Search"  @click="handleDownload">
-                        <el-icon><Download /></el-icon>
+                  </el-tooltip>
+                  <el-tooltip content="Bulk Generate User Accounts" placement="top">
+                    <el-button type="success" @click="handleBulkCreateAccounts">
+                      <el-icon><User /></el-icon>
                     </el-button>
-                    </el-tooltip>
-                  </el-col>
-                </el-row>
-              </el-col>
-            </el-row>
-        </head-controls> 
+                  </el-tooltip>
+                  <el-tooltip content="Download Login Credentials" placement="top">
+                    <el-button :loading="credentialsLoading" type="warning" @click="handleDownloadCredentials">
+                      <el-icon><Key /></el-icon>
+                    </el-button>
+                  </el-tooltip>
+                  <el-tooltip content="Export to Excel" placement="top">
+                    <el-button :loading="downloadLoading" type="danger" @click="handleDownload">
+                      <el-icon><Download /></el-icon>
+                    </el-button>
+                  </el-tooltip>
+                </el-button-group>
+              </div>
+            </div>
+        </head-controls>
     </div>
     <el-table
       :data="parents"
@@ -91,10 +92,12 @@
           <el-input ref="search" v-model="query.keyword" size="mini" placeholder="Type to search"  v-on:input="debounceInput" />
         </template>
         <template #default="scope">
-          <el-button
-            size="mini"
-            @click="handleEdit(scope.row.id, scope.row.name)"
-          >Edit</el-button>
+          <el-tooltip content="Edit Parent" placement="top">
+            <el-button
+              size="mini"
+              @click="handleEdit(scope.row.id, scope.row.name)"
+            >Edit</el-button>
+          </el-tooltip>
           <el-tooltip
             v-if="scope.row.students && scope.row.students.length > 0"
             :content="`Cannot delete: this parent has ${scope.row.students.length} child(ren)`"
@@ -102,12 +105,17 @@
           >
             <el-button size="mini" type="danger" disabled>Delete</el-button>
           </el-tooltip>
-          <el-button
+          <el-tooltip
             v-else
-            size="mini"
-            type="danger"
-            @click="handleDelete(scope.row.id, scope.row.name)"
-          >Delete</el-button>
+            content="Delete Parent"
+            placement="top"
+          >
+            <el-button
+              size="mini"
+              type="danger"
+              @click="handleDelete(scope.row.id, scope.row.name)"
+            >Delete</el-button>
+          </el-tooltip>
         </template>
       </el-table-column>
     </el-table>
@@ -145,6 +153,19 @@
         <el-button type="primary" :loading="createAccountLoading" @click="submitCreateAccount">Create</el-button>
       </template>
     </el-dialog>
+
+    <el-dialog v-model="bulkCreateAccountsDialog" title="Bulk Generate User Accounts" width="400px" :close-on-click-modal="false">
+      <p>This will create user accounts for <strong>all parents</strong> who don't have one yet. Each account will use <code>phone@idlschool.pk</code> as the email.</p>
+      <el-form ref="bulkCreateAccountsForm" :model="bulkCreateAccountsForm" :rules="bulkCreateAccountsRules" label-position="top">
+        <el-form-item label="Default Password" prop="password">
+          <el-input v-model="bulkCreateAccountsForm.password" type="password" placeholder="Enter default password for all new accounts" show-password />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="bulkCreateAccountsDialog = false">Cancel</el-button>
+        <el-button type="primary" :loading="bulkCreateAccountsLoading" @click="submitBulkCreateAccounts">Generate Accounts</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 <script>
@@ -167,6 +188,7 @@ export default {
   data() {
     return {
       downloadLoading: false,
+      credentialsLoading: false,
       parentid: null,
       parents: null,
       search: '',
@@ -189,6 +211,12 @@ export default {
         email: [{ required: true, type: 'email', message: 'Valid email required', trigger: 'blur' }],
         password: [{ required: true, min: 6, message: 'Minimum 6 characters', trigger: 'blur' }],
       },
+      bulkCreateAccountsDialog: false,
+      bulkCreateAccountsLoading: false,
+      bulkCreateAccountsForm: { password: '' },
+      bulkCreateAccountsRules: {
+        password: [{ required: true, min: 6, message: 'Minimum 6 characters', trigger: 'blur' }],
+      },
       filtercol: [
         { col: 'name', display: 'Name' },
         { col: 'cnic', display: 'CNIC' },
@@ -201,6 +229,7 @@ export default {
         keyword: '',
         filtercol: 'name',
         role: '',
+        has_app: false,
       },
     };
   },
@@ -272,7 +301,8 @@ export default {
     },
     handleCreateAccount(parent) {
       this.createAccountParent = parent;
-      const suggestedEmail = parent.phone + '@idlschool.pk';
+      const phone = parent.phone.replace(/[^0-9]/g, '');
+      const suggestedEmail = phone + '@idlschool.pk';
       // Check if any other parent in the loaded list already uses this email
       const emailTaken = this.parents.some(
         p => p.id !== parent.id && p.user && p.user.email === suggestedEmail
@@ -308,50 +338,106 @@ export default {
         this.createAccountLoading = false;
       }
     },
+    handleBulkCreateAccounts() {
+      this.bulkCreateAccountsForm.password = '';
+      this.bulkCreateAccountsDialog = true;
+    },
+    async submitBulkCreateAccounts() {
+      try {
+        await this.$refs.bulkCreateAccountsForm.validate();
+      } catch {
+        return;
+      }
+      this.bulkCreateAccountsLoading = true;
+      try {
+        const { data } = await axios.post('/api/parents/bulk-create-accounts', this.bulkCreateAccountsForm);
+        this.$message.success(data.message || 'Accounts created successfully');
+        this.bulkCreateAccountsDialog = false;
+        this.getList();
+      } catch (error) {
+        const msg = error.response?.data?.message || 'Failed to generate accounts';
+        this.$message.error(msg);
+      } finally {
+        this.bulkCreateAccountsLoading = false;
+      }
+    },
     handleDownload() {
       this.downloadLoading = true;
       import('@/vendor/Export2Excel').then(excel => {
-        const tHeader = ['Name', 'Phone','Address','Profession','CNIC'];
-        const filterVal = ['name', 'phone','address','profession','cnic'];
-        const list = this.formateData(this.list);
-        const data = this.formatJson(filterVal, list);
+        const tHeader = ['Name', 'Phone', 'Address', 'Profession', 'CNIC', 'Children'];
+        const data = this.parents.map(p => {
+          const children = p.students && p.students.length
+            ? p.students.map((s, i) => `${i + 1}. ${s.name}`).join(', ')
+            : '-';
+          return [p.name || '', p.phone || '', p.address || '', p.profession || '', p.cnic || '', children];
+        });
         excel.export_json_to_excel({
           header: tHeader,
           data,
-          filename: 'paid_fee_today',
+          filename: 'parents_list',
         });
+        this.downloadLoading = false;
       });
     },
-    formateData(data) {
-      const formatedData = data.map(record => (
-        {
-          roll_no: record.roll_no,
-          name: record.name,
-          parent_name: record.parents.name,
-          phone: record.parents.phone,
-          class: record.stdclasses.name,
-          gender: record.gender,
-          fee: record.monthly_fee,
-          dob: record.dob,
-        }
-      )
-      );
-      this.downloadLoading = false;
-      return formatedData;
-    },
-    formatJson(filterVal, jsonData) {
-      return jsonData.map(v => filterVal.map(j => {
-        if (j === 'timestamp') {
-          return parseTime(v[j]);
-        } else {
-          return v[j];
-        }
-      }));
+    handleDownloadCredentials() {
+      this.credentialsLoading = true;
+      import('@/vendor/Export2Excel').then(excel => {
+        const tHeader = ['Parent Name', 'Phone', 'Children'];
+        const data = this.parents
+          .filter(p => p.user)
+          .map(p => {
+            const children = p.students && p.students.length
+              ? p.students.map((s, i) => `${i + 1}. ${s.name}`).join(', ')
+              : '-';
+            return [p.name || '', p.user.phone || p.phone || '', children];
+          });
+        excel.export_json_to_excel({
+          header: tHeader,
+          data,
+          filename: 'parent_login_credentials',
+        });
+        this.credentialsLoading = false;
+      });
     },
   },
 };
 </script>
 <style >
+  .header-flex {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 0 15px 15px 0;
+  }
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+  .header-left .el-select {
+    width: 120px;
+  }
+  .header-left .el-input {
+    width: 180px;
+  }
+  .header-left .el-select,
+  .header-left .el-input,
+  .header-left .el-button,
+  .header-left .el-checkbox {
+    flex-shrink: 0;
+  }
+  .header-left .el-checkbox.is-bordered {
+    height: 32px;
+    padding: 0 12px;
+  }
+  .header-right {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+  }
   .el-drawer__body {
     flex: 1;
     padding: 20px;
@@ -362,7 +448,7 @@ export default {
     height: 100%;
     padding: 20px;
   }
-  
+
   /* User account link styling */
   .user-account-link {
     color: #409eff;
