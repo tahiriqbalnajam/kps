@@ -35,7 +35,7 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\EncryptCookies::class
         );
         $middleware->replace(
-            \Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class,
+            \Illuminate\Foundation\Http\Middleware\PreventRequestForgery::class,
             \App\Http\Middleware\VerifyCsrfToken::class
         );
 
