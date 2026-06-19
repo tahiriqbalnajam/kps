@@ -17,3 +17,6 @@ package-lock.json
 composer.lock
 /database/migrations
 public/front/images/*
+/.planning
+/.expo
+/.claude

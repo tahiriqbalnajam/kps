@@ -28,6 +28,29 @@ class ExamController extends Controller
     {
         $searchParams = $request->all();
         $limit = Arr::get($searchParams, 'limit', static::ITEM_PER_PAGE);
+
+        // Block exams if student has pending or overdue fee vouchers
+        $studentId = $request->input('filter.student_id');
+        unset($searchParams['filter']['student_id']); // don't pass to QueryBuilder — only used for fee check
+        if ($studentId) {
+            $hasBlockingFees = \App\Models\FeeVoucher::where('student_id', $studentId)
+                ->where(function ($q) {
+                    $q->where('status', 'unpaid') // pending
+                      ->orWhere(function ($q2) {
+                          $q2->whereIn('status', ['unpaid', 'partially_paid'])
+                              ->where('due_date', '<', now()->toDateString()); // overdue
+                      });
+                })
+                ->exists();
+
+            if ($hasBlockingFees) {
+                return response()->json([
+                    'message' => 'Exam schedule is hidden due to pending or overdue fees.',
+                    'fee_blocked' => true,
+                ], 403);
+            }
+        }
+
         $exams = $this->examService->listExams($searchParams);
         return response()->json(new JsonResponse(['exams' => $exams]));
     }
