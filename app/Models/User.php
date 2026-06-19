@@ -44,13 +44,6 @@ class User extends Authenticatable
     ];
 
     /**
-     * The attributes that should be mutated to dates.
-     *
-     * @var array
-     */
-    protected $dates = ['deleted_at', 'birthday'];
-
-    /**
      * The attributes that are mass assignable.
      *
      * @var array<int, string>
@@ -110,6 +103,7 @@ class User extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'birthday' => 'date',
     ];
 
     /**
@@ -133,7 +127,7 @@ class User extends Authenticatable
         if (empty($this->birthday)) {
             return 0;
         }
-        return Carbon::now()->diffInYears($this->birthday);
+        return (int) Carbon::now()->diffInYears($this->birthday);
     }
 
     /**

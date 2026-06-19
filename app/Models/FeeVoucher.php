@@ -53,15 +53,6 @@ class FeeVoucher extends Model
         'selected_fee_types' => 'json'
     ];
 
-    protected $dates = [
-        'due_date',
-        'payment_date',
-        'generated_at',
-        'created_at',
-        'updated_at',
-        'deleted_at'
-    ];
-
     // Relationships
     public function student()
     {

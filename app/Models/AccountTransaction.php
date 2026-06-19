@@ -25,8 +25,6 @@ class AccountTransaction extends Model
         'amount' => 'decimal:2'
     ];
 
-    protected $dates = ['deleted_at'];
-
     // Constants for transaction types
     const TYPE_INCOME = 'income';
     const TYPE_EXPENSE = 'expense';
