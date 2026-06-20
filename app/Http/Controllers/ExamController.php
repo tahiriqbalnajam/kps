@@ -63,7 +63,7 @@ class ExamController extends Controller
     {
         $exam = QueryBuilder::for(Exam::class)
             ->with('examSubjects.subject')
-            ->allowedIncludes(['examResults.student'])
+            ->allowedIncludes(...['examResults.student'])
             ->findOrFail($id);
         
         return response()->json(new JsonResponse(['exam' => $exam]));

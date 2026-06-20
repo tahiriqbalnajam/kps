@@ -21,7 +21,7 @@ class ChapterController extends Controller
         $limit = Arr::get($searchParams, 'limit', static::ITEM_PER_PAGE);
         $chapters =  QueryBuilder::for(Chapter::class)
             ->allowedIncludes('subject', 'class')
-            ->allowedFilters([
+            ->allowedFilters(...[
                 'id', 'subject_id', 'class_id', 'title',
             ])
             ->paginate($limit)

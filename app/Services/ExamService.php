@@ -20,9 +20,9 @@ class ExamService implements ExamServiceInterface
     {
         $limit = Arr::get($searchParams, 'limit', static::ITEM_PER_PAGE);
         $query = QueryBuilder::for(Exam::class)
-            ->allowedFields(['id', 'title', 'class_id', 'classes.name'])
+            ->allowedFields(...['id', 'title', 'class_id', 'classes.name'])
             ->with(['classes', 'section'])
-            ->allowedFilters([
+            ->allowedFilters(...[
                 'id', 'title', 'class_id', 'created_at',
                 AllowedFilter::exact('class_id'),
 

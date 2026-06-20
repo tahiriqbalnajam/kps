@@ -17,8 +17,8 @@ class TestService
     {
         $limit = Arr::get($searchParams, 'limit', static::ITEM_PER_PAGE);
         $query = QueryBuilder::for(Test::class)
-            ->allowedIncludes(['class', 'subject', 'teacher', 'section', 'testResults','testResults.student','testResults.student.parents'])
-            ->allowedFilters([
+            ->allowedIncludes(...['class', 'subject', 'teacher', 'section', 'testResults','testResults.student','testResults.student.parents'])
+            ->allowedFilters(...[
                 'id','class_id', 'subject_id', 'teacher_id', 'title', 'date',
                 AllowedFilter::exact('session_id'),
             ])
@@ -119,8 +119,8 @@ class TestService
         $limit = Arr::get($searchParams, 'limit', static::ITEM_PER_PAGE);
         return QueryBuilder::for(TestResult::class)
             ->with('student')
-            ->allowedIncludes(['student', 'test', 'test.subject'])
-            ->allowedFilters([
+            ->allowedIncludes(...['student', 'test', 'test.subject'])
+            ->allowedFilters(...[
                 'id','test_id', 'student_id','absent'
             ])
             ->paginate($limit)

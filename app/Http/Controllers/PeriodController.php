@@ -16,7 +16,7 @@ class PeriodController extends Controller
         $limit = Arr::get($searchParams, 'limit', static::ITEM_PER_PAGE);
         $periods =  QueryBuilder::for(Period::class)
             ->allowedIncludes('subject', 'class')
-            ->allowedFilters([
+            ->allowedFilters(...[
                 'id', 'title', 'start', 'end',
 
             ])

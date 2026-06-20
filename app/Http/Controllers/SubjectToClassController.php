@@ -24,7 +24,7 @@ class SubjectToClassController extends Controller
         $searchParams = $request->all();
         $limit = Arr::get($searchParams, 'limit', static::ITEM_PER_PAGE);
         $subjects =  QueryBuilder::for(Classes::class)->with('subjects')
-        ->allowedFilters([
+        ->allowedFilters(...[
             AllowedFilter::exact('id'),
             'title'
         ])
@@ -53,7 +53,7 @@ class SubjectToClassController extends Controller
     {
         $classId = $request->get('class_id');
         $subjects = QueryBuilder::for(ClassSubject::class)
-            ->allowedFilters([AllowedFilter::exact('class_id')])
+            ->allowedFilters(...[AllowedFilter::exact('class_id')])
             ->where('class_id', $classId)
             ->with('subject')
             //->get();

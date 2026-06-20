@@ -24,13 +24,13 @@ class StudentService implements StudentServiceInterface
         $limit = Arr::get($searchParams, 'limit', static::ITEM_PER_PAGE);
         
         $query = QueryBuilder::for(Student::class)
-            ->allowedFields(['id','user_id','roll_no','name','adminssion_number','parent_id',
+            ->allowedFields(...['id','user_id','roll_no','name','adminssion_number','parent_id',
                 'class_id','session_id','dob','doa','b_form','gender',
                 'is_orphan','cast','previous_school','monthly_fee','sibling','religion',
                 'pef_admission','nadra_pending','action_required','action_details','status',
                 'parents.id','parents.name','parent.phone','stdclasses.id','stdclasses.name'])
             ->with('parents', 'stdclasses', 'section', 'class_session')
-            ->allowedFilters([
+            ->allowedFilters(...[
                 AllowedFilter::exact('id'),
                 AllowedFilter::exact('parent_id'),
                 'name', 'roll_no', 'adminssion_number', 'is_orphan',
@@ -113,13 +113,13 @@ class StudentService implements StudentServiceInterface
         
         // Create QueryBuilder with the formatted request
         $query = QueryBuilder::for(Student::class, $formattedRequest)
-            ->allowedFields(['id','user_id','roll_no','name','adminssion_number','parent_id',
+            ->allowedFields(...['id','user_id','roll_no','name','adminssion_number','parent_id',
                 'class_id','session_id','dob','doa','b_form','gender',
                 'is_orphan','cast','previous_school','monthly_fee','sibling','religion',
                 'pef_admission','nadra_pending','action_required','action_details','status',
                 'parents.id','parents.name','parent.phone','stdclasses.id','stdclasses.name'])
             ->with('parents', 'stdclasses', 'section', 'class_session')
-            ->allowedFilters([
+            ->allowedFilters(...[
                 AllowedFilter::exact('id'),
                 AllowedFilter::exact('parent_id'),
                 'name', 'roll_no', 'adminssion_number', 'is_orphan',

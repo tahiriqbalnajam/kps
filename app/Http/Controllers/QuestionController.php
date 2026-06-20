@@ -22,10 +22,10 @@ class QuestionController extends Controller
         $limit = Arr::get($searchParams, 'limit', static::ITEM_PER_PAGE);
         $questions = QueryBuilder::for(Question::class)
             ->with(['chapter'])
-            ->allowedFilters([
+            ->allowedFilters(...[
                 'id','lang','chapter_id', 'question_text', 'choice_1', 'choice_2', 'choice_3', 'choice_4'
             ])
-            ->allowedSorts([
+            ->allowedSorts(...[
                 AllowedSort::custom('random', new RandomSort(), 'name'),
             ])
             ->paginate($limit)

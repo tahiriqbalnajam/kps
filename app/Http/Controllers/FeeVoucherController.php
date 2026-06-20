@@ -244,7 +244,7 @@ class FeeVoucherController extends Controller
             $limit = $request->input('limit', 15);
 
             $vouchers = QueryBuilder::for(FeeVoucher::class)
-                ->allowedFilters([
+                ->allowedFilters(...[
                 AllowedFilter::exact('status'),
                 AllowedFilter::partial('class_name'), // Keeping partial for class as it's often short
                 AllowedFilter::exact('voucher_type'),
@@ -621,7 +621,7 @@ class FeeVoucherController extends Controller
         try {
             // 1. Common Filters (Class, Type)
             $baseQuery = QueryBuilder::for(FeeVoucher::class)
-                ->allowedFilters([
+                ->allowedFilters(...[
                     AllowedFilter::partial('class_name'),
                     AllowedFilter::exact('voucher_type'),
                     // Allow these filters but do nothing in base query (handled manually below for split logic)

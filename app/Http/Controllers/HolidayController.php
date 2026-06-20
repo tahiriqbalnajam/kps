@@ -19,7 +19,7 @@ class HolidayController extends Controller
         $limit = Arr::get($searchParams, 'limit', static::ITEM_PER_PAGE);
 
         $holidays =  QueryBuilder::for(Holiday::class)
-            ->allowedFilters([
+            ->allowedFilters(...[
                 'description',
                 'holiday_date',
             ])
