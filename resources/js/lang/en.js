@@ -17,6 +17,7 @@ export default {
     administrator: 'Administrator',
     users: 'Users',
     userProfile: 'User Profile',
+    aiAssistant: 'AI Assistant',
   },
   navbar: {
     logOut: 'Log Out',

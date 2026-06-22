@@ -17,6 +17,7 @@ export default {
     administrator: 'Administrator',
     users: '用户列表',
     userProfile: '用户信息',
+    aiAssistant: 'AI 助手',
   },
   navbar: {
     logOut: '退出登录',

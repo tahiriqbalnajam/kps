@@ -27,6 +27,9 @@ final class Acl
     const PERMISSION_PERMISSION_MANAGE = 'manage permission';
     const PERMISSION_STUDENTS_MANAGE = 'manage students';
 
+    const PERMISSION_VIEW_MENU_AI = 'view menu ai';
+    const PERMISSION_AI_AGENT_USE = 'use ai agent';
+
     /**
      * @param array $exclusives Exclude some permissions from the list
      * @return array
