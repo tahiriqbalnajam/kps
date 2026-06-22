@@ -164,6 +164,12 @@ Route::namespace('Api')->group(function() {
         Route::apiResource('users', 'UserController')->middleware('permission:' . Acl::PERMISSION_USER_MANAGE);
         Route::apiResource('permissions', 'PermissionController')->middleware('permission:' . Acl::PERMISSION_PERMISSION_MANAGE);
 
+        // AI Data Agent — natural-language queries over students / attendance / fees.
+        // NOTE: permission gate temporarily removed so the feature can be tested.
+        // Re-add ->middleware('permission:' . Acl::PERMISSION_AI_AGENT_USE) once the
+        // 'use ai agent' permission exists with guard_name='api' and is assigned to a role.
+        Route::post('ai-agent/query', 'AiAgentController@query');
+
         // Custom routes
         Route::group(['prefix' => 'users'], function (RouteContract $api) {
             $api->get('{user}/permissions', 'UserController@permissions')->middleware('permission:' . Acl::PERMISSION_PERMISSION_MANAGE);

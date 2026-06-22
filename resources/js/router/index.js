@@ -54,6 +54,20 @@ export const constantRoutes = [
 export const asyncRoutes = [
   { path: '/:pathMatch(.*)*', name: 'NotFound', redirect: '/404', hidden: true },
   {
+    path: '/ai-assistant',
+    component: Layout,
+    redirect: 'ai-assistant/index',
+    meta: { title: 'aiAssistant', bootstrapIcon: 'robot', noCache: true, permissions: ['view menu ai'] },
+    children: [
+      {
+        path: 'index',
+        component: () => import('@/views/aidata/AiAssistant.vue'),
+        name: 'AI Assistant',
+        meta: { title: 'aiAssistant', bootstrapIcon: 'robot', noCache: true, permissions: ['view menu ai'] },
+      },
+    ],
+  },
+  {
     path: '/students',
     component: Layout,
     redirect: 'students/list',
