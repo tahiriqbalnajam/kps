@@ -95,8 +95,19 @@ class AttendanceService implements AttendanceServiceInterface
     {
         $date = $request['month'];
         $stdclass = $request['stdclass'];
-        $attendance = StudentAttendance::where(['attendance_date'=>$date, 'class_id' => $stdclass])->get();
-        
+        $sectionId = $request['section_id'] ?? null;
+
+        $attendance = StudentAttendance::where('attendance_date', $date)
+            ->where('class_id', $stdclass)
+            ->when($sectionId, function ($q) use ($sectionId) {
+                // Scope to students of the given section so "already done" is section-aware
+                // and the app can prefill P/A/L for just that section.
+                $q->whereHas('students', function ($s) use ($sectionId) {
+                    $s->where('section_id', $sectionId);
+                });
+            })
+            ->get();
+
         return $attendance;
     }
 

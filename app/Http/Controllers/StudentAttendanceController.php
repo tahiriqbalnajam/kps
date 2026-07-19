@@ -144,8 +144,15 @@ class StudentAttendanceController extends Controller
                 ]
             ], 422);
         }
-        StudentAttendance::where(['attendance_date'=> $date, 'class_id' => $stdclass])->delete();
         $students = $request->students;
+        $studentIds = collect($students)->pluck('id')->all();
+
+        // Section-safe: delete only the submitted students' records for this date
+        // so marking one section does not wipe another section's attendance.
+        StudentAttendance::where('attendance_date', $date)
+            ->where('class_id', $stdclass)
+            ->when(!empty($studentIds), fn($q) => $q->whereIn('student_id', $studentIds))
+            ->delete();
 
         // Fetch relevant settings once before the loop
         $settingsCollection = Settings::whereIn('setting_key', [

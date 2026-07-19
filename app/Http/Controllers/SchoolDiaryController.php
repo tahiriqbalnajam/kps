@@ -147,7 +147,9 @@ class SchoolDiaryController extends Controller
         $sectionId = $request->section_id;
         $date      = Carbon::parse($request->diary_date)->format('Y-m-d');
         $entries   = $request->entries;
-        $createdBy = auth()->id();
+        // Diary routes are public (no auth:sanctum middleware), so resolve the
+        // teacher from the bearer token the mobile app sends via Sanctum.
+        $createdBy = auth('sanctum')->id() ?? auth()->id();
 
         DB::beginTransaction();
         try {

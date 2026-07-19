@@ -33,12 +33,12 @@ class AuthController extends BaseController
 
         if (str_contains($identifier, '@')) {
             // Login with email
-            $user = User::query()->with(['student', 'roles', 'parent'])->where('email', $identifier)->first();
+            $user = User::query()->with(['student', 'roles', 'parent', 'teacher'])->where('email', $identifier)->first();
         } else {
             // Login with phone — find parent by phone then load their user
             $parent = Parents::where('phone', $identifier)->whereNotNull('user_id')->first();
             $user = $parent
-                ? User::query()->with(['student', 'roles', 'parent'])->find($parent->user_id)
+                ? User::query()->with(['student', 'roles', 'parent', 'teacher'])->find($parent->user_id)
                 : null;
         }
 
