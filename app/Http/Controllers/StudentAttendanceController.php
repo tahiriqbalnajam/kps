@@ -132,8 +132,7 @@ class StudentAttendanceController extends Controller
     public function store(Request $request)
     {
         $date = $request->date;
-        $stdclass = $request->stdclass;
-        
+
         // Check if the date is Sunday
         $dayOfWeek = Carbon::parse($date)->dayOfWeek;
         if ($dayOfWeek === Carbon::SUNDAY) {
@@ -144,8 +143,16 @@ class StudentAttendanceController extends Controller
                 ]
             ], 422);
         }
-        StudentAttendance::where(['attendance_date'=> $date, 'class_id' => $stdclass])->delete();
-        $students = $request->students;
+        $students = $request->input('students', []);
+
+        // Delete only the submitted students' records for that date — saving
+        // a group must never wipe the other groups' attendance on the same day
+        $studentIds = collect($students)->pluck('id')->filter();
+        if ($studentIds->isNotEmpty()) {
+            StudentAttendance::where('attendance_date', $date)
+                ->whereIn('student_id', $studentIds)
+                ->delete();
+        }
 
         // Fetch relevant settings once before the loop
         $settingsCollection = Settings::whereIn('setting_key', [

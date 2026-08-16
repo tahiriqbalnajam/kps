@@ -60,6 +60,10 @@ watch(
   () => $route.path,
   () => {
     addTags()
+    // Keep the active tab visible when the bar overflows (horizontal scroll)
+    nextTick(() => {
+      document.querySelector('.tags-view-item.active')?.scrollIntoView({ behavior: 'smooth', inline: 'nearest' })
+    })
   }
 )
 watch(
@@ -219,7 +223,26 @@ const { visible, top, left, selectedTag } = toRefs(resData)
   background: #fff;
   border-bottom: 1px solid #d8dce5;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.12), 0 0 3px 0 rgba(0, 0, 0, 0.04);
+  overflow: hidden;
   .tags-view-wrapper {
+    // Single line: overflow scrolls horizontally instead of wrapping
+    height: $tagViewHeight;
+    white-space: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+
+    &::-webkit-scrollbar {
+      height: 4px;
+    }
+    &::-webkit-scrollbar-thumb {
+      background: #c0c4cc;
+      border-radius: 2px;
+    }
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
     .tags-view-item {
       display: inline-block;
       position: relative;

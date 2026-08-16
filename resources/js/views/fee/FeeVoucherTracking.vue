@@ -301,6 +301,25 @@
             style="width: 100%"
           />
         </el-form-item>
+
+        <el-form-item
+          v-if="getPendingItems(selectedVoucher).length > 0"
+          label="Settle Pending"
+        >
+          <div class="pending-settle-list">
+            <el-checkbox
+              v-for="(item, idx) in getPendingItems(selectedVoucher)"
+              :key="idx"
+              v-model="manuallySettleIds"
+              :label="item.pending_voucher_id"
+            >
+              {{ item.fee_type }} — Rs. {{ item.amount }}
+            </el-checkbox>
+            <div class="pending-settle-hint">
+              Payment covers these automatically in order; check any to settle explicitly.
+            </div>
+          </div>
+        </el-form-item>
       </el-form>
 
       <template #footer>
@@ -467,6 +486,7 @@ export default {
       showStatsDialog: false,
       showPrintDialog: false,
       voucherToPrint: [],
+      manuallySettleIds: [],
       query: {
         page: 1,
         limit: 15,
@@ -660,14 +680,20 @@ export default {
       console.log('Voucher details:', row)
     },
 
+    getPendingItems(voucher) {
+      if (!voucher || !Array.isArray(voucher.fee_breakdown)) return []
+      return voucher.fee_breakdown.filter(item => item.pending_voucher_id)
+    },
+
     markAsPaid(voucher) {
       this.selectedVoucher = voucher
-      
+      this.manuallySettleIds = []
+
       // Calculate correct amount based on current date vs due date
       const today = new Date()
       const dueDate = new Date(voucher.due_date)
       const paidAmount = parseFloat(voucher.paid_amount || 0)
-      
+
       if (today <= dueDate) {
         // If paying before or on due date, don't include fine
         // For partially paid, only show remaining amount
@@ -677,7 +703,7 @@ export default {
         // For partially paid, only show remaining amount
         this.paymentForm.paidAmount = parseFloat(voucher.total_with_fine) - paidAmount
       }
-      
+
       this.paymentForm.paymentDate = new Date()
       this.showPaymentDialog = true
     },
@@ -700,7 +726,8 @@ export default {
           'paid',
           this.paymentForm.paidAmount,
           moment(this.paymentForm.paymentDate).format('YYYY-MM-DD HH:mm:ss'),
-          pendingVoucherIds.length > 0 ? pendingVoucherIds : null
+          pendingVoucherIds.length > 0 ? pendingVoucherIds : null,
+          this.manuallySettleIds.length > 0 ? this.manuallySettleIds : null
         )
         
         this.$message.success('Voucher marked as paid successfully!')
@@ -827,6 +854,20 @@ export default {
   padding: 16px;
   background: #f5f7fa;
   min-height: 100vh;
+}
+
+.pending-settle-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.pending-settle-hint {
+  font-size: 11px;
+  color: #909399;
+  line-height: 1.4;
+  margin-top: 4px;
 }
 
 /* Filter Header */

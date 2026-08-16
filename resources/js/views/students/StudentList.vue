@@ -180,23 +180,12 @@
         </el-table-column>
         <el-table-column label="Name" prop="">
           <template #default="scope">
-            <el-input
-              v-if="isEditing(scope.row.id, 'name')"
-              v-model="editCell.value"
-              size="small"
-              :ref="(el) => { cellInputRef = el; }"
-              @blur="saveCell(scope.row)"
-              @keyup.enter="saveCell(scope.row)"
-              @keyup.esc="cancelCell"
-            />
-            <span v-else @click="startEdit(scope.row, 'name', scope.row.name)" class="editable-cell">
-              <el-popover trigger="hover" placement="top">
-                <p>B Form# {{ scope.row.b_form }}</p>
-                <template #reference>
-                  <el-link :href="'#/students/report/'+ scope.row.id" @click.prevent>{{ scope.row.name }}</el-link>
-                </template>
-              </el-popover>
-            </span>
+            <el-popover trigger="hover" placement="top">
+              <p>B Form# {{ scope.row.b_form }}</p>
+              <template #reference>
+                <el-link :href="'#/students/report/'+ scope.row.id">{{ scope.row.name }}</el-link>
+              </template>
+            </el-popover>
           </template>
         </el-table-column>
         <el-table-column label="Parent" prop="parents.name" />

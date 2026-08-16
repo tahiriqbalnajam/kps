@@ -64,7 +64,7 @@ onMounted(async () => {
   width: 100%;
   height: 50px;
   line-height: 50px;
-  background: #0071f3;
+  background: #4f46e5;
   padding-left: 14px;
   text-align: left;
   overflow: hidden;

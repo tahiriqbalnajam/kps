@@ -37,7 +37,14 @@ class TeacherController extends Controller
         $filtercol = $request->get('filtercol');
         
         $all = ($request->get('filtercol') == 'all') ? true : false;
-        $data = Teacher::select($this->column_select)->where('status', 'active')
+        $data = Teacher::select($this->column_select)
+        // Default to active teachers; pass status=inactive or status=all to
+        // include inactive ones in the list
+        ->when($request->filled('status') && $request->get('status') !== 'all', function ($query) use ($request) {
+            return $query->where('status', $request->get('status'));
+        }, function ($query) {
+            return $query->where('status', 'active');
+        })
         //->where('name', 'like', '%'.$keyword.'%')
         ->when($all || ($filtercol == 'name' && !empty($keyword)), function ($query) use ($all, $keyword) {
             if($all)
@@ -59,7 +66,33 @@ class TeacherController extends Controller
         })
         ->paginate($limit);
         //dd(DB::getQueryLog()); // Show results of log
+        $this->attachTestAverages($data);
         return response()->json(new JsonResponse(['teachers' => $data]));
+    }
+
+    /**
+     * Attach each teacher's overall test average (mean of per-test
+     * percentages, same definition as the profile page) to the paginated rows.
+     */
+    private function attachTestAverages($data)
+    {
+        if ($data->isEmpty()) {
+            return;
+        }
+
+        $averages = DB::table('tests as t')
+            ->join('test_results as tr', 't.id', '=', 'tr.test_id')
+            ->whereIn('t.teacher_id', $data->pluck('id'))
+            ->where('tr.absent', 'no')
+            ->selectRaw('t.teacher_id, t.id, AVG(tr.score) / t.total_marks * 100 as pct')
+            ->groupBy('t.id', 't.teacher_id', 't.total_marks')
+            ->get()
+            ->groupBy('teacher_id')
+            ->map(fn ($rows) => round($rows->avg('pct'), 1));
+
+        $data->getCollection()->each(function ($teacher) use ($averages) {
+            $teacher->avg_pct = $averages->get($teacher->id);
+        });
     }
 
     public function store(Request $request)

@@ -109,9 +109,6 @@ export default {
       query: {
         date: this.todayDate()
       },
-      classquery: {
-        stdclass: '',
-      },
     };
   },
   computed: {
@@ -135,7 +132,9 @@ export default {
       this.mergeAttendanceWithTeachers();
     },
     async loadTeachersList() {
-      const { data } = await teachersPro.list(this.classquery);
+      // Only active teachers should appear for attendance marking — request
+      // them explicitly (the backend also defaults to active when omitted)
+      const { data } = await teachersPro.list({ status: 'active' });
       this.teachers_list = data.teachers.data;
     },
     mergeAttendanceWithTeachers() {

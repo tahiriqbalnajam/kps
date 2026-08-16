@@ -1,22 +1,47 @@
 <template>
   <div class="app-container">
-    <div class="filter-container">
-      <el-input
-        v-model="query.keyword"
-        placeholder="Search complaints..."
-        style="width: 200px;"
-        class="filter-item"
-        @keyup.enter.native="handleFilter"
-      />
-      <el-select v-model="query.status" placeholder="Status" clearable class="filter-item" style="width: 130px">
-        <el-option v-for="item in statusOptions" :key="item.value" :label="item.label" :value="item.value" />
-      </el-select>
-      <el-button class="filter-item" type="primary" icon="el-icon-search" @click="handleFilter">
-        Search
-      </el-button>
-      <el-button class="filter-item" style="margin-left: 10px;" type="primary" icon="el-icon-plus" @click="handleCreate">
-        Add Complaint
-      </el-button>
+    <!-- Compact Filter Header (matches Student List style) -->
+    <div class="compact-filter-header">
+      <div class="filter-section">
+        <!-- Search Controls -->
+        <div class="search-controls">
+          <el-input
+            v-model="query.keyword"
+            placeholder="Search complaints..."
+            class="search-input"
+            clearable
+            @keyup.enter="handleFilter"
+            @clear="handleFilter"
+          >
+            <template #prefix>
+              <el-icon><Search /></el-icon>
+            </template>
+          </el-input>
+        </div>
+
+        <!-- Filter Controls -->
+        <div class="filter-controls">
+          <el-select v-model="query.status" placeholder="Status" clearable class="status-select" @change="handleFilter">
+            <el-option v-for="item in statusOptions" :key="item.value" :label="item.label" :value="item.value" />
+          </el-select>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="action-section">
+        <el-button-group class="action-button-group">
+          <el-tooltip content="Search" placement="top">
+            <el-button type="primary" class="action-btn" @click="handleFilter">
+              <el-icon><Search /></el-icon>
+            </el-button>
+          </el-tooltip>
+          <el-tooltip content="Add Complaint" placement="top">
+            <el-button type="success" class="action-btn" @click="handleCreate">
+              <el-icon><Plus /></el-icon>
+            </el-button>
+          </el-tooltip>
+        </el-button-group>
+      </div>
     </div>
 
     <el-table v-loading="loading" :data="list" border fit highlight-current-row style="width: 100%">
@@ -65,17 +90,25 @@
           <span>{{ parseTimeMethod(scope.row.created_at, '{m}/{d}/{y}') }}</span>
         </template>
       </el-table-column>      
-      <el-table-column align="center" label="Actions" width="200">
+      <el-table-column align="center" label="Actions" width="130">
         <template #default="scope">
-          <el-button type="primary" size="small" @click="handleEdit(scope.row)">
-            Edit
-          </el-button>
-          <el-button type="info" size="small"  @click="handleView(scope.row)">
-            View
-          </el-button>
-          <el-button type="danger" size="small"  @click="handleDelete(scope.row)">
-            Delete
-          </el-button>
+          <div class="action-btns">
+            <el-tooltip content="Edit" placement="top">
+              <el-button type="primary" size="small" circle @click="handleEdit(scope.row)">
+                <el-icon><Edit /></el-icon>
+              </el-button>
+            </el-tooltip>
+            <el-tooltip content="View" placement="top">
+              <el-button type="info" size="small" circle @click="handleView(scope.row)">
+                <el-icon><View /></el-icon>
+              </el-button>
+            </el-tooltip>
+            <el-tooltip content="Delete" placement="top">
+              <el-button type="danger" size="small" circle @click="handleDelete(scope.row)">
+                <el-icon><Delete /></el-icon>
+              </el-button>
+            </el-tooltip>
+          </div>
         </template>
       </el-table-column>
     </el-table>
@@ -234,12 +267,13 @@
 import ComplaintResource from '@/api/complaint';
 import Pagination from '@/components/Pagination/index.vue';
 import { parseTime } from '@/utils'; // Make sure this import path is correct
+import { Edit, View, Delete, Search, Plus } from '@element-plus/icons-vue';
 
 const complaintResource = new ComplaintResource();
 
 export default {
   name: 'ComplaintManagement',
-  components: { Pagination },
+  components: { Pagination, Edit, View, Delete, Search, Plus },
   data() {
     return {
       list: [],
@@ -447,11 +481,85 @@ export default {
 </script>
 
 <style scoped>
-.filter-container {
-  padding: 20px 0;
+/* Compact filter header — mirrors Student List */
+.compact-filter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: white;
+  padding: 12px 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 16px;
+  border: 1px solid #e4e7ed;
 }
 
-.filter-item {
-  margin-right: 10px;
+.filter-section {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex: 1;
+  flex-wrap: wrap;
+}
+
+.search-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.search-input {
+  width: 280px;
+  min-width: 200px;
+}
+
+.filter-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.status-select {
+  width: 150px;
+  min-width: 150px;
+}
+
+.action-section {
+  display: flex;
+  align-items: center;
+  margin-left: 16px;
+}
+
+.action-button-group {
+  display: flex;
+  gap: 0;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.action-btn {
+  border-radius: 0;
+  border-right: 1px solid rgba(255, 255, 255, 0.3);
+  font-weight: 500;
+  transition: all 0.3s ease;
+  min-width: 44px;
+  height: 36px;
+}
+
+.action-btn:last-child {
+  border-right: none;
+}
+
+.action-btn:hover {
+  transform: translateY(-1px);
+  z-index: 1;
+}
+
+/* Table row action buttons */
+.action-btns {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
 }
 </style>

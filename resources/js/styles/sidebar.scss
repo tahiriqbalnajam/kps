@@ -1,7 +1,9 @@
 #app {
 
   .main-container {
-    min-height: 100%;
+    // 100vh (not 100%) — the parent chain has auto heights, so a percentage
+    // resolves to auto and the #eee background would end partway down the page
+    min-height: 100vh;
     transition: margin-left .28s;
     margin-left: $sideBarWidth;
     position: relative;
@@ -62,34 +64,82 @@
       border: none;
       height: 100%;
       width: 100% !important;
+
+      // Indigo scheme (matches navbar / logo). Hover = solid indigo
+      // ($menuHover) with white text; active items get the indigo background
+      // from $menuActiveBG.
+      --el-menu-text-color: #475569;
+      --el-menu-hover-text-color: #ffffff;
+      --el-menu-active-color: #4f46e5;
+      --el-menu-hover-bg-color: #6366f1;
     }
 
-    // menu hover
-    .submenu-title-noDropdown,
-    .el-submenu__title {
-      &:hover {
-        background-color: $menuHover !important;
+    // menu hover — solid indigo with white text/icons.
+    // Note: EP 2 renamed el-submenu → el-sub-menu (old spelling is a dead selector).
+    .submenu-title-noDropdown:hover,
+    .el-sub-menu__title:hover,
+    .el-menu--vertical .el-menu-item:hover {
+      background-color: $menuHover !important;
+      color: #fff;
+
+      .bi {
+        color: #fff !important; // icons are colored inline — force white on hover
       }
     }
-    .is-active > div {
-      background-color: #e9e3e3;
+
+    // Smooth icon colour animation (indigo ↔ white) on hover / active
+    .el-menu-item .bi,
+    .el-sub-menu__title .bi,
+    .el-menu-item .el-svg-icon,
+    .el-sub-menu__title .el-svg-icon {
+      transition: color 0.25s ease;
     }
+    // Removed the old `.is-active > div { background: #e9e3e3 }` rule — in
+    // collapsed mode EP wraps items in a .el-menu-tooltip__trigger div, which
+    // that EP1-era selector painted gray over the indigo active fill.
     .is-active {
       color: $subMenuActiveText !important;
       background-color: $menuActiveBG !important;
     }
-    .is-active>.el-submenu__title {
+    .is-active>.el-sub-menu__title {
       color: $subMenuActiveText !important;
       background-color: $menuActiveBG !important;
+
+      .bi {
+        color: #fff !important; // keep icon white on the indigo active fill
+      }
     }
 
     & .nest-menu .el-submenu>.el-submenu__title,
     & .el-submenu .el-menu-item {
       min-width: $sideBarWidth !important;
       background-color: $subMenuBg !important;
+      color: #cbd5e1;
+
+      .bi,
+      .el-svg-icon {
+        // Lighter indigo so icons stay visible on the dark indigo panel
+        color: #a5b4fc !important;
+      }
 
       &:hover {
         background-color: $subMenuHover !important;
+        color: #fff;
+
+        .bi,
+        .el-svg-icon {
+          color: #c7d2fe !important;
+        }
+      }
+
+      &.is-active {
+        background-color: $menuActiveBG !important;
+        color: #fff;
+
+        .bi,
+        .el-svg-icon {
+          color: #fff !important;
+        }
       }
     }
   }
@@ -195,12 +245,27 @@
     }
   }
 
-  .nest-menu .el-submenu>.el-submenu__title,
+  // The popup flyout is teleported outside .sidebar-container, so hover
+  // colors must be declared here too — same indigo fill + white text/icons
+  // as the main sidebar, otherwise the dark text becomes invisible.
+  .el-sub-menu__title,
   .el-menu-item {
     &:hover {
       // you can use $subMenuHover
       background-color: $menuHover !important;
+      color: #fff;
+
+      .bi {
+        color: #fff !important; // icons are colored inline — force white on hover
+      }
     }
+  }
+
+  .el-menu-item .bi,
+  .el-sub-menu__title .bi,
+  .el-menu-item .el-svg-icon,
+  .el-sub-menu__title .el-svg-icon {
+    transition: color 0.25s ease;
   }
 
   // the scroll bar appears when the subMenu is too long

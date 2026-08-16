@@ -137,6 +137,19 @@
           <div class="voucher-num">
             <span class="vnum">{{ scope.row.voucher_number }}</span>
             <el-tag v-if="scope.row.voucher_type !== 'monthly'" size="small" type="info">{{ scope.row.voucher_type }}</el-tag>
+            <el-tooltip
+              v-if="getPendingItems(scope.row).length > 0"
+              placement="top"
+            >
+              <template #content>
+                <div v-for="(item, i) in getPendingItems(scope.row)" :key="i" class="pending-tip-item">
+                  {{ item.fee_type }} — Rs. {{ item.amount }}
+                </div>
+              </template>
+              <el-tag size="small" type="warning" effect="plain" class="pending-tag">
+                {{ getPendingItems(scope.row).length }} pending
+              </el-tag>
+            </el-tooltip>
           </div>
         </template>
       </el-table-column>
@@ -185,6 +198,13 @@
         </template>
       </el-table-column>
 
+      <el-table-column label="Fee Month" width="110" align="center">
+        <template #default="scope">
+          <span v-if="scope.row.fee_month" class="fee-month-cell">{{ formatMonth(scope.row.fee_month) }}</span>
+          <span v-else class="fee-month-empty">—</span>
+        </template>
+      </el-table-column>
+
       <el-table-column label="Status" width="110" align="center">
         <template #default="scope">
           <el-tag
@@ -198,12 +218,17 @@
         </template>
       </el-table-column>
 
-      <el-table-column label="Actions" width="180" align="center">
+      <el-table-column label="Actions" width="220" align="center">
         <template #default="scope">
           <div class="action-btns">
             <el-tooltip content="Mark Paid" placement="top" v-if="scope.row.status === 'unpaid' || scope.row.status === 'partially_paid'">
               <el-button type="success" size="small" circle @click.stop="markAsPaid(scope.row)">
                 <el-icon><Money /></el-icon>
+              </el-button>
+            </el-tooltip>
+            <el-tooltip content="Settle Pending Vouchers" placement="top" v-if="getPendingItems(scope.row).length > 0">
+              <el-button type="warning" size="small" circle @click.stop="openSettlePending(scope.row)">
+                <el-icon><Check /></el-icon>
               </el-button>
             </el-tooltip>
             <el-tooltip content="Reprint" placement="top">
@@ -278,6 +303,24 @@
             style="width: 100%"
           />
         </el-form-item>
+        <el-form-item
+          v-if="getPendingItems(selectedVoucher).length > 0"
+          label="Settle Pending"
+        >
+          <div class="pending-settle-list">
+            <el-checkbox
+              v-for="(item, idx) in getPendingItems(selectedVoucher)"
+              :key="idx"
+              v-model="manuallySettleIds"
+              :label="item.pending_voucher_id"
+            >
+              {{ item.fee_type }} — Rs. {{ item.amount }}
+            </el-checkbox>
+            <div class="pending-settle-hint">
+              Payment covers these automatically in order; check any to settle explicitly.
+            </div>
+          </div>
+        </el-form-item>
       </el-form>
 
       <template #footer>
@@ -289,6 +332,39 @@
           :disabled="!paymentForm.paidAmount || !paymentForm.paymentDate"
         >
           Confirm Payment
+        </el-button>
+      </template>
+    </el-dialog>
+
+    <!-- Settle Pending Vouchers Dialog -->
+    <el-dialog
+      title="Settle Pending Vouchers"
+      v-model="showSettlePendingDialog"
+      width="480px"
+    >
+      <p class="settle-dialog-intro">
+        Voucher <b>{{ selectedVoucher?.voucher_number }}</b> includes these pending vouchers.
+        Check the ones to mark as paid:
+      </p>
+      <div class="pending-settle-list">
+        <el-checkbox
+          v-for="(item, idx) in getPendingItems(selectedVoucher)"
+          :key="idx"
+          v-model="manuallySettleIds"
+          :label="item.pending_voucher_id"
+        >
+          {{ item.fee_type }} — Rs. {{ item.amount }}
+        </el-checkbox>
+      </div>
+      <template #footer>
+        <el-button @click="showSettlePendingDialog = false">Cancel</el-button>
+        <el-button
+          type="primary"
+          @click="confirmSettlePending"
+          :loading="settlePendingLoading"
+          :disabled="manuallySettleIds.length === 0"
+        >
+          Mark Selected as Paid
         </el-button>
       </template>
     </el-dialog>
@@ -344,7 +420,7 @@
 <script>
 import {
   Search, Files, CircleCheckFilled, Clock, WarningFilled, List, Money,
-  Printer, Close, Bell, Refresh, DataAnalysis, SemiSelect, Download
+  Printer, Close, Bell, Refresh, DataAnalysis, SemiSelect, Download, Check
 } from '@element-plus/icons-vue'
 import moment from 'moment'
 import { debounce } from 'lodash'
@@ -396,11 +472,14 @@ export default {
       },
       showStatsDrawer: false,
       showPaymentDialog: false,
+      showSettlePendingDialog: false,
+      settlePendingLoading: false,
       showReminderDialog: false,
       showPrintDialog: false,
       selectedVoucher: null,
       selectedVouchers: [],
       voucherToPrint: [],
+      manuallySettleIds: [],
       dateRange: [],
 
       dateShortcuts: [
@@ -633,8 +712,43 @@ export default {
 
 
 
+    getPendingItems(voucher) {
+      if (!voucher || !Array.isArray(voucher.fee_breakdown)) return []
+      return voucher.fee_breakdown.filter(item => item.pending_voucher_id)
+    },
+
+    openSettlePending(voucher) {
+      this.selectedVoucher = voucher
+      this.manuallySettleIds = []
+      this.showSettlePendingDialog = true
+    },
+
+    async confirmSettlePending() {
+      this.settlePendingLoading = true
+      try {
+        const response = await updateFeeVoucherStatus(
+          this.selectedVoucher.id,
+          this.selectedVoucher.status,
+          null,
+          null,
+          null,
+          this.manuallySettleIds,
+          true
+        )
+        this.$message.success(response?.message || 'Pending vouchers settled')
+        this.showSettlePendingDialog = false
+        this.getVouchers()
+      } catch (error) {
+        console.error('Error settling pending vouchers:', error)
+        this.$message.error('Failed to settle pending vouchers')
+      } finally {
+        this.settlePendingLoading = false
+      }
+    },
+
     markAsPaid(voucher) {
       this.selectedVoucher = voucher
+      this.manuallySettleIds = []
       const today = new Date()
       const dueDate = new Date(voucher.due_date)
       const paidAmount = parseFloat(voucher.paid_amount || 0)
@@ -663,12 +777,12 @@ export default {
           'paid',
           this.paymentForm.paidAmount,
           moment(this.paymentForm.paymentDate).format('YYYY-MM-DD HH:mm:ss'),
-          pendingVoucherIds.length > 0 ? pendingVoucherIds : null
+          pendingVoucherIds.length > 0 ? pendingVoucherIds : null,
+          this.manuallySettleIds.length > 0 ? this.manuallySettleIds : null
         )
         this.$message.success('Payment recorded successfully!')
         this.showPaymentDialog = false
         this.getVouchers()
-        this.loadStats()
       } catch (error) {
         console.error('Error updating payment:', error)
         this.$message.error('Failed to update payment')
@@ -733,7 +847,6 @@ export default {
         await updateFeeVoucherStatus(voucher.id, 'cancelled')
         this.$message.success('Voucher cancelled')
         this.getVouchers()
-        this.loadStats()
       } catch (error) {
         if (error !== 'cancel') {
           console.error('Error cancelling voucher:', error)
@@ -749,6 +862,10 @@ export default {
 
     formatDate(date) {
       return moment(date).format('DD MMM, YY')
+    },
+
+    formatMonth(month) {
+      return month ? moment(month).format('MMM YYYY') : ''
     },
 
     formatAmount(amount) {
@@ -1001,10 +1118,48 @@ export default {
   font-weight: 600;
 }
 
+.fee-month-cell {
+  font-weight: 600;
+  color: #4f46e5;
+  font-size: 12px;
+}
+
+.fee-month-empty {
+  color: #c0c4cc;
+}
+
 .action-btns {
   display: flex;
   gap: 4px;
   justify-content: center;
+}
+
+.pending-tag {
+  margin-left: 4px;
+}
+
+.pending-tip-item {
+  font-size: 12px;
+}
+
+.pending-settle-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.pending-settle-hint {
+  font-size: 11px;
+  color: #909399;
+  line-height: 1.4;
+  margin-top: 4px;
+}
+
+.settle-dialog-intro {
+  margin-bottom: 12px;
+  color: #606266;
+  font-size: 13px;
 }
 
 /* ─── Stats Drawer ─── */

@@ -36,7 +36,9 @@ export function getFeeVoucherDetails(voucherId) {
 }
 
 // Update fee voucher status (paid/unpaid)
-export function updateFeeVoucherStatus(voucherId, status, paidAmount = null, paymentDate = null, pendingVoucherIds = null) {
+// manuallySettleIds: pending vouchers to settle explicitly alongside the payment
+// settlePendingOnly: mark selected pending vouchers paid without touching the voucher's own status
+export function updateFeeVoucherStatus(voucherId, status, paidAmount = null, paymentDate = null, pendingVoucherIds = null, manuallySettleIds = null, settlePendingOnly = false) {
   return request({
     url: `/fee/voucher/${voucherId}/status`,
     method: 'put',
@@ -44,7 +46,9 @@ export function updateFeeVoucherStatus(voucherId, status, paidAmount = null, pay
       status,
       paid_amount: paidAmount,
       payment_date: paymentDate,
-      pending_voucher_ids: pendingVoucherIds
+      pending_voucher_ids: pendingVoucherIds,
+      manually_settle_ids: manuallySettleIds,
+      settle_pending_only: settlePendingOnly
     }
   })
 }

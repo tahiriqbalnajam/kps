@@ -118,8 +118,11 @@ watch(
   /*50 = navbar  */
   position: relative;
 }
+// min-height (not height): short pages fill exactly one viewport below the
+// navbar + tags bar, long pages grow with their content — so the page
+// background never cuts off mid-scroll.
 .show-tag-view {
-  height: calc(100vh - #{$navBarHeight} - #{$tagViewHeight} - 50px) !important;
+  min-height: calc(100vh - #{$navBarHeight} - #{$tagViewHeight}) !important;
 }
 .fixed-header + .app-main {
   padding-top: 50px;

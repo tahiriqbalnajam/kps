@@ -47,10 +47,9 @@
       style="width: 100%"
        max-height="450"
     >
-      <el-table-column label="ID" prop="id" />
       <el-table-column label="Name" prop="name" />
       <el-table-column label="Phone" prop="phone" />
-      <el-table-column label="Address" prop="address" />
+      <el-table-column label="Address" prop="address" show-overflow-tooltip />
       <el-table-column label="CNIC" prop="cnic" />
       <el-table-column label="User Account">
         <template #default="scope">
@@ -71,16 +70,24 @@
       </el-table-column>
       <el-table-column label="Children" prop="children">
         <template #default="scope">
-          <el-table :data=" scope.row.students" size="small">
+          <el-table :data="scope.row.students" size="small" :row-class-name="studentRowClassName">
             <el-table-column type="index"/>
             <el-table-column property="name" label="Name">
               <template #default="studentScope">
-                <router-link 
-                  :to="`/students/report/${studentScope.row.id}`"
-                  class="student-link"
-                >
-                  {{ studentScope.row.name }}
-                </router-link>
+                <span class="student-name-cell">
+                  <router-link
+                    :to="`/students/report/${studentScope.row.id}`"
+                    class="student-link"
+                  >
+                    {{ studentScope.row.name }}
+                  </router-link>
+                  <el-tag
+                    v-if="studentScope.row.status !== 'enable'"
+                    size="small"
+                    type="info"
+                    class="inactive-tag"
+                  >Inactive</el-tag>
+                </span>
               </template>
             </el-table-column>
             <el-table-column property="stdclasses.name" label="Class" />
@@ -92,30 +99,37 @@
           <el-input ref="search" v-model="query.keyword" size="mini" placeholder="Type to search"  v-on:input="debounceInput" />
         </template>
         <template #default="scope">
-          <el-tooltip content="Edit Parent" placement="top">
+          <el-button-group>
             <el-button
-              size="mini"
+              size="small"
               @click="handleEdit(scope.row.id, scope.row.name)"
-            >Edit</el-button>
-          </el-tooltip>
-          <el-tooltip
-            v-if="scope.row.students && scope.row.students.length > 0"
-            :content="`Cannot delete: this parent has ${scope.row.students.length} child(ren)`"
-            placement="top"
-          >
-            <el-button size="mini" type="danger" disabled>Delete</el-button>
-          </el-tooltip>
-          <el-tooltip
-            v-else
-            content="Delete Parent"
-            placement="top"
-          >
-            <el-button
-              size="mini"
-              type="danger"
-              @click="handleDelete(scope.row.id, scope.row.name)"
-            >Delete</el-button>
-          </el-tooltip>
+              title="Edit Parent"
+            >
+              <el-icon :size="15"><Edit /></el-icon>
+            </el-button>
+            <el-tooltip
+              v-if="scope.row.students && scope.row.students.length > 0"
+              :content="`Cannot delete: this parent has ${scope.row.students.length} child(ren)`"
+              placement="top"
+            >
+              <el-button size="small" type="danger" disabled>
+                <el-icon :size="15"><Delete /></el-icon>
+              </el-button>
+            </el-tooltip>
+            <el-tooltip
+              v-else
+              content="Delete Parent"
+              placement="top"
+            >
+              <el-button
+                size="small"
+                type="danger"
+                @click="handleDelete(scope.row.id, scope.row.name)"
+              >
+                <el-icon :size="15"><Delete /></el-icon>
+              </el-button>
+            </el-tooltip>
+          </el-button-group>
         </template>
       </el-table-column>
     </el-table>
@@ -281,6 +295,10 @@ export default {
     },
     handleFilter() {
       this.getList();
+    },
+    // Fade children whose student account is disabled so active ones stand out
+    studentRowClassName({ row }) {
+      return row.status !== 'enable' ? 'inactive-student-row' : '';
     },
     async handleDelete(id, name) {
       try {
@@ -466,14 +484,32 @@ export default {
     font-weight: 500;
     transition: color 0.2s ease;
   }
-  
+
   .student-link:hover {
     color: #66b1ff;
     text-decoration: underline;
   }
-  
+
   .student-link:active {
     color: #3a8ee6;
+  }
+
+  .student-name-cell {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .inactive-tag {
+    height: 14px;
+    line-height: 14px;
+    padding: 0 4px;
+    font-size: 10px;
+  }
+
+  /* Disabled children are faded so active ones stand out */
+  .inactive-student-row {
+    opacity: 0.55;
   }
 </style>
 <style>

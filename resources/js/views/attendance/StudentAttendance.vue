@@ -1,39 +1,40 @@
 <template>
   <div class="app-container">
     <div class="filter-container">
-      <head-controls>
-        <el-row :gutter="20">
-          <el-col :span="5">
-            <el-form-item>
-                <el-tree-select 
-                      check-strictly
-                      v-model="query.stdclass" 
-                      :data="classes"
-                      placeholder="Class" clearable 
-                      style="" class="filter-item" 
-                      @change="getStudent"
-                    />
-            </el-form-item>
-          </el-col>
-          <el-col :span="5">
-            <el-date-picker
-              v-model="attendance.date"
-              type="date"
-              format="DD MMM, YYYY"
-              value-format="YYYY-MM-DD"
-              placeholder="Pick a day" 
-              @change="getStudent" />
-          </el-col>
-          <el-col :span="3">
-            <el-button 
-              type="primary" 
-              :loading="loading" 
-              :disabled="attendance.students.length <= 0 || isSelectedDateSunday" 
-              @click="submitAttendance"
-            >
-              {{ loading ? 'Submitting ...' : attendanceAlreadyMarked ? 'Update Attendance' : 'Save Attendance' }}
-            </el-button>
-          </el-col>
+      <head-controls class="filter-card">
+        <el-row :gutter="16">
+            <el-col :xs="24" :sm="8" :md="7" :lg="6">
+              <el-tree-select
+                check-strictly
+                v-model="query.stdclass"
+                :data="classes"
+                placeholder="Class"
+                clearable
+                class="filter-item"
+                style="width: 100%"
+                @change="getStudent"
+              />
+            </el-col>
+            <el-col :xs="24" :sm="8" :md="7" :lg="6">
+              <el-date-picker
+                v-model="attendance.date"
+                type="date"
+                format="DD MMM, YYYY"
+                value-format="YYYY-MM-DD"
+                placeholder="Pick a day"
+                style="width: 100%"
+                @change="getStudent" />
+            </el-col>
+            <el-col :xs="24" :sm="8" :md="7" :lg="6">
+              <el-button
+                type="primary"
+                :loading="loading"
+                :disabled="attendance.students.length <= 0 || isSelectedDateSunday"
+                @click="submitAttendance"
+              >
+                {{ loading ? 'Submitting ...' : attendanceAlreadyMarked ? 'Update Attendance' : 'Save Attendance' }}
+              </el-button>
+            </el-col>
         </el-row>
       </head-controls>
     </div>
@@ -52,46 +53,43 @@
     
     <!-- Attendance Summary when already marked -->
     <div v-if="attendanceAlreadyMarked && attendance.students.length > 0" class="attendance-summary">
-      <el-card shadow="hover" style="margin-bottom: 20px;">
-        <template #header>
-          <span>Attendance Summary for {{ attendance.date }}</span>
-        </template>
-        <el-row :gutter="20">
-          <el-col :span="6">
-            <el-statistic title="Total Students" :value="attendance.students.length" />
-          </el-col>
-          <el-col :span="6">
-            <el-statistic 
-              title="Present" 
-              :value="getPresentCount" 
-              suffix="students"
-              class="green-stat"
-            />
-          </el-col>
-          <el-col :span="6">
-            <el-statistic 
-              title="Absent" 
-              :value="getAbsentCount" 
-              suffix="students"
-              class="red-stat"
-            />
-          </el-col>
-          <el-col :span="6">
-            <el-statistic 
-              title="On Leave" 
-              :value="getLeaveCount" 
-              suffix="students"
-              class="orange-stat"
-            />
-          </el-col>
-        </el-row>
+      <el-card shadow="never" class="summary-card">
+        <div class="summary-row">
+          <div class="summary-title">
+            <el-icon class="summary-icon"><Calendar /></el-icon>
+            <div>
+              <div class="summary-heading">Attendance Summary</div>
+              <div class="summary-date">{{ formatSummaryDate(attendance.date) }}</div>
+            </div>
+          </div>
+          <div class="summary-stats">
+            <div class="summary-stat">
+              <span class="stat-value total">{{ attendance.students.length }}</span>
+              <span class="stat-label">Total</span>
+            </div>
+            <div class="summary-stat">
+              <span class="stat-value present">{{ getPresentCount }}</span>
+              <span class="stat-label">Present</span>
+            </div>
+            <div class="summary-stat">
+              <span class="stat-value absent">{{ getAbsentCount }}</span>
+              <span class="stat-label">Absent</span>
+            </div>
+            <div class="summary-stat">
+              <span class="stat-value leave">{{ getLeaveCount }}</span>
+              <span class="stat-label">On Leave</span>
+            </div>
+          </div>
+        </div>
       </el-card>
     </div>
     
+    <el-card class="table-card" shadow="never">
     <el-table
+      ref="table"
       :data="filterTableData"
       style="width: 100%"
-      max-height="500"
+      :max-height="tableMaxHeight"
       :stripe="true"
       :border="true"
       empty-text="Select a class first!"
@@ -132,11 +130,13 @@
       <el-table-column label="Student Name" prop="name" />
       <el-table-column label="Father name" prop="parents.name" />
     </el-table>
+    </el-card>
   </div>
 </template>
 <script>
 import Pagination from '@/components/Pagination/index.vue';
 import HeadControls from '@/components/HeadControls.vue';
+import { Calendar } from '@element-plus/icons-vue';
 import Resource from '@/api/resource';
 const classPro = new Resource('classes');
 const studentPro = new Resource('students');
@@ -146,11 +146,12 @@ import { debounce } from 'lodash';
 import { sessionStore } from '@/store/session'
 export default {
   name: 'StudentAttendance',
-  components: { Pagination, HeadControls },
+  components: { Pagination, HeadControls, Calendar },
   directives: { },
   data() {
     return {
       student_loading: false,
+      tableMaxHeight: 500,
       classes: [],
       attendance_day: 'Week day',
       search: '',
@@ -219,7 +220,24 @@ export default {
   created() {
     this.getList();
   },
+  mounted() {
+    this.updateTableHeight();
+    window.addEventListener('resize', this.updateTableHeight);
+  },
+  beforeUnmount() {
+    window.removeEventListener('resize', this.updateTableHeight);
+  },
   methods: {
+    // Fit the table to the remaining viewport below it (filter bar, summary
+    // card and alerts above change height, so measure from the live position)
+    updateTableHeight() {
+      this.$nextTick(() => {
+        const tableEl = this.$refs.table?.$el;
+        if (!tableEl) return;
+        const top = tableEl.getBoundingClientRect().top;
+        this.tableMaxHeight = Math.max(200, Math.floor(window.innerHeight - top - 24));
+      });
+    },
     debounceInput: debounce(function (e) {
       this.getList();
     }, 500),
@@ -310,13 +328,18 @@ export default {
         // Extract section ID from section_X format
         const sectionId = selectedValue.split('_')[1];
         this.query.filter['section_id'] = sectionId;
-        // Remove stdclass if it exists from previous selection
-        delete this.query.filter['stdclass'];
-        
+
         // Find the class ID for this section (needed for attendance table)
         const selectedSection = this.findSectionById(sectionId);
         if (selectedSection) {
           classId = selectedSection.class_id;
+          // Also require the section's class so students whose section_id is
+          // stale (not updated after a class promotion) don't show up under
+          // the wrong class's section list.
+          this.query.filter['stdclass'] = classId;
+        } else {
+          // No stdclass from a previous selection should leak through
+          delete this.query.filter['stdclass'];
         }
       }
       
@@ -336,6 +359,9 @@ export default {
       try {
         const { data } = await studentPro.list(this.query);
         this.attenquery.month = this.attendance.date;
+        // Scope the already-marked check to exactly the displayed students so
+        // a group selection only flags records for its own students
+        this.attenquery.student_ids = data.students.data.map((s) => s.id);
         const attenDD = await studentAttMarked(this.attenquery);
         const hasrec = Object.keys(attenDD.data.attendance).length;
         
@@ -373,8 +399,16 @@ export default {
       }
       
       this.student_loading = false;
+      // Summary card / alert may have appeared above the table — re-fit
+      this.updateTableHeight();
     },
-    
+
+    formatSummaryDate(d) {
+      if (!d) return '';
+      const dt = new Date(d + 'T00:00:00');
+      return dt.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    },
+
     // Helper method to find section by ID and get its class_id
     findSectionById(sectionId) {
       for (const classItem of this.classes) {
@@ -474,7 +508,31 @@ export default {
   },
 };
 </script>
-<style  scoped>
+<style scoped lang="scss">
+  .table-card {
+    border: 1px solid #e4e7ed;
+    border-radius: 8px;
+
+    :deep(.el-card__body) {
+      padding: 12px 16px;
+    }
+  }
+
+  .filter-card {
+    margin-bottom: 16px;
+    border: 1px solid #e4e7ed;
+    border-radius: 8px;
+
+    // HeadControls renders an el-card whose body is padded via an inline
+    // style (padding: 15px 0 0 15px) that no normal rule can override, so the
+    // el-row gutter's negative right margin overflows it and the body's
+    // baked-in overflow:auto paints a horizontal scrollbar. Force the right
+    // padding past the inline style and clip as a backstop.
+    :deep(.el-card__body) {
+      padding-right: 16px !important;
+      overflow-x: hidden;
+    }
+  }
   .el-drawer__body {
     flex: 1;
     padding: 20px;
@@ -526,21 +584,85 @@ export default {
     font-weight: bold;
   }
   
-  /* Statistics styling */
+  /* Attendance summary — compact single row matching the filter card above */
   .attendance-summary {
-    margin-bottom: 20px;
+    margin-bottom: 16px;
   }
-  
-  .green-stat :deep(.el-statistic__number) {
-    color: #67c23a;
+
+  .summary-card {
+    border: 1px solid #e4e7ed;
+    border-radius: 8px;
+
+    :deep(.el-card__body) {
+      padding: 10px 16px;
+    }
   }
-  
-  .red-stat :deep(.el-statistic__number) {
-    color: #f56c6c;
+
+  .summary-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px 16px;
   }
-  
-  .orange-stat :deep(.el-statistic__number) {
-    color: #e6a23c;
+
+  .summary-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
   }
+
+  .summary-icon {
+    font-size: 18px;
+    color: #4f46e5;
+    background: #eef2ff;
+    border-radius: 8px;
+    padding: 5px;
+  }
+
+  .summary-heading {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1f2937;
+    line-height: 1.2;
+  }
+
+  .summary-date {
+    font-size: 12px;
+    color: #6b7280;
+    line-height: 1.4;
+  }
+
+  .summary-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .summary-stat {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    background: #f9fafb;
+    border: 1px solid #eef0f4;
+    border-radius: 6px;
+    padding: 4px 10px;
+  }
+
+  .stat-value {
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .stat-label {
+    font-size: 12px;
+    color: #6b7280;
+  }
+
+  .stat-value.total { color: #4f46e5; }
+  .stat-value.present { color: #10b981; }
+  .stat-value.absent { color: #f43f5e; }
+  .stat-value.leave { color: #f59e0b; }
 </style>
 

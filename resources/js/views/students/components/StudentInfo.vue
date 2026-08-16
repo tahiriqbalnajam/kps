@@ -1,97 +1,130 @@
 <template>
-    <el-card>
-      <div class="user-profile">
-        <div class="box-center">
-          <div class="user-name text-center">
-            {{ student.name }}
-          </div>
-        </div>
-        <div class="box-social">
-          <el-descriptions
-              :column="1"
-              :size="50"
-              border
-              :style="{boxShadow: 'Light Shadow', borderRadius: 'Large Radius'}"
-          >
-            <el-descriptions-item label="Father Name">{{ student.parents.name }}</el-descriptions-item>
-            <el-descriptions-item label="Address">{{ student.parents.address }}</el-descriptions-item>
-            <el-descriptions-item label="Registration No">{{ student.adminssion_number }}</el-descriptions-item>
-            <el-descriptions-item label="Date of Admission">{{ student.doa }}</el-descriptions-item>
-            <el-descriptions-item label="Class">{{ student.stdclasses.name }}</el-descriptions-item>
-            <el-descriptions-item label="Date Of Birth">{{ student.dob }}</el-descriptions-item>
-            <el-descriptions-item label="Gender">{{ student.gender }}</el-descriptions-item>
-            <el-descriptions-item label="Student Birth Form ID / NIC">{{ student.b_form }}</el-descriptions-item>
-            <el-descriptions-item label="Cast">{{ student.cast }}</el-descriptions-item>
-            <el-descriptions-item label="Previous School">{{ student.previous_school }}</el-descriptions-item>
-            <el-descriptions-item label="Orphan">{{ student.is_orphan }}</el-descriptions-item>
-            <el-descriptions-item label="Religion">{{ student.religion }}</el-descriptions-item>
-          </el-descriptions>
+  <el-card class="profile-card" shadow="never">
+    <div v-loading="loading" class="user-profile">
+      <div class="box-center">
+        <el-avatar :size="72" class="avatar">{{ initials }}</el-avatar>
+        <div class="user-name">{{ student.name || '—' }}</div>
+        <div class="user-meta">
+          <el-tag v-if="student.stdclasses?.name" size="small" effect="plain" type="primary">
+            {{ student.stdclasses.name }}
+          </el-tag>
+          <el-tag v-if="student.gender" size="small" effect="plain" :type="genderTagType">
+            {{ student.gender }}
+          </el-tag>
+          <el-tag v-if="isOrphan" size="small" effect="dark" type="danger">Orphan</el-tag>
         </div>
       </div>
-    </el-card>
+
+      <el-descriptions :column="1" border class="info-descriptions">
+        <el-descriptions-item label="Father Name">{{ student.parents?.name || '—' }}</el-descriptions-item>
+        <el-descriptions-item label="Address">{{ student.parents?.address || '—' }}</el-descriptions-item>
+        <el-descriptions-item label="Registration No">{{ student.adminssion_number || '—' }}</el-descriptions-item>
+        <el-descriptions-item label="Date of Admission">{{ formatDate(student.doa) }}</el-descriptions-item>
+        <el-descriptions-item label="Date of Birth">{{ formatDate(student.dob) }}</el-descriptions-item>
+        <el-descriptions-item label="Birth Form / NIC">{{ student.b_form || '—' }}</el-descriptions-item>
+        <el-descriptions-item label="Cast">{{ student.cast || '—' }}</el-descriptions-item>
+        <el-descriptions-item label="Previous School">{{ student.previous_school || '—' }}</el-descriptions-item>
+        <el-descriptions-item label="Religion">{{ student.religion || '—' }}</el-descriptions-item>
+      </el-descriptions>
+    </div>
+  </el-card>
 </template>
+
 <script>
-  import Resource from '@/api/resource';
-  import { useRoute } from 'vue-router';
-  const route = useRoute()
-  const student = new Resource('students');
-  const parent = new Resource('parents');
-  export default {
-    name: 'StudentInfo',
-    components: {
-    },
-    data() {
-      return {
-        student: {
-          parents: {},
-          stdclasses: {}
-        },
-        parent: {},
-        query: {
-          studentid: '',
-        }
-      };
-    },
-    mounted() {
-      const studentId = this.$route.params.id; // Accessing the URL parameter named 'id'
-      this.getProfile(studentId);
-    },
-    methods: {
-      async getProfile(stdid) {  
-        let { data } = await student.get(stdid);
-        console.log(data);
-        this.student = data.student;
-      }
+import moment from 'moment'
+import Resource from '@/api/resource'
+
+const student = new Resource('students')
+
+export default {
+  name: 'StudentInfo',
+  data() {
+    return {
+      loading: false,
+      student: { parents: {}, stdclasses: {} }
     }
-  };
+  },
+  computed: {
+    initials() {
+      const name = (this.student.name || '').trim()
+      if (!name) return '—'
+      return name
+        .split(/\s+/)
+        .slice(0, 2)
+        .map((w) => w.charAt(0))
+        .join('')
+        .toUpperCase()
+    },
+    genderTagType() {
+      return this.student.gender === 'Male' ? 'primary' : 'danger'
+    },
+    isOrphan() {
+      const v = this.student.is_orphan
+      return v === true || v === 1 || v === '1' || v === 'Yes' || v === 'yes'
+    }
+  },
+  mounted() {
+    this.getProfile(this.$route.params.id)
+  },
+  methods: {
+    async getProfile(stdid) {
+      this.loading = true
+      try {
+        const { data } = await student.get(stdid)
+        this.student = data.student
+      } finally {
+        this.loading = false
+      }
+    },
+    formatDate(date) {
+      return date ? moment(date).format('DD MMM, YYYY') : '—'
+    }
+  }
+}
 </script>
 
 <style lang="scss" scoped>
 .user-profile {
-  .user-name {
-    font-weight: bold;
-  }
-
   .box-center {
-    padding-top: 10px;
+    text-align: center;
+    padding-bottom: 18px;
+    border-bottom: 1px dashed #e4e7ed;
+    margin-bottom: 16px;
   }
 
-  .user-role {
-    padding-top: 10px;
-    font-weight: 400;
-    font-size: 14px;
+  .avatar {
+    background: linear-gradient(135deg, #4f46e5, #818cf8);
+    border: 3px solid #e0e7ff;
+    color: #fff;
+    font-size: 26px;
+    font-weight: 700;
+    margin-bottom: 12px;
   }
 
-  .box-social {
-    padding-top: 30px;
+  .user-name {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1e293b;
+  }
 
-    .el-table {
-      border-top: 1px solid #dfe6ec;
+  .user-meta {
+    margin-top: 8px;
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .info-descriptions {
+    :deep(.el-descriptions__label) {
+      font-weight: 600;
+      color: #5b6b82;
+      width: 140px;
     }
-  }
 
-  .user-follow {
-    padding-top: 20px;
+    :deep(.el-descriptions__content) {
+      color: #1e293b;
+    }
   }
 }
 </style>

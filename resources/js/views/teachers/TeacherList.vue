@@ -6,15 +6,22 @@
           <el-row justify="space-between">
             <el-col :span="12">
               <el-row :gutter="20">
-                <el-col :xs="8" :sm="8" :md="8" :lg="8" :xl ="8">
+                <el-col :xs="6" :sm="6" :md="6" :lg="6" :xl ="6">
+                  <el-select v-model="query.status" class="filter-item" @change="handleFilter">
+                    <el-option label="Active" value="active" />
+                    <el-option label="Inactive" value="inactive" />
+                    <el-option label="All" value="all" />
+                  </el-select>
+                </el-col>
+                <el-col :xs="6" :sm="6" :md="6" :lg="6" :xl ="6">
                   <el-select v-model="query.filtercol" placeholder="Filter" class="filter-item">
                     <el-option v-for="filter in filtercol" :key="filter.col" :label="filter.display" :value="filter.col" />
                   </el-select>
                 </el-col>
-                <el-col :xs="8" :sm="8" :md="8" :lg="8" :xl ="8">
+                <el-col :xs="6" :sm="6" :md="6" :lg="6" :xl ="6">
                   <el-input v-model="query.keyword" placeholder="Teacher info" class="filter-item" v-on:input="debounceInput" />
                 </el-col>
-                <el-col :xs="8" :sm="8" :md="8" :lg="8" :xl ="8">
+                <el-col :xs="6" :sm="6" :md="6" :lg="6" :xl ="6">
                   <el-button  class="filter-item" type="primary" :icon="Search"  @click="handleFilter">
                     {{ $t('table.search') }}
                   </el-button>
@@ -50,7 +57,6 @@
       max-height="500"
 
     >
-      <el-table-column label="ID" prop="id" />
       <el-table-column label="Name">
         <template #default="scope">
           <el-link :href="'#/teacher/profile/'+ scope.row.id">
@@ -59,41 +65,53 @@
         </template>
       </el-table-column>
       <el-table-column label="ID" prop="teacher_special_id" />
-      <el-table-column label="Designation" prop="designation" />
+      <el-table-column label="Designation" prop="designation" show-overflow-tooltip />
+      <el-table-column label="Test Avg" align="center" width="90">
+        <template #default="scope">
+          <el-tag v-if="scope.row.avg_pct != null" size="small" :type="avgTagType(scope.row.avg_pct)">
+            {{ Math.round(scope.row.avg_pct) }}%
+          </el-tag>
+          <span v-else class="no-avg">—</span>
+        </template>
+      </el-table-column>
       <el-table-column label="CNIC" prop="cnic" />
       <el-table-column label="Phone" prop="phone" />
-      <el-table-column label="Gender" prop="gender" />
-      <el-table-column label="Address" prop="address" />
+      <el-table-column label="Gender" align="center" width="70">
+        <template #default="scope">
+          {{ genderShort(scope.row.gender) }}
+        </template>
+      </el-table-column>
+      <el-table-column label="Address" prop="address" show-overflow-tooltip />
       <el-table-column label="Pay" prop="pay" />
       <el-table-column align="right">
         <template slot="header" #header="scope">
           <el-input ref="search" v-model="query.keyword" size="mini" placeholder="Type to search" v-on:input="debounceInput" />
         </template>
         <template #default="scope">
-          <!-- Add new ID Card button -->
-          <el-button
-            circle
-            size="small"
-            type="primary"
-            @click="openIDCard(scope.row)"
-            title="Print ID Card"
-          >
-            <el-icon :size="15"><Postcard /></el-icon>
-          </el-button>
-          
-          <el-button
-            circle
-            size="small"
-            @click="handleEdit(scope.row.id, scope.row.name)"
-          >
-            <el-icon :size="15"><Edit /></el-icon>
-          </el-button>
-          <el-button
-            circle
-            size="small"
-            type="danger"
-            @click="handleDelete(scope.row.id, scope.row.name)"
-          ><el-icon :size="15"><Delete /></el-icon></el-button>
+          <el-button-group>
+            <el-button
+              size="small"
+              type="primary"
+              @click="openIDCard(scope.row)"
+              title="Print ID Card"
+            >
+              <el-icon :size="15"><Postcard /></el-icon>
+            </el-button>
+
+            <el-button
+              size="small"
+              @click="handleEdit(scope.row.id, scope.row.name)"
+              title="Edit"
+            >
+              <el-icon :size="15"><Edit /></el-icon>
+            </el-button>
+            <el-button
+              size="small"
+              type="danger"
+              @click="handleDelete(scope.row.id, scope.row.name)"
+              title="Delete"
+            ><el-icon :size="15"><Delete /></el-icon></el-button>
+          </el-button-group>
         </template>
       </el-table-column>
     </el-table>
@@ -380,6 +398,7 @@ export default {
         limit: 15,
         keyword: '',
         filtercol: 'name',
+        status: 'active',
         role: '',
       },
       showIDCard: false,
@@ -421,6 +440,17 @@ export default {
       const { data } = await resourcePro.list(this.query);
       this.list = data.teachers.data;
       this.total = data.teachers.total;
+    },
+    avgTagType(p) {
+      if (p >= 80) return 'success';
+      if (p >= 60) return 'warning';
+      return 'danger';
+    },
+    genderShort(g) {
+      const s = String(g || '').toLowerCase();
+      if (s.startsWith('m')) return 'M';
+      if (s.startsWith('f')) return 'F';
+      return g || '—';
     },
     async search_data() {
       await this.getList();
@@ -517,6 +547,9 @@ export default {
 };
 </script>
 <style  scoped>
+  .no-avg {
+    color: #a0aec0;
+  }
   .el-drawer__body {
     flex: 1;
     padding: 20px;

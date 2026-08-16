@@ -47,8 +47,15 @@
       <!-- ── end Session Selector ── -->
 
       <ScreenFull />
-      <SizeSelect />
-      <LangSelect />
+
+      <el-badge
+        :value="pendingComplaints"
+        :hidden="pendingComplaints === 0"
+        :max="99"
+        class="notification-badge"
+      >
+        <el-icon class="notification-icon" @click="goToComplaints"><Bell /></el-icon>
+      </el-badge>
 
       <el-dropdown trigger="click" size="medium">
         <div class="avatar-wrapper">
@@ -63,10 +70,7 @@
             <router-link to="/">
               <el-dropdown-item>Home</el-dropdown-item>
             </router-link>
-            <a target="_blank" href="https://github.com/trumanwong/laravel-vue-admin">
-              <el-dropdown-item>Github</el-dropdown-item>
-            </a>
-            <el-dropdown-item divided @click="loginOut">login out</el-dropdown-item>
+            <el-dropdown-item divided @click="loginOut">Logout</el-dropdown-item>
           </el-dropdown-menu>
         </template>
       </el-dropdown>
@@ -75,10 +79,9 @@
 </template>
 
 <script setup>
-import SizeSelect from '@/components/SizeSelect/index.vue'
-import LangSelect from '@/components/LangSelect/index.vue'
 import ScreenFull from '@/components/ScreenFull/index.vue'
-import { CaretBottom, Calendar } from '@element-plus/icons-vue'
+import ComplaintResource from '@/api/complaint'
+import { Bell, CaretBottom, Calendar } from '@element-plus/icons-vue'
 import Breadcrumb from './Breadcrumb'
 import Hamburger from './Hamburger'
 import { appStore } from '@/store/app'
@@ -96,9 +99,32 @@ const opened   = computed(() => useAppStore.sidebar.opened)
 
 const toggleSideBar = () => useAppStore.toggleSideBar()
 
+// ── Complaint notification badge ──
+const complaintResource = new ComplaintResource()
+const pendingComplaints = ref(0)
+let complaintsTimer = null
+
+const fetchPendingComplaints = async () => {
+  try {
+    const response = await complaintResource.list({ status: 'pending', limit: 1 })
+    pendingComplaints.value = response?.complaints?.total ?? response?.data?.complaints?.total ?? 0
+  } catch (e) {
+    console.warn('Failed to fetch pending complaints count:', e)
+  }
+}
+
+const goToComplaints = () => router.push('/communication/complaints')
+
 // Initialise session list when the navbar mounts (once per session)
 onMounted(() => {
   useSessionStore.init()
+  fetchPendingComplaints()
+  // Refresh the badge periodically so new complaints show up
+  complaintsTimer = setInterval(fetchPendingComplaints, 60000)
+})
+
+onUnmounted(() => {
+  if (complaintsTimer) clearInterval(complaintsTimer)
 })
 
 const handleSessionChange = (id) => {
@@ -122,7 +148,7 @@ const loginOut = async () => {
   position: relative;
   background: #fff;
   box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
-  background: linear-gradient(to right, #0071f3, #73b4ff);
+  background: linear-gradient(to right, #4f46e5, #818cf8);
 }
 
 .session-selector {
@@ -160,6 +186,27 @@ const loginOut = async () => {
     width: 40px;
     height: 40px;
     border-radius: 10px;
+  }
+}
+
+.notification-badge {
+  margin-right: 18px;
+  margin-top: 6px;
+
+  // Keep Element Plus' default corner position (badge straddles the top-right
+  // corner of the bell, half outside the icon) — don't override the transform.
+  :deep(.el-badge__content) {
+    border: none;
+  }
+}
+
+.notification-icon {
+  font-size: 20px;
+  color: #fff;
+  cursor: pointer;
+
+  &:hover {
+    opacity: 0.85;
   }
 }
 

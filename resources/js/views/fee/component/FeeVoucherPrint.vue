@@ -60,7 +60,8 @@
                   <span class="status-badge">({{ getStatusLabel(voucher.status) }})</span>
                 </h3>
                 <div class="voucher-number">Voucher #: {{ voucher.voucher_number || 'TEMP-' + (index + 1) }}</div>
-                <div class="print-date"><strong>Due Date: {{ formatDate(voucher.due_date) }}</strong></div>
+                <div v-if="voucher.fee_month" class="fee-month"><strong>Fee Month:</strong> {{ formatMonth(voucher.fee_month) }}</div>
+                <div class="print-date"><strong>Due Date:</strong> {{ formatDate(voucher.due_date) }}</div>
               </div>
             </div>
 
@@ -136,6 +137,8 @@
               <div class="payment-info">
                 <div v-if="voucher.status === 'paid'" class="paid-stamp">PAID</div>
                 <div v-else-if="voucher.status === 'partially_paid'" class="partial-stamp">PARTIAL</div>
+                <div v-else-if="voucher.status === 'unpaid'" class="pending-stamp">PENDING</div>
+                <div v-else-if="voucher.status === 'cancelled'" class="cancelled-stamp">CANCELLED</div>
                 <div class="payment-instruction">
                   <strong>Payment Instructions:</strong> Please pay before the due date to avoid fine charges.
                 </div>
@@ -180,7 +183,8 @@
                   <span class="status-badge">({{ getStatusLabel(voucher.status) }})</span>
                 </h3>
                 <div class="voucher-number">Voucher #: {{ voucher.voucher_number || 'TEMP-' + (index + 1) }}</div>
-                <div class="print-date"><strong>Due Date: {{ formatDate(voucher.due_date) }}</strong></div>
+                <div v-if="voucher.fee_month" class="fee-month"><strong>Fee Month:</strong> {{ formatMonth(voucher.fee_month) }}</div>
+                <div class="print-date"><strong>Due Date:</strong> {{ formatDate(voucher.due_date) }}</div>
               </div>
             </div>
 
@@ -256,6 +260,8 @@
               <div class="payment-info">
                 <div v-if="voucher.status === 'paid'" class="paid-stamp">PAID</div>
                 <div v-else-if="voucher.status === 'partially_paid'" class="partial-stamp">PARTIAL</div>
+                <div v-else-if="voucher.status === 'unpaid'" class="pending-stamp">PENDING</div>
+                <div v-else-if="voucher.status === 'cancelled'" class="cancelled-stamp">CANCELLED</div>
                 <div class="payment-instruction">
                   <strong>Payment Instructions:</strong> Please pay before the due date to avoid fine charges.
                 </div>
@@ -352,6 +358,10 @@ export default {
       return moment(date).format('DD MMM, YYYY')
     },
 
+    formatMonth(month) {
+      return month ? moment(month).format('MMM YYYY') : ''
+    },
+
     async loadSettings() {
       try {
         const response = await getFeeVoucherSettings()
@@ -394,7 +404,21 @@ export default {
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
-          
+
+          /* Inkjet-safe palette: light tones darkened one step so hairlines,
+             tints and muted text stay visible on inkjet printouts (ink spreads
+             and lightens on absorbent paper). Solid indigo (#4f46e5) prints fine. */
+          :root {
+            --accent: #4f46e5;
+            --accent-soft: #e0e7ff;
+            --accent-border: #c7d2fe;
+            --ink: #1e293b;
+            --muted: #5b6b82;
+            --border: #cbd5e1;
+            --border-strong: #94a3b8;
+            --surface: #f1f5f9;
+          }
+
           body { 
             font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif; 
             font-size: 13px; /* Increased base size for inkjet clarity */
@@ -441,9 +465,9 @@ export default {
           
           .voucher-copy {
             background: white;
-            border: 2px solid #000;
-            border-radius: 0; /* Sharp corners for professional look */
-            padding: 5mm;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 6mm;
             height: 100%;
             display: flex;
             flex-direction: column;
@@ -454,9 +478,9 @@ export default {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 10px;
-            padding-bottom: 5px;
-            border-bottom: 2px solid #000;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--accent);
           }
           
           .school-info {
@@ -467,24 +491,24 @@ export default {
           }
           
           .school-logo img {
-            height: 60px;
-            width: 60px;
+            height: 56px;
+            width: 56px;
             object-fit: contain;
-            filter: grayscale(100%) contrast(120%); /* Optimize logo for B&W */
           }
-          
+
           .school-details h2 {
-            margin: 0 0 2px 0;
-            color: #000;
-            font-size: 18px;
+            margin: 0 0 3px 0;
+            color: var(--ink);
+            font-size: 19px;
             font-weight: 800;
             text-transform: uppercase;
+            letter-spacing: 0.4px;
           }
-          
+
           .school-details p {
             margin: 1px 0;
-            color: #000;
-            font-size: 12px; /* Bumped from 11px */
+            color: var(--muted);
+            font-size: 11.5px;
           }
           
           .school-tagline {
@@ -499,48 +523,71 @@ export default {
           }
           
           .voucher-title {
-            margin: 0 0 5px 0;
-            color: #000;
-            font-size: 16px; /* Adjusted for inline status */
-            font-weight: 900;
+            margin: 0 0 6px 0;
+            color: var(--ink);
+            font-size: 15px;
+            font-weight: 800;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 1px;
           }
-          
+
           .status-badge {
-            font-size: 12px;
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 999px;
+            background: var(--accent-soft);
+            border: 1px solid var(--accent-border);
+            color: var(--accent);
+            font-size: 11px;
             font-weight: 700;
-            margin-left: 5px;
+            letter-spacing: 0.8px;
+            margin-left: 6px;
             vertical-align: middle;
           }
-          
+
           .voucher-number {
-            border: 2px solid #000; /* Thicker border */
-            color: #000;
-            padding: 2px 4px;
-            font-size: 12px;
-            font-weight: 800;
             display: block;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--ink);
+            padding: 3px 8px;
+            font-size: 11px;
+            font-weight: 700;
             margin-bottom: 4px;
-            font-family: inherit; /* Removed Courier New */
-            background: white;
+            font-family: inherit;
           }
-          
+
           .copy-label {
-            color: #000;
-            border: 2px solid #000;
-            padding: 2px 6px;
-            font-size: 11px; /* Bumped from 10px */
-            font-weight: 800;
-            text-transform: uppercase;
             display: inline-block;
+            background: var(--accent);
+            color: white;
+            border-radius: 999px;
+            padding: 2px 10px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
             margin-top: 2px;
           }
-          
+
           .print-date {
-             color: #000;
-             font-size: 10px; /* Bumped from 9px */
-             margin-top: 2px;
+             color: var(--muted);
+             font-size: 10.5px;
+             margin-top: 3px;
+          }
+
+          .fee-month {
+             display: inline-block;
+             margin-top: 4px;
+             background: var(--accent-soft);
+             border: 1px solid var(--accent-border);
+             color: var(--accent);
+             border-radius: 999px;
+             padding: 2px 10px;
+             font-size: 11px;
+             font-weight: 700;
+             letter-spacing: 0.5px;
           }
           
           .voucher-body {
@@ -552,148 +599,191 @@ export default {
           .info-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 10px;
-            border: 1px solid #000;
+            margin-bottom: 12px;
           }
-          
+
           .info-table td {
-            padding: 5px 8px; /* More padding */
-            border: 1px solid #000;
-            font-size: 12px; /* Bumped from 11px */
-            color: #000;
+            padding: 6px 8px;
+            border: none;
+            border-bottom: 1px solid var(--border);
+            font-size: 12px;
+            color: var(--ink);
           }
-          
-          
+
+          .info-table tr:last-child td {
+            border-bottom: none;
+          }
+
           .info-table .label {
-            background: white; /* Removed gray background */
-            font-weight: 800;
-            width: 15%; /* Optimized for name space */
-            white-space: nowrap; /* Prevent label wrapping */
+            font-weight: 700;
+            color: var(--muted);
+            width: 14%;
+            white-space: nowrap;
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.5px;
           }
-          
+
           .info-table .value {
-            font-weight: 600; /* Slightly bolder for names */
-            width: 35%;
+            font-weight: 600;
+            width: 36%;
           }
           
           .fee-section {
-            margin-bottom: 10px;
-            flex: 1; 
+            margin-bottom: 12px;
+            flex: 1;
           }
-          
+
           .fee-table {
             width: 100%;
-            border-collapse: collapse;
-            border: 1px solid #000;
+            border-collapse: separate;
+            border-spacing: 0;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
           }
-          
+
           .fee-table th,
           .fee-table td {
-            padding: 5px 8px; /* More padding */
-            border: 1px solid #000;
+            padding: 6px 10px;
+            border-right: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
             text-align: left;
-            font-size: 12px; /* Bumped from 11px */
-            color: #000;
+            font-size: 12px;
+            color: var(--ink);
           }
-          
+
+          .fee-table th:last-child,
+          .fee-table td:last-child {
+            border-right: none;
+          }
+
+          .fee-table tr:last-child td {
+            border-bottom: none;
+          }
+
           .fee-table th {
-            background: white; /* Removed gray background */
-            font-weight: 800;
+            background: var(--accent-soft);
+            color: var(--accent);
+            font-weight: 700;
             text-transform: uppercase;
-            border-bottom: 2px solid #000;
+            font-size: 11px;
+            letter-spacing: 0.8px;
+            border-bottom: 1px solid var(--accent-border);
           }
-          
+
           .fee-table .amount-col,
           .fee-table .amount {
             text-align: right;
             width: 25%;
-            font-family: inherit; /* Removed Consolas/Monaco */
+            font-variant-numeric: tabular-nums;
+            font-weight: 600;
+            white-space: nowrap;
           }
-          
-          .subtotal-row td,
-          .paid-row td,
-          .total-row td {
-            border-top: 1px solid #000;
+
+          .subtotal-row td {
+            color: var(--muted);
+            font-weight: 600;
+            border-top: 1px solid var(--border);
+          }
+
+          .paid-row td {
+            color: var(--muted);
+            border-top: 1px solid var(--border);
           }
 
           .total-row td {
-            border-top: 2px solid #000;
-            font-weight: 900;
-            background: white; /* Removed gray background */
-            font-size: 13px;
+            border-top: 2px solid var(--accent);
+            font-weight: 800;
+            background: var(--surface);
+            font-size: 12.5px;
+            color: var(--ink);
           }
           
           .payment-info {
             margin: 10px 0;
-            border: 1px dashed #000;
-            padding: 5px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 8px 10px;
           }
 
-          .paid-stamp, .partial-stamp {
+          .paid-stamp, .partial-stamp, .pending-stamp, .cancelled-stamp {
              position: absolute;
-             top: 40%;
+             top: 42%;
              left: 50%;
              transform: translate(-50%, -50%) rotate(-15deg);
-             font-size: 3.5rem;
-             font-weight: 900;
-             color: #000; /* Pure black text */
-             border: 6px double #000; /* Distinct double border */
-             padding: 10px 20px;
+             font-size: 2.8rem;
+             font-weight: 800;
+             letter-spacing: 5px;
+             border: 4px solid;
+             border-radius: 14px;
+             padding: 8px 20px;
              text-transform: uppercase;
              z-index: 0;
              pointer-events: none;
-             opacity: 0.15; /* Transparency for watermark effect */
-             mix-blend-mode: multiply; /* Better blending on print */
+             opacity: 0.25; /* Darkened for inkjet legibility */
+             mix-blend-mode: multiply;
           }
-          
+
+          .paid-stamp { color: #16a34a; }
+          .partial-stamp { color: #d97706; }
+          .pending-stamp { color: #5b6b82; }
+          .cancelled-stamp { color: #dc2626; }
+
           .payment-instruction {
             font-size: 11px;
-            color: #000;
+            color: var(--ink);
           }
-           
+
           .payment-instruction strong {
-            display: inline; /* Make inline */
+            display: inline;
             margin-right: 5px;
-            text-decoration: underline;
+            color: var(--accent);
+            font-weight: 700;
           }
 
           .signatures {
             margin-top: auto; /* Push to bottom */
-            padding-top: 15px;
-            border-top: 1px dashed #000;
+            padding-top: 12px;
+            border-top: 1px dashed var(--border-strong);
           }
-          
+
           .signature-row {
              display: flex;
              justify-content: space-between;
              width: 100%;
              font-size: 11px;
              font-weight: 500;
-             color: #000;
+             color: var(--ink);
           }
-          
+
           .sig-item strong {
-            font-weight: 800;
+            font-weight: 700;
             margin-right: 5px;
+            color: var(--muted);
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.5px;
           }
-          
+
           .voucher-status {
              font-size: 11px;
              font-weight: 800;
              text-transform: uppercase;
              margin-bottom: 2px;
              padding: 2px 0;
-             border-bottom: 1px solid #000;
+             border-bottom: 1px solid var(--border);
              display: inline-block;
           }
 
           .voucher-footer {
             margin-top: 10px;
-            border-top: 1px solid #000;
-            padding-top: 5px;
+            border-top: 1px solid var(--border);
+            padding-top: 6px;
             text-align: center;
-            font-size: 10px; /* Bumped from 9px */
-            color: #000;
+            font-size: 10px;
+            color: var(--muted);
             font-style: italic;
           }
 
@@ -803,14 +893,15 @@ export default {
 }
 
 .voucher-copy {
-  padding: 15px;
+  padding: 18px;
   margin: 0;
-  border: 2px solid #000;
-  border-radius: 0;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
   min-height: 95vh;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
   display: flex;
   flex-direction: column;
+  position: relative; /* anchor status stamp to this copy */
 }
 
 .office-copy {
@@ -823,7 +914,7 @@ export default {
   align-items: flex-start;
   margin-bottom: 20px;
   padding-bottom: 15px;
-  border-bottom: 2px solid #000;
+  border-bottom: 2px solid #4f46e5;
 }
 
 .school-info {
@@ -834,25 +925,27 @@ export default {
 
 .school-details h2 {
   margin: 0 0 5px 0;
-  color: #000;
+  color: #1e293b;
   font-size: 20px;
   font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
 }
 
 .school-details p {
   margin: 2px 0;
-  color: #000;
+  color: #5b6b82;
   font-size: 14px;
 }
 
 .school-tagline {
   font-style: italic;
-  color: #000 !important;
+  color: #5b6b82 !important;
   font-weight: 500;
 }
 
 .school-website {
-  color: #000 !important;
+  color: #5b6b82 !important;
   font-size: 12px;
 }
 
@@ -862,42 +955,74 @@ export default {
 
 .voucher-title {
   margin: 0;
-  color: #000;
-  font-size: 24px;
-  font-weight: bold;
+  color: #1e293b;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 3px 12px;
+  border-radius: 999px;
+  background: #e0e7ff;
+  border: 1px solid #c7d2fe;
+  color: #4f46e5;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  margin-left: 6px;
+  vertical-align: middle;
+  text-transform: uppercase;
 }
 
 .voucher-number {
-  background: #fff;
-  color: #000;
-  padding: 4px 8px;
-  border-radius: 4px;
+  background: #f1f5f9;
+  color: #1e293b;
+  padding: 4px 10px;
+  border-radius: 6px;
   font-size: 12px;
-  font-weight: 600;
-  margin: 4px 0;
+  font-weight: 700;
+  margin: 6px 0;
   display: inline-block;
-  border: 1px solid #000;
-  font-family: 'Courier New', monospace;
+  border: 1px solid #cbd5e1;
 }
 
 .copy-label {
-  background: #666;
+  background: #4f46e5;
   color: white;
-  padding: 4px 12px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 600;
+  padding: 4px 14px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
   margin: 8px 0;
   display: inline-block;
+  text-transform: uppercase;
 }
 
 .office-label {
-  background: #333;
+  background: #334155;
 }
 
 .print-date {
-  color: #909399;
+  color: #5b6b82;
   font-size: 12px;
+  font-weight: 600;
+}
+
+.fee-month {
+  display: inline-block;
+  margin-top: 5px;
+  background: #e0e7ff;
+  border: 1px solid #c7d2fe;
+  color: #4f46e5;
+  border-radius: 999px;
+  padding: 3px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
 }
 
 .voucher-body {
@@ -912,17 +1037,26 @@ export default {
 
 .info-table td {
   padding: 8px 12px;
-  border: 1px solid #e4e7ed;
+  border: none;
+  border-bottom: 1px solid #cbd5e1;
+}
+
+.info-table tr:last-child td {
+  border-bottom: none;
 }
 
 .info-table .label {
-  background: #f5f7fa;
-  font-weight: 600;
-  width: 25%;
+  font-weight: 700;
+  color: #5b6b82;
+  width: 14%;
+  white-space: nowrap;
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.5px;
 }
 
 .info-table .value {
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .due-date {
@@ -935,73 +1069,107 @@ export default {
 }
 
 .paid-stamp,
-.partial-stamp {
-  font-size: 24px;
-  font-weight: bold;
-  color: green;
-  border: 2px solid green;
-  padding: 5px 10px;
-  border-radius: 5px;
-  transform: rotate(-15deg);
+.partial-stamp,
+.pending-stamp,
+.cancelled-stamp {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: 4px;
+  border: 3px solid;
+  border-radius: 12px;
+  padding: 8px 18px;
+  transform: translate(-50%, -50%) rotate(-15deg);
   display: inline-block;
   margin-bottom: 10px;
   position: absolute;
   top: 50%;
   left: 50%;
-  opacity: 0.3;
+  opacity: 0.25;
+  pointer-events: none;
+}
+
+.paid-stamp {
+  color: #16a34a;
+  border-color: #16a34a;
 }
 
 .partial-stamp {
-  color: orange;
-  border-color: orange;
+  color: #d97706;
+  border-color: #d97706;
+}
+
+.pending-stamp {
+  color: #5b6b82;
+  border-color: #5b6b82;
+}
+
+.cancelled-stamp {
+  color: #dc2626;
+  border-color: #dc2626;
 }
 
 .fee-table {
   width: 100%;
-  border-collapse: collapse;
-  border: 2px solid #303133;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  overflow: hidden;
 }
 
 .fee-table th,
 .fee-table td {
-  padding: 12px;
+  padding: 10px 14px;
   text-align: left;
-  border: 1px solid #303133;
+  border-right: 1px solid #cbd5e1;
+  border-bottom: 1px solid #cbd5e1;
+  font-size: 14px;
+  color: #1e293b;
+}
+
+.fee-table th:last-child,
+.fee-table td:last-child {
+  border-right: none;
+}
+
+.fee-table tr:last-child td {
+  border-bottom: none;
 }
 
 .fee-table th {
-  background: #f5f7fa;
-  font-weight: 600;
-  color: #303133;
+  background: #e0e7ff;
+  color: #4f46e5;
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0.8px;
+  border-bottom: 1px solid #c7d2fe;
 }
 
 .amount-col,
 .amount {
   text-align: right;
-  font-family: 'Courier New', monospace;
+  font-variant-numeric: tabular-nums;
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .fine-row {
-  color: #555;
+  color: #5b6b82;
 }
-
 
 .subtotal-row td,
 .paid-row td {
+  color: #5b6b82;
   font-weight: 600;
-  background-color: #fafafa;
-}
-
-.total-row {
-  background: #f0f0f0;
-  border-top: 2px solid #333;
 }
 
 .total-row td {
-  font-size: 16px;
-  color: #333;
-  font-weight: bold;
+  font-size: 15px;
+  color: #1e293b;
+  font-weight: 800;
+  background: #f1f5f9;
+  border-top: 2px solid #4f46e5;
 }
 
 .notes-section {
@@ -1017,34 +1185,53 @@ export default {
   color: #606266;
 }
 
-.payment-instructions {
-  margin: 20px 0;
-  padding: 15px;
-  background: #f0f0f0;
-  border-radius: 6px;
-  border: 1px solid #ccc;
+.payment-info {
+  margin: 14px 0;
+  padding: 12px 14px;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #1e293b;
 }
 
-.payment-instructions p {
-  margin: 0 0 8px 0;
-  font-weight: 600;
-  color: #333;
+.payment-info strong {
+  color: #4f46e5;
+  font-weight: 700;
+  margin-right: 5px;
 }
 
-.payment-instructions ul {
-  margin: 8px 0 0 0;
-  padding-left: 20px;
+.signatures {
+  margin-top: auto;
+  padding-top: 14px;
+  border-top: 1px dashed #94a3b8;
 }
 
-.payment-instructions li {
-  margin-bottom: 4px;
-  color: #606266;
+.signature-row {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  font-size: 13px;
+  color: #1e293b;
+}
+
+.sig-item strong {
+  font-weight: 700;
+  margin-right: 5px;
+  color: #5b6b82;
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.5px;
 }
 
 .voucher-footer {
-  margin-top: 30px;
-  padding-top: 20px;
-  border-top: 2px solid #e4e7ed;
+  margin-top: 24px;
+  padding-top: 12px;
+  border-top: 1px solid #cbd5e1;
+  text-align: center;
+  font-size: 12px;
+  color: #5b6b82;
+  font-style: italic;
 }
 
 .signature-section {
@@ -1113,8 +1300,9 @@ export default {
   
   .voucher-copy {
     margin: 0 !important;
-    border: 1px solid #333 !important;
-    padding: 8mm !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 10px !important;
+    padding: 6mm !important;
     box-shadow: none !important;
     min-height: auto !important;
     page-break-inside: avoid !important;
@@ -1155,7 +1343,7 @@ export default {
     align-items: flex-start !important;
     margin-bottom: 15px !important;
     padding-bottom: 10px !important;
-    border-bottom: 1px solid #ddd !important;
+    border-bottom: 2px solid #4f46e5 !important;
   }
   
   .school-info {

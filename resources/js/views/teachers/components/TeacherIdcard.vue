@@ -1,69 +1,54 @@
 <template>
-    <el-dialog
-      :modelValue="showcardprop"
-      title="Teacher ID Card"
-      width="350px"
-      @close="handleClose"
-    >
-      <div class="print-actions">
-        <el-button type="primary" @click="printIDCard">
-          <el-icon><Printer /></el-icon> Print ID Card
-        </el-button>
-      </div>
+  <el-dialog
+    :modelValue="showcardprop"
+    title="Teacher ID Card"
+    width="420px"
+    @close="handleClose"
+  >
+    <div class="print-actions">
+      <el-button type="primary" @click="printIDCard">
+        <el-icon><Printer /></el-icon> Print ID Card
+      </el-button>
+    </div>
 
-      <div class="id-card-container" ref="idCardContent">
-        <div class="id-card">
-          <!-- Header with logo and school name in two columns -->
-          <div class="id-card-header">
-            <div class="header-content">
-              <div class="logo-container">
-                <img v-if="settings.school_logo" :src="settings.school_logo" alt="School Logo" class="school-logo"/>
-              </div>
-              <div class="school-info">
-                <h2 class="school-name">{{ settings.school_name || 'School Name' }}</h2>
-              </div>
-            </div>
+    <div class="id-card-container" ref="idCardContent">
+      <div class="id-card">
+        <!-- Indigo header band: logo + school name -->
+        <div class="id-card-header">
+          <div class="logo-box">
+            <img v-if="resolvedLogo" :src="resolvedLogo" alt="School Logo" class="school-logo" />
           </div>
-          
-          <!-- Card Title -->
-          <div class="card-title-container">
-            <h3 class="card-title">Teacher ID Card</h3>
+          <div class="school-name">{{ settings.school_name || 'School Name' }}</div>
+        </div>
+
+        <!-- Body: QR on the left, teacher details on the right -->
+        <div class="id-card-body">
+          <div class="qr-box">
+            <vue-qrcode class="qr-code" :value="qrCodeUrl" :size="88" level="H" />
           </div>
-          
-          <div class="id-card-body">
-            <!-- Large QR Code in a single line -->
-            <div class="qr-section">
-              <vue-qrcode 
-                :value="qrCodeUrl" 
-                :size="125" 
-                level="H" 
-                class="qr-code"
-              ></vue-qrcode>
-            </div>
-            
-            <!-- Teacher Name -->
-            <div class="teacher-info">
-              <h3 class="teacher-name">{{ teacher.name || 'Teacher Name' }}</h3>
-              <p v-if="teacher.teacher_special_id" class="teacher-code">ID: {{ teacher.teacher_special_id }}</p>
-              <p v-if="teacher.designation" class="teacher-code"><b>Designation: {{ teacher.designation }}</b></p>
-              <p v-if="teacher.class_name" class="teacher-class">Class Teacher: {{ teacher.class_name }}</p>
-            </div>
-            
-            <!-- Footer with scan instruction and issue date -->
-            <div class="id-card-footer">
-              <p class="scan-instruction">Scan QR code for online verification</p>
-              <p class="issue-date">Issued: {{ currentDate }}</p>
-            </div>
+          <div class="teacher-info">
+            <div class="card-title">Teacher ID Card</div>
+            <div class="teacher-name">{{ teacher.name || 'Teacher Name' }}</div>
+            <div v-if="teacher.teacher_special_id" class="teacher-code">ID: {{ teacher.teacher_special_id }}</div>
+            <div v-if="teacher.designation" class="teacher-code">Designation: {{ teacher.designation }}</div>
+            <div v-if="teacher.class_name" class="teacher-class">Class Teacher: {{ teacher.class_name }}</div>
           </div>
         </div>
+
+        <!-- Footer strip -->
+        <div class="id-card-footer">
+          <span class="scan-instruction">Scan QR code for online verification</span>
+          <span class="issue-date">Issued: {{ currentDate }}</span>
+        </div>
       </div>
-    </el-dialog>
+    </div>
+  </el-dialog>
 </template>
 
 <script>
-import VueQrcode from 'qrcode.vue';
-import Resource from '@/api/resource';
-import { Printer } from '@element-plus/icons-vue';
+import VueQrcode from 'qrcode.vue'
+import Resource from '@/api/resource'
+import { Printer } from '@element-plus/icons-vue'
 
 export default {
   name: 'TeacherIdcard',
@@ -85,210 +70,166 @@ export default {
   data() {
     return {
       settings: {},
-      showmodal: true,
       settingsResource: new Resource('settings'),
       currentDateStr: new Date().toLocaleDateString('en-GB', {
         day: 'numeric',
         month: 'short',
         year: 'numeric'
       })
-    };
+    }
   },
   computed: {
-    dialogVisible() {
-      return this.modelValue;
-    },
     qrCodeUrl() {
-      return `/teacher/${this.teacher.id || ''}/online`;
+      return `/teacher/${this.teacher.id || ''}/online`
     },
     currentDate() {
-      return this.currentDateStr;
+      return this.currentDateStr
+    },
+    // The logo may be a relative path — resolve it against the app origin so
+    // it also loads inside the print window (about:blank would break it)
+    resolvedLogo() {
+      const logo = this.settings.school_logo
+      if (!logo) return ''
+      try {
+        return new URL(logo, window.location.origin).href
+      } catch (e) {
+        return logo
+      }
     }
   },
   mounted() {
-    this.loadSettings();
+    this.loadSettings()
   },
   methods: {
     async loadSettings() {
       try {
-        const { data } = await this.settingsResource.list();
-        this.settings = data.settings || {};
+        const { data } = await this.settingsResource.list()
+        this.settings = data.settings || {}
       } catch (error) {
-        console.error('Failed to load settings:', error);
+        console.error('Failed to load settings:', error)
       }
-    },
-    updateDialog(value) {
-      this.$emit('update:modelValue', value);
     },
     handleClose() {
-      this.$emit('closeAddSection');
+      this.$emit('closeAddSection')
     },
     printIDCard() {
-      // Create a new window for printing
-      const printWindow = window.open('', '_blank');
-      
-      // Get the QR code image from the DOM
-      const qrCodeCanvas = document.querySelector('.qr-code canvas');
-      let qrCodeDataUrl = '';
-      
-      // Convert canvas to data URL for reliable printing
-      if (qrCodeCanvas) {
-        qrCodeDataUrl = qrCodeCanvas.toDataURL('image/png');
+      // vue-qrcode renders a <canvas> as its root element, so .qr-code IS
+      // the canvas — grabbing .qr-code canvas was the old bug (empty QR).
+      const qrCanvas = document.querySelector('.qr-code')
+      let qrCodeDataUrl = ''
+      if (qrCanvas && typeof qrCanvas.toDataURL === 'function') {
+        qrCodeDataUrl = qrCanvas.toDataURL('image/png')
       }
-      
-      // Get the school logo
-      const schoolLogo = this.settings.school_logo || '';
-      
-      // Create the print HTML with inline styles
+
+      const logo = this.resolvedLogo
+      const schoolName = this.settings.school_name || 'School Name'
+      const t = this.teacher
+
       const printContent = `
         <html>
         <head>
           <title>Teacher ID Card</title>
           <style>
-            @page {
-              size: 85mm 54mm;
-              margin: 0;
-            }
-            body {
-              margin: 0;
-              padding: 0;
-              width: 85mm;
-              height: 54mm;
-              font-family: Arial, sans-serif;
-              font-size: 10px;
-            }
+            @page { size: 85mm 54mm; margin: 0; }
+            * { box-sizing: border-box; margin: 0; padding: 0; }
+            html, body { width: 85mm; height: 54mm; }
+            body { font-family: Arial, sans-serif; }
             .id-card {
-              width: 100%;
-              height: 100%;
-              box-sizing: border-box;
-              background-color: white;
-              display: flex;
-              flex-direction: column;
+              width: 85mm; height: 54mm;
+              background: #fff;
+              display: flex; flex-direction: column;
+              overflow: hidden;
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
             }
             .id-card-header {
-              padding: 4px 8px;
-              display: flex;
-              align-items: center;
-              border-bottom: 1px solid #eee;
+              background: linear-gradient(135deg, #4f46e5, #818cf8);
+              color: #fff;
+              display: flex; align-items: center; gap: 3mm;
+              padding: 2.5mm 4mm;
             }
-            .logo-container {
-              width: 30%;
+            .logo-box {
+              width: 11mm; height: 11mm; flex-shrink: 0;
+              background: #fff; border-radius: 2mm;
+              display: flex; align-items: center; justify-content: center;
+              overflow: hidden;
             }
-            .school-logo {
-              height: 40px;
-              max-width: 100%;
-            }
-            .school-info {
-              width: 70%;
-              padding-left: 8px;
-            }
+            .school-logo { max-width: 100%; max-height: 100%; object-fit: contain; }
             .school-name {
-              font-size: 12px;
-              font-weight: bold;
-              margin: 0;
-            }
-            .card-title-container {
-              text-align: center;
-              padding: 2px 0;
-              border-bottom: 1px solid #eee;
-            }
-            .card-title {
-              font-size: 10px;
-              text-transform: uppercase;
-              margin: 0;
-              font-weight: bold;
+              font-size: 4mm; font-weight: 700; letter-spacing: 0.3px;
+              white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
             }
             .id-card-body {
-              flex-grow: 1;
-              display: flex;
-              flex-direction: column;
-              align-items: center;
-              padding: 4px 0;
+              flex: 1; min-height: 0;
+              display: flex; align-items: center;
+              padding: 3.5mm 4mm; gap: 5mm;
             }
-            .qr-section {
-              text-align: center;
-              margin: 4px 0;
+            .qr-box {
+              flex-shrink: 0;
+              border: 0.4mm solid #e0e7ff; border-radius: 2mm; padding: 2mm;
             }
-            .qr-code-img {
-              width: 90px;
-              height: 90px;
-            }
-            .teacher-info {
-              text-align: center;
-              width: 100%;
+            .qr-code-img { width: 88px; height: 88px; display: block; }
+            .teacher-info { flex: 1; min-width: 0; }
+            .card-title {
+              font-size: 3mm; font-weight: 800; color: #4f46e5;
+              text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1.5mm;
             }
             .teacher-name {
-              font-size: 12px;
-              font-weight: bold;
-              margin: 3px 0;
+              font-size: 4.5mm; font-weight: 700; color: #1e293b;
+              line-height: 1.2; margin-bottom: 1mm;
+              white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
             }
-            .teacher-code, .teacher-class {
-              font-size: 9px;
-              margin: 2px 0;
-            }
+            .teacher-code, .teacher-class { font-size: 3mm; color: #475569; line-height: 1.5; }
             .id-card-footer {
-              background-color: #f5f7fa;
-              text-align: center;
-              padding: 3px 0;
-              font-size: 8px;
-              color: #606266;
-              border-top: 1px solid #eee;
-            }
-            .scan-instruction, .issue-date {
-              margin: 2px 0;
+              background: #eef2ff; color: #4f46e5;
+              display: flex; justify-content: space-between; align-items: center;
+              padding: 2mm 4mm; font-size: 2.8mm;
             }
           </style>
         </head>
         <body>
           <div class="id-card">
             <div class="id-card-header">
-              <div class="logo-container">
-                ${schoolLogo ? `<img src="${schoolLogo}" alt="School Logo" class="school-logo"/>` : ''}
+              <div class="logo-box">
+                ${logo ? `<img src="${logo}" alt="School Logo" class="school-logo"/>` : ''}
               </div>
-              <div class="school-info">
-                <h2 class="school-name">${this.settings.school_name || 'School Name'}</h2>
-              </div>
+              <div class="school-name">${schoolName}</div>
             </div>
-            
-            <div class="card-title-container">
-              <h3 class="card-title">Teacher ID Card</h3>
-            </div>
-            
+
             <div class="id-card-body">
-              <div class="qr-section">
+              <div class="qr-box">
                 ${qrCodeDataUrl ? `<img src="${qrCodeDataUrl}" alt="QR Code" class="qr-code-img"/>` : ''}
               </div>
-              
               <div class="teacher-info">
-                <div class="teacher-name">${this.teacher.name || 'Teacher Name'}</div>
-                ${this.teacher.teacher_special_id ? `<div class="teacher-code">ID: ${this.teacher.teacher_special_id}</div>` : ''}
-                ${this.teacher.designation ? `<div class="teacher-code"><b>Designation: ${this.teacher.designation}</b></div>` : ''}
-                ${this.teacher.class_name ? `<div class="teacher-class">Class Teacher: ${this.teacher.class_name}</div>` : ''}
+                <div class="card-title">Teacher ID Card</div>
+                <div class="teacher-name">${t.name || 'Teacher Name'}</div>
+                ${t.teacher_special_id ? `<div class="teacher-code">ID: ${t.teacher_special_id}</div>` : ''}
+                ${t.designation ? `<div class="teacher-code">Designation: ${t.designation}</div>` : ''}
+                ${t.class_name ? `<div class="teacher-class">Class Teacher: ${t.class_name}</div>` : ''}
               </div>
             </div>
-            
+
             <div class="id-card-footer">
-              <div class="scan-instruction">Scan QR code for online verification</div>
-              <div class="issue-date">Issued: ${this.currentDate}</div>
+              <span>Scan QR code for online verification</span>
+              <span>Issued: ${this.currentDate}</span>
             </div>
           </div>
         </body>
         </html>
-      `;
-      
-      // Write to the new window
-      printWindow.document.open();
-      printWindow.document.write(printContent);
-      printWindow.document.close();
-      
-      // Add onload event to print after resources are loaded
-      printWindow.onload = function() {
-        printWindow.focus();
-        printWindow.print();
-        setTimeout(function() {
-          printWindow.close();
-        }, 1000);
-      };
+      `
+
+      const printWindow = window.open('', '_blank')
+      printWindow.document.open()
+      printWindow.document.write(printContent)
+      printWindow.document.close()
+
+      printWindow.onload = function () {
+        printWindow.focus()
+        printWindow.print()
+        setTimeout(function () {
+          printWindow.close()
+        }, 1000)
+      }
     }
   }
 }
@@ -306,164 +247,109 @@ export default {
   padding: 15px 0;
 }
 
+/* 85mm × 54mm credit-card proportions, rendered 1:1 with mm units so the
+   on-screen preview is exactly what prints */
 .id-card {
   width: 85mm;
-  height: auto;
-  background: white;
-  border-radius: 10px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  border-radius: 4mm;
   overflow: hidden;
-  display: flex;
-  flex-direction: column;
+  background: #fff;
+  border: 1px solid #e4e7ed;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
   font-family: Arial, sans-serif;
 }
 
 .id-card-header {
-  color: #000;
-  padding: 4px 8px;
-}
-
-.header-content {
+  background: linear-gradient(135deg, #4f46e5, #818cf8);
+  color: #fff;
   display: flex;
   align-items: center;
+  gap: 3mm;
+  padding: 2.5mm 4mm;
 }
 
-.logo-container {
-  width: 30%;
+.logo-box {
+  width: 11mm;
+  height: 11mm;
+  flex-shrink: 0;
+  background: #fff;
+  border-radius: 2mm;
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
 }
 
 .school-logo {
-  height: 60px;
   max-width: 100%;
+  max-height: 100%;
   object-fit: contain;
 }
 
-.school-info {
-  width: 70%;
-  padding-left: 8px;
-}
-
 .school-name {
-  font-size: 15px;
-  margin: 0;
-  line-height: 1.2;
-}
-
-.card-title-container {
-  color: #000;
-  text-align: center;
-  padding: 3px 0;
-}
-
-.card-title {
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  margin: 0;
+  font-size: 4mm;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .id-card-body {
-  flex: 1;
+  min-height: 32mm;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  padding: 4px 0;
-  justify-content: space-between;
+  padding: 3.5mm 4mm;
+  gap: 5mm;
 }
 
-.qr-section {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 100%;
-  margin: 30px 0;
-}
-
-.qr-code {
-  width: 85px !important;
-  height: 85px !important;
+.qr-box {
+  flex-shrink: 0;
+  border: 0.4mm solid #e0e7ff;
+  border-radius: 2mm;
+  padding: 2mm;
+  line-height: 0;
 }
 
 .teacher-info {
-  text-align: center;
-  width: 100%;
-  padding: 0 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.card-title {
+  font-size: 3mm;
+  font-weight: 800;
+  color: #4f46e5;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 1.5mm;
 }
 
 .teacher-name {
-  font-size: 14px;
-  font-weight: bold;
-  margin: 2px 0;
-  color: #333;
-  word-wrap: break-word;
+  font-size: 4.5mm;
+  font-weight: 700;
+  color: #1e293b;
   line-height: 1.2;
+  margin-bottom: 1mm;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
+.teacher-code,
 .teacher-class {
-  font-size: 10px;
-  color: #666;
-  margin: 2px 0;
-  line-height: 1.1;
+  font-size: 3mm;
+  color: #475569;
+  line-height: 1.5;
 }
 
 .id-card-footer {
-  width: 100%;
-  background: #f5f7fa;
-  text-align: center;
-  padding: 3px 0;
-  margin-top: 3px;
-}
-
-.scan-instruction {
-  font-size: 9px;
-  color: #606266;
-  margin: 1px 0;
-}
-
-.issue-date {
-  font-size: 9px;
-  font-weight: bold;
-  color: #606266;
-  margin: 1px 0;
-}
-
-.teacher-code {
-  font-size: 9px;
-  color: #606266;
-  margin: 1px 0;
-}
-
-@media print {
-  .el-dialog {
-    display: none !important;
-  }
-  
-  .id-card-container {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    padding: 0;
-    margin: 0;
-    background: white;
-  }
-  
-  /* Enhanced print styles */
-  .qr-code {
-    display: block !important;
-    width: 85px !important;
-    height: 85px !important;
-  }
-  
-  .qr-code canvas,
-  .qr-code img {
-    width: 100% !important;
-    height: 100% !important;
-    display: block !important;
-  }
+  background: #eef2ff;
+  color: #4f46e5;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2mm 4mm;
+  font-size: 2.8mm;
 }
 </style>

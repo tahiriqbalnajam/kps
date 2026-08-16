@@ -87,9 +87,25 @@ onBeforeMount(() => {
   line-height: 50px;
   margin-left: 8px;
 
+  // Scoped to this breadcrumb subtree only: EP reads these global tokens for
+  // every breadcrumb state, so links, separators and the current item all get
+  // colors that work on the indigo navbar.
+  --el-text-color-primary: #e0e7ff; // links
+  --el-text-color-regular: #ffffff; // current (non-link) item
+  --el-text-color-placeholder: rgba(255, 255, 255, 0.5); // separators
+  --el-color-primary: #ffffff; // link hover
+
   .no-redirect {
     color: #fff;
     cursor: text;
+    font-weight: 600;
+  }
+
+  // Links: medium weight so the bold current page stands out; color fades
+  // to white on hover via EP's own transition on .is-link
+  :deep(.el-breadcrumb__inner.is-link),
+  :deep(.el-breadcrumb__inner a) {
+    font-weight: 500;
   }
 }
 </style>

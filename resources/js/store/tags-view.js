@@ -27,6 +27,20 @@ export const tagsViewStore = defineStore('tagsView', {
             }
           )
         );
+
+        // Cap the tab bar: drop the oldest non-affix tab(s) beyond the limit
+        // so the bar never overflows into multiple lines. Affix tabs (e.g.
+        // Dashboard) are pinned and never removed.
+        const MAX_TABS = 12;
+        while (state.visitedViews.length > MAX_TABS) {
+          const idx = state.visitedViews.findIndex(v => !v.meta?.affix)
+          if (idx === -1) break
+          const [dropped] = state.visitedViews.splice(idx, 1)
+          if (dropped?.name) {
+            const ci = state.cachedViews.indexOf(dropped.name)
+            if (ci !== -1) state.cachedViews.splice(ci, 1)
+          }
+        }
       })
     },
     addCachedView(view) {

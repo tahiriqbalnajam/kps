@@ -1,16 +1,14 @@
 <?php
+
 namespace App\Services;
 
-use DB;
-use Carbon\Carbon;
 use App\Models\Classes;
 use App\Models\Holiday;
 use App\Models\Student;
-use Carbon\CarbonPeriod;
 use App\Models\StudentAttendance;
-use Spatie\QueryBuilder\QueryBuilder;
-use Spatie\QueryBuilder\AllowedFilter;
 use App\Services\Contracts\AttendanceServiceInterface;
+use Carbon\Carbon;
+use DB;
 
 class AttendanceService implements AttendanceServiceInterface
 {
@@ -18,43 +16,43 @@ class AttendanceService implements AttendanceServiceInterface
     {
         $start_month = Carbon::createFromFormat('Y-m-d', $date)->firstOfMonth()->format('Y-m-d');
         $end_month = Carbon::createFromFormat('Y-m-d', $date)->lastOfMonth()->format('Y-m-d');
-        
+
         $attendance = StudentAttendance::where('student_id', $student_id)
-                                        
-                                        ->whereBetween('attendance_date', [$start_month, $end_month])
-                                        ->orderBy('attendance_date')
-                                        ->get();
-        
+            ->whereBetween('attendance_date', [$start_month, $end_month])
+            ->orderBy('attendance_date')
+            ->get();
+
         return $attendance;
     }
 
     public function get_student_attendance($student_id, $date)
     {
         $attendance = StudentAttendance::with('students')
-                                        ->where('student_id', $student_id)
-                                        ->where('attendance_date', $date)
-                                        ->first();
-        
+            ->where('student_id', $student_id)
+            ->where('attendance_date', $date)
+            ->first();
+
         return $attendance;
     }
 
-    public function student_monthly_attendance_report(array $request) {
-        
+    public function student_monthly_attendance_report(array $request)
+    {
+
         $start_month = Carbon::createFromFormat('Y-m-d', $request['month'])->firstOfMonth()->format('Y-m-d');
         $end_month = Carbon::createFromFormat('Y-m-d', $request['month'])->lastOfMonth()->format('Y-m-d');
         $class_id = $request['class'];
-        
+
         // Build the WHERE clause based on whether section_id is provided
         $whereClause = "c.date BETWEEN ? AND ? AND s.status = 'enable'";
         $params = [$start_month, $end_month];
-        
-        if (isset($request['section_id']) && !empty($request['section_id'])) {
+
+        if (isset($request['section_id']) && ! empty($request['section_id'])) {
             // Filter by specific section
-            $whereClause .= " AND s.section_id = ?";
+            $whereClause .= ' AND s.section_id = ?';
             $params[] = $request['section_id'];
         } else {
             // Filter by class (all sections in the class)
-            $whereClause .= " AND s.class_id = ?";
+            $whereClause .= ' AND s.class_id = ?';
             $params[] = $class_id;
         }
 
@@ -83,71 +81,92 @@ class AttendanceService implements AttendanceServiceInterface
                 s.id, c.date;
         ", $params);
 
-        foreach($attendance as $attend) {
+        foreach ($attendance as $attend) {
             $students[$attend->student_id]['name'] = $attend->student_name;
             $students[$attend->student_id]['attendances'][] = $attend->attendance_status;
         }
-        //print_r($attend);
-        return  $students;
+
+        // print_r($attend);
+        return $students;
     }
 
     public function student_attendance_marked(array $request)
     {
         $date = $request['month'];
-        $stdclass = $request['stdclass'];
-        $attendance = StudentAttendance::where(['attendance_date'=>$date, 'class_id' => $stdclass])->get();
-        
-        return $attendance;
+        $query = StudentAttendance::where('attendance_date', $date);
+
+        // When student_ids are sent, scope to exactly those students so a
+        // group-wise marking doesn't report the whole class as already marked
+        if (! empty($request['student_ids'])) {
+            $query->whereIn('student_id', $request['student_ids']);
+        } elseif (! empty($request['stdclass'])) {
+            $query->where('class_id', $request['stdclass']);
+        }
+
+        return $query->get();
     }
 
     public function student_daily_classwise(array $request)
     {
         $date = $request['attendance_date'];
         $pef_filter = ($request['pef_admission'] == 'yes') ? 1 : 0;
-        $query = DB::table('students as s')
+
+        // Only school days are reported — the previous query enforced this
+        // through the calendar/holidays joins, which silently dropped rows.
+        $isSchoolDay = DB::table('calendar')->where('date', $date)->exists()
+            && ! DB::table('holidays')->where('holiday_date', $date)->exists();
+        if (! $isSchoolDay) {
+            return collect();
+        }
+
+        // Class-wise report for a single day. Students are LEFT-joined so
+        // every class is listed with its real strength: a group-wise marking
+        // that covers only some students can no longer shrink the class's
+        // totals or drop the class from the report. Present/absent counts are
+        // DISTINCT per student so a stray duplicate attendance row cannot
+        // inflate them either.
+        $query = DB::table('classes as cl')
             ->selectRaw('
                 cl.name AS class_title,
                 COUNT(DISTINCT s.id) AS total_students,
                 COUNT(DISTINCT CASE WHEN s.gender = "male" THEN s.id END) AS total_male,
                 COUNT(DISTINCT CASE WHEN s.gender = "female" THEN s.id END) AS total_female,
-                COUNT(CASE WHEN s.gender = "male" AND sa.status = "present" THEN 1 END) AS total_male_present,
-                COUNT(CASE WHEN s.gender = "male" AND (sa.status = "absent" OR sa.status = "leave") THEN 1 END) AS total_male_absent,
-                COUNT(CASE WHEN s.gender = "female" AND sa.status = "present" THEN 1 END) AS total_female_present,
-                COUNT(CASE WHEN s.gender = "female" AND (sa.status = "absent" OR sa.status = "leave") THEN 1 END) AS total_female_absent,
-                COUNT(CASE WHEN sa.status = "present" THEN 1 END) AS total_present,
-                COUNT(CASE WHEN (sa.status = "absent" OR sa.status = "leave") THEN 1 END) AS total_absent,
-                ROUND((COUNT(CASE WHEN sa.status = "present" THEN 1 END) / COUNT(sa.id)) * 100 , 0) AS present_percentage,
-                ROUND((COUNT(CASE WHEN (sa.status = "absent" OR sa.status = "leave") THEN 1 END) / COUNT(sa.id)) * 100 , 0) AS absent_percentage
+                COUNT(DISTINCT CASE WHEN s.gender = "male" AND sa.status = "present" THEN s.id END) AS total_male_present,
+                COUNT(DISTINCT CASE WHEN s.gender = "male" AND (sa.status = "absent" OR sa.status = "leave") THEN s.id END) AS total_male_absent,
+                COUNT(DISTINCT CASE WHEN s.gender = "female" AND sa.status = "present" THEN s.id END) AS total_female_present,
+                COUNT(DISTINCT CASE WHEN s.gender = "female" AND (sa.status = "absent" OR sa.status = "leave") THEN s.id END) AS total_female_absent,
+                COUNT(DISTINCT CASE WHEN sa.status = "present" THEN s.id END) AS total_present,
+                COUNT(DISTINCT CASE WHEN (sa.status = "absent" OR sa.status = "leave") THEN s.id END) AS total_absent,
+                COALESCE(ROUND((COUNT(DISTINCT CASE WHEN sa.status = "present" THEN s.id END) / COUNT(DISTINCT s.id)) * 100, 0), 0) AS present_percentage,
+                COALESCE(ROUND((COUNT(DISTINCT CASE WHEN (sa.status = "absent" OR sa.status = "leave") THEN s.id END) / COUNT(DISTINCT s.id)) * 100, 0), 0) AS absent_percentage
             ')
-            ->join('student_attendances as sa', function($join) {
-                $join->on('s.id', '=', 'sa.student_id')
-                    ->on('s.class_id', '=', 'sa.class_id');
+            ->leftJoin('students as s', function ($join) use ($pef_filter) {
+                $join->on('s.class_id', '=', 'cl.id');
+                if ($pef_filter) {
+                    $join->whereRaw("s.pef_admission = 'yes' AND s.nadra_pending = 'No'");
+                }
             })
-            ->join('classes as cl', 's.class_id', '=', 'cl.id')
-            ->leftJoin('calendar as c', 'sa.attendance_date', '=', 'c.date')
-            ->leftJoin('holidays as h', 'sa.attendance_date', '=', 'h.holiday_date')
-            ->whereNull('h.holiday_date')
-            ->where('c.date', $date);
+            ->leftJoin('student_attendances as sa', function ($join) use ($date) {
+                $join->on('s.id', '=', 'sa.student_id')
+                    ->on('s.class_id', '=', 'sa.class_id')
+                    ->where('sa.attendance_date', $date);
+            })
+            ->groupBy('cl.id')
+            ->havingRaw('COUNT(DISTINCT sa.id) > 0')
+            ->get();
 
-        if ($pef_filter) {
-            $query->whereRaw(" s.pef_admission = 'yes' AND s.nadra_pending = 'No'");
-        }
-
-        $query->groupBy('cl.id');
-        //return $query->toSql();
-        $attendance = $query->get();
-        
-        return $attendance;
+        return $query;
     }
 
-    public function student_attendance_total($student_id) {
+    public function student_attendance_total($student_id)
+    {
 
         $student = Student::with('attendances')->findOrFail($student_id);
         $today = Carbon::today();
         $yesterday = Carbon::yesterday();
         $startOfMonth = Carbon::now()->startOfMonth();
         $endOfMonth = Carbon::now()->endOfMonth();
-        
+
         // Fetch attendance records for the current month
         $monthlyAttendance = $student->attendances->filter(function ($attendance) use ($startOfMonth, $endOfMonth) {
             return Carbon::parse($attendance->attendance_date)->between($startOfMonth, $endOfMonth);
@@ -192,38 +211,39 @@ class AttendanceService implements AttendanceServiceInterface
             'yesterday_status' => $yesterdayStatus,
         ];
 
-
         return $attendanceData;
-    
+
     }
 
-    public function absent_student_each_class($data) {
+    public function absent_student_each_class($data)
+    {
         $today = ($data['date']) ?? Carbon::today();
 
         $isHoliday = Holiday::whereDate('holiday_date', $today)->exists();
         if ($isHoliday) {
             return response()->json([
-                'message' => 'Today is a holiday. No students are absent.'
+                'message' => 'Today is a holiday. No students are absent.',
             ]);
         }
         $absentStudents = Classes::with(['students' => function ($query) use ($today) {
             $query->whereHas('attendances', function ($query) use ($today) {
                 $query->whereDate('attendance_date', $today)
-                      ->where(function ($query) {
-                          $query->where('status', 'absent')
-                                ->orWhere('status', 'leave');
-                      });
+                    ->where(function ($query) {
+                        $query->where('status', 'absent')
+                            ->orWhere('status', 'leave');
+                    });
             });
         }, 'students.parents' => function ($query) {
             $query->select('id', 'name', 'phone');
         }])
-        ->get();
+            ->get();
 
         $result = $absentStudents->map(function ($class) use ($today) {
             return [
                 'class_name' => $class->name,
                 'absent_students' => $class->students->map(function ($student) use ($today) {
                     $attendance = $student->attendances->where('attendance_date', $today)->first();
+
                     return [
                         'id' => $student->id,
                         'name' => $student->name,
@@ -232,22 +252,22 @@ class AttendanceService implements AttendanceServiceInterface
                         'attendace_id' => $attendance->id,
                         'comment' => $attendance->comment,
 
-
                     ];
-                })
+                }),
             ];
         });
 
         return $result;
     }
 
-    public function absent_comment($data) {
+    public function absent_comment($data)
+    {
         $attendance = StudentAttendance::findOrFail($data['attendance_id']);
         $attendance->comment = $data['comment'];
         $attendance->save();
 
         return response()->json([
-            'message' => 'Absent comment updated successfully.'
+            'message' => 'Absent comment updated successfully.',
         ]);
     }
 
@@ -284,19 +304,20 @@ class AttendanceService implements AttendanceServiceInterface
                 t.name, c.date;
         ", [$start_month, $end_month]);
 
-        //print_r($attendance);
-        foreach($attendance as $attend) {
+        // print_r($attendance);
+        foreach ($attendance as $attend) {
             $teachers[$attend->teacher_id]['name'] = $attend->teacher_name;
-            $teachers[$attend->teacher_id]['attendances'][] = array('status' => $attend->attendance_status, 'time' => $attend->updated_at, 'opening_time' => $attend->opening_time );
+            $teachers[$attend->teacher_id]['attendances'][] = ['status' => $attend->attendance_status, 'time' => $attend->updated_at, 'opening_time' => $attend->opening_time];
         }
 
         return $teachers;
     }
 
-    public function get_student_attendace_comments($student_id) {
+    public function get_student_attendace_comments($student_id)
+    {
         $attendancesWithComments = StudentAttendance::where('student_id', $student_id)
-        ->where('comment', '<>', '')
-        ->get();
+            ->where('comment', '<>', '')
+            ->get();
 
         return $attendancesWithComments;
     }
@@ -334,7 +355,7 @@ class AttendanceService implements AttendanceServiceInterface
         $grouped = [];
         foreach ($results as $row) {
             $className = $row->class_name;
-            if (!isset($grouped[$className])) {
+            if (! isset($grouped[$className])) {
                 $grouped[$className] = [];
             }
             if (count($grouped[$className]) < 4) {
@@ -348,9 +369,9 @@ class AttendanceService implements AttendanceServiceInterface
     public function get_attendance_summry($month = null)
     {
         $month = $month ?? Carbon::now()->format('Y-m');
-        
+
         // Most absent students by class
-        $absentees = StudentAttendance::where('created_at', 'like', $month . '%')
+        $absentees = StudentAttendance::where('created_at', 'like', $month.'%')
             ->where('status', 'absent')
             ->select('class_id', 'student_id', DB::raw('count(*) as absent_count'))
             ->groupBy('class_id', 'student_id')
@@ -360,7 +381,7 @@ class AttendanceService implements AttendanceServiceInterface
             ->groupBy('class_id');
 
         // Most present students by class
-        $punctual = StudentAttendance::where('created_at', 'like', $month . '%')
+        $punctual = StudentAttendance::where('created_at', 'like', $month.'%')
             ->where('status', 'present')
             ->select('class_id', 'student_id', DB::raw('count(*) as present_count'))
             ->groupBy('class_id', 'student_id')
@@ -370,7 +391,7 @@ class AttendanceService implements AttendanceServiceInterface
             ->groupBy('class_id');
 
         // Top 3 most punctual students overall
-        $topPunctual = StudentAttendance::where('created_at', 'like', $month . '%')
+        $topPunctual = StudentAttendance::where('created_at', 'like', $month.'%')
             ->where('status', 'present')
             ->select('student_id', DB::raw('count(*) as present_count'))
             ->groupBy('student_id')
@@ -382,8 +403,7 @@ class AttendanceService implements AttendanceServiceInterface
         return [
             'absentees' => $absentees,
             'punctual' => $punctual,
-            'top_punctual' => $topPunctual
+            'top_punctual' => $topPunctual,
         ];
     }
-   
 }

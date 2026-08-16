@@ -373,6 +373,8 @@ class FeeVoucherController extends Controller
                 'paid_amount'         => 'nullable|numeric|min:0',
                 'payment_date'        => 'nullable|date',
                 'pending_voucher_ids' => 'nullable|array',
+                'manually_settle_ids' => 'nullable|array',
+                'settle_pending_only' => 'nullable|boolean',
             ]);
 
             $voucher = FeeVoucher::findOrFail($id);
@@ -391,6 +393,23 @@ class FeeVoucherController extends Controller
                         'success' => true,
                         'message' => 'Voucher cancelled successfully',
                         'voucher' => $voucher->fresh(),
+                    ]);
+                }
+
+                // Settle-pending-only: mark selected pending vouchers paid without touching this voucher's own status
+                if ($request->boolean('settle_pending_only')) {
+                    $settledCount = $this->settlePendingVouchers(
+                        $request->manually_settle_ids ?? [],
+                        $request->payment_date ?? now()->toDateString()
+                    );
+                    DB::commit();
+                    return response()->json([
+                        'success'          => true,
+                        'message'          => $settledCount > 0
+                            ? "{$settledCount} pending voucher(s) settled"
+                            : 'No pending vouchers to settle',
+                        'voucher'          => $voucher->fresh(),
+                        'settled_count'    => $settledCount,
                     ]);
                 }
 
@@ -444,19 +463,21 @@ class FeeVoucherController extends Controller
                     ]);
                 }
 
-                // Bulk-mark additional pending vouchers (bundle payment feature)
-                if ($resolvedStatus === 'paid'
-                    && $request->filled('pending_voucher_ids')
-                    && count($request->pending_voucher_ids) > 0
-                ) {
-                    FeeVoucher::whereIn('id', $request->pending_voucher_ids)
-                        ->whereNotIn('status', ['paid', 'cancelled'])
-                        ->update([
-                            'status'       => 'paid',
-                            'payment_date' => $paymentDate,
-                            'updated_by'   => Auth::id() ?? 1,
-                        ]);
-                }
+                // --- Settle attached pending vouchers ---
+                // Auto: the cumulative payment covers the voucher's own fee first, then
+                // pending items in breakdown order — each fully covered pending voucher
+                // is marked paid immediately (works for partial payments too).
+                $coveredPendingIds = $this->computeCoveredPendingIds($voucher, $alreadyPaid, $newPayment);
+
+                // Manual: user-selected vouchers settle explicitly, regardless of coverage.
+                // Legacy: a fully-paid voucher also settles whatever ids the client sent.
+                $settledIds = array_values(array_unique(array_merge(
+                    $coveredPendingIds,
+                    $request->manually_settle_ids ?? [],
+                    $resolvedStatus === 'paid' ? ($request->pending_voucher_ids ?? []) : []
+                )));
+
+                $settledCount = $this->settlePendingVouchers($settledIds, $paymentDate);
 
                 DB::commit();
 
@@ -469,11 +490,16 @@ class FeeVoucherController extends Controller
                     default          => 'Voucher status updated successfully',
                 };
 
+                if ($settledCount > 0) {
+                    $message .= " {$settledCount} pending voucher(s) settled";
+                }
+
                 return response()->json([
                     'success'          => true,
                     'message'          => $message,
                     'voucher'          => $freshVoucher,
                     'remaining_amount' => $remainingAfter,
+                    'settled_count'    => $settledCount,
                 ]);
 
             } catch (\Exception $e) {
@@ -487,6 +513,86 @@ class FeeVoucherController extends Controller
                 'message' => 'Failed to update voucher: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Determine which attached pending vouchers the cumulative payment covers.
+     *
+     * Allocation order: the voucher's own fee (fee_amount minus the included pending
+     * amounts, plus fine when overdue) is covered first, then pending items in
+     * fee_breakdown order. A pending voucher is settled only when the payment fully
+     * covers its included amount.
+     *
+     * @return int[]
+     */
+    private function computeCoveredPendingIds(FeeVoucher $voucher, float $alreadyPaid, float $newPayment): array
+    {
+        $pendingItems = collect($voucher->fee_breakdown ?? [])
+            ->filter(fn ($item) => !empty($item['pending_voucher_id']))
+            ->values();
+
+        if ($pendingItems->isEmpty()) {
+            return [];
+        }
+
+        $pendingIncluded = (float) $pendingItems->sum(fn ($item) => (float) ($item['amount'] ?? 0));
+
+        $isOverdue  = $voucher->due_date && $voucher->due_date < now()->toDateString();
+        $ownAmount  = max(0, round((float) $voucher->fee_amount - $pendingIncluded, 2));
+        $ownAmount += $isOverdue ? (float) $voucher->fine_amount : 0;
+
+        $cumulative = round($alreadyPaid + $newPayment, 2);
+        $coverLeft  = round($cumulative - $ownAmount, 2);
+
+        $covered = [];
+        foreach ($pendingItems as $item) {
+            $itemAmount = round((float) ($item['amount'] ?? 0), 2);
+            if ($coverLeft < $itemAmount - 0.005) {
+                break; // not fully covered — later items can't be either
+            }
+            $covered[] = (int) $item['pending_voucher_id'];
+            $coverLeft = round($coverLeft - $itemAmount, 2);
+        }
+
+        return $covered;
+    }
+
+    /**
+     * Mark pending vouchers as paid (skips vouchers already paid or cancelled).
+     * paid_amount is raised to the voucher's own total so remaining/statistics
+     * stay consistent with the settled status.
+     *
+     * @param  int[]  $ids
+     */
+    private function settlePendingVouchers(array $ids, ?string $paymentDate = null): int
+    {
+        $ids = array_values(array_unique(array_filter($ids)));
+
+        if (empty($ids)) {
+            return 0;
+        }
+
+        $paymentDate = $paymentDate ?? now()->toDateString();
+        $settled     = 0;
+
+        FeeVoucher::whereIn('id', $ids)
+            ->whereNotIn('status', ['paid', 'cancelled'])
+            ->get()
+            ->each(function ($pendingVoucher) use (&$settled, $paymentDate) {
+                $isOverdue = $pendingVoucher->due_date && $pendingVoucher->due_date < now()->toDateString();
+                $target    = (float) ($isOverdue ? $pendingVoucher->total_with_fine : $pendingVoucher->fee_amount);
+
+                $pendingVoucher->update([
+                    'status'       => 'paid',
+                    'paid_amount'  => max((float) ($pendingVoucher->paid_amount ?? 0), $target),
+                    'payment_date' => $paymentDate,
+                    'updated_by'   => Auth::id() ?? 1,
+                ]);
+
+                $settled++;
+            });
+
+        return $settled;
     }
 
     /**
