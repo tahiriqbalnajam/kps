@@ -8,10 +8,11 @@ use Illuminate\Database\Eloquent\Model;
 class Section extends Model
 {
     use HasFactory;
-    
-    protected $fillable = ['name', 'class_id'];
+
+    protected $fillable = ['name', 'class_id', 'status'];
+
     public $timestamps = false;
-    
+
     /**
      * Get the class that owns the section
      */
@@ -19,7 +20,7 @@ class Section extends Model
     {
         return $this->belongsTo(Classes::class, 'class_id');
     }
-    
+
     /**
      * Get the students for the section
      */

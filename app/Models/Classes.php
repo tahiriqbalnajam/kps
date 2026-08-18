@@ -7,8 +7,10 @@ use Illuminate\Database\Eloquent\Model;
 class Classes extends Model
 {
     public $timestamps = false;
-    protected $fillable = ['name', 'priority'];
-    protected $table = "classes";
+
+    protected $fillable = ['name', 'priority', 'status'];
+
+    protected $table = 'classes';
 
     /**
      * The "booted" method of the model.
@@ -23,7 +25,7 @@ class Classes extends Model
 
     public function subjects()
     {
-        return $this->belongsToMany(Subject::class, 'subject_to_classes','class_id', 'subject_id');
+        return $this->belongsToMany(Subject::class, 'subject_to_classes', 'class_id', 'subject_id');
     }
 
     public function students()
@@ -42,18 +44,13 @@ class Classes extends Model
     }
 
     /**
-     * Get the sections for the class
+     * Get the sections for the class.
+     *
+     * Note: student counts are applied where the relation is consumed
+     * (see ClassesController@index) so they can be filtered by session/status.
      */
     public function sections()
     {
-        return $this->hasMany(Section::class, 'class_id')->withCount([
-            'students',
-            'students as males_count' => function ($query) {
-                $query->where('gender', 'male');
-            },
-            'students as females_count' => function ($query) {
-                $query->where('gender', 'female');
-            }
-        ]);
+        return $this->hasMany(Section::class, 'class_id');
     }
 }

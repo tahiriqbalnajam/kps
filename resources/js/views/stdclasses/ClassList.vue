@@ -10,6 +10,14 @@
         <el-button size="small" type="primary" @click="toggleSortPriority('desc')">Priority Desc</el-button>
         <el-button size="small" @click="toggleSortPriority(null)">Default</el-button>
       </div>
+      <div style="margin-left: 20px; display: inline-block;">
+        <span style="font-weight: 600; margin-right: 10px;">Status:</span>
+        <el-select v-model="query.status" size="small" style="width: 110px;" @change="getList">
+          <el-option label="Enabled" value="enable" />
+          <el-option label="Disabled" value="disable" />
+          <el-option label="All" value="all" />
+        </el-select>
+      </div>
     </div>
     <el-table
       :data="displayedClasses"
@@ -58,15 +66,34 @@
               <el-table-column label="Girls" prop="females_count" />
               <el-table-column align="right">
                 <template #default="scope">
-                  <el-button
-                    size="small"
-                    @click="handleEditSection(scope.row.id)"
-                  >Edit</el-button>
-                  <el-button
-                    size="small"
-                    type="danger"
-                    @click="handleDeleteSection(scope.row.id, scope.row.name)"
-                  >Delete</el-button>
+                  <el-switch
+                    v-model="scope.row.status"
+                    active-value="enable"
+                    inactive-value="disable"
+                    class="cls-status-switch"
+                    style="margin-right: 8px;"
+                    @change="(val) => handleToggleSectionStatus(scope.row, val)"
+                  />
+                  <el-tooltip content="Edit Section" placement="top">
+                    <el-button
+                      size="small"
+                      type="primary"
+                      plain
+                      @click="handleEditSection(scope.row.id)"
+                    >
+                      <el-icon><Edit /></el-icon>
+                    </el-button>
+                  </el-tooltip>
+                  <el-tooltip content="Delete Section" placement="top">
+                    <el-button
+                      size="small"
+                      type="danger"
+                      plain
+                      @click="handleDeleteSection(scope.row.id, scope.row.name)"
+                    >
+                      <el-icon><Delete /></el-icon>
+                    </el-button>
+                  </el-tooltip>
                 </template>
               </el-table-column>
             </el-table>
@@ -95,15 +122,34 @@
           <el-input ref="search" v-model="query.keyword" size="mini" placeholder="Type to search" v-on:input="debounceInput" />
         </template>
         <template #default="scope">
-          <el-button
-            size="small"
-            @click="handleEdit(scope.row.id, scope.row.name)"
-          >Edit</el-button>
-          <el-button
-            size="small"
-            type="danger"
-            @click="handleDelete(scope.row.id, scope.row.name)"
-          >Delete</el-button>
+          <el-switch
+            v-model="scope.row.status"
+            active-value="enable"
+            inactive-value="disable"
+            class="cls-status-switch"
+            style="margin-right: 8px;"
+            @change="(val) => handleToggleStatus(scope.row, val)"
+          />
+          <el-tooltip content="Edit Class" placement="top">
+            <el-button
+              size="small"
+              type="primary"
+              plain
+              @click="handleEdit(scope.row.id, scope.row.name)"
+            >
+              <el-icon><Edit /></el-icon>
+            </el-button>
+          </el-tooltip>
+          <el-tooltip content="Delete Class" placement="top">
+            <el-button
+              size="small"
+              type="danger"
+              plain
+              @click="handleDelete(scope.row.id, scope.row.name)"
+            >
+              <el-icon><Delete /></el-icon>
+            </el-button>
+          </el-tooltip>
         </template>
       </el-table-column>
     </el-table>
@@ -136,16 +182,17 @@ import AddClass from '@/views/stdclasses/AddClass.vue';
 import AddSection from '@/views/stdclasses/AddSection.vue';
 import Resource from '@/api/resource';
 import { debounce } from 'lodash';
-import { Plus } from '@element-plus/icons-vue';
+import { Plus, Edit, Delete } from '@element-plus/icons-vue';
 import Sortable from 'sortablejs';
 import axios from 'axios';
+import { sessionStore } from '@/store/session';
 
 const classesPro = new Resource('classes');
 const sectionsResource = new Resource('sections');
 
 export default {
   name: 'ClassList',
-  components: { Pagination, AddClass, AddSection, Plus },
+  components: { Pagination, AddClass, AddSection, Plus, Edit, Delete },
   directives: { },
   data() {
     return {
@@ -170,12 +217,20 @@ export default {
         limit: 15,
         keyword: '',
         role: '',
+        status: 'enable',
         include: 'sections',
+        // classlist management page needs disabled sections visible in the
+        // expand table too (so they can be re-enabled); dropdown consumers
+        // don't send this, so they get enabled sections only.
+        sections_status: 'all',
       },
       sortOrder: null, // null | 'asc' | 'desc'
     };
   },
   computed: {
+    currentSessionId() {
+      return sessionStore().currentSessionId;
+    },
     displayedClasses() {
       if (!this.classes) return [];
       // Make a copy and ensure priority exists
@@ -193,6 +248,13 @@ export default {
   },
   created() {
     this.getList();
+  },
+  watch: {
+    // Navbar session dropdown only updates the store — refetch when it changes
+    currentSessionId() {
+      this.query.page = 1;
+      this.getList();
+    },
   },
   mounted() {
     this.initDragDrop();
@@ -265,6 +327,7 @@ export default {
       this.getList();
     }, 500),
     async getList() {
+      this.query.session_id = this.currentSessionId;
       const { data } = await classesPro.list(this.query);
       this.classes = data.classes.data;
       this.total = data.classes.total;
@@ -290,6 +353,24 @@ export default {
         });
       });
     },
+    async handleToggleStatus(row, newStatus) {
+      try {
+        await axios.post(`/api/classes/${row.id}/toggle-status`);
+        // Keep the row visible in its new state instead of refetching —
+        // a refetch on the Enabled/Disabled filters makes the row vanish,
+        // which reads as "the toggle switched back".
+        const item = this.classes.find(c => c.id === row.id);
+        if (item) item.status = newStatus;
+        row.status = newStatus;
+        this.$message({
+          type: 'success',
+          message: `Class "${row.name}" ${newStatus === 'enable' ? 'enabled' : 'disabled'} successfully`
+        });
+      } catch (error) {
+        this.$message({ type: 'error', message: 'Failed to update class status' });
+        this.getList(); // revert the optimistic switch on failure
+      }
+    },
     closeAddClassPopup() {
       this.addstdclasspop = false;
       this.classid = null;
@@ -314,6 +395,24 @@ export default {
     handleEditSection(sectionId) {
       this.currentSectionId = sectionId;
       this.showSectionDialog = true;
+    },
+    async handleToggleSectionStatus(row, newStatus) {
+      try {
+        await axios.post(`/api/sections/${row.id}/toggle-status`);
+        // Keep the row visible in its new state (no refetch — same reason
+        // as classes: a refetch would make the row vanish on this page).
+        const parent = this.classes.find(c => c.id === row.class_id);
+        const item = parent ? parent.sections.find(s => s.id === row.id) : null;
+        if (item) item.status = newStatus;
+        row.status = newStatus;
+        this.$message({
+          type: 'success',
+          message: `Section "${row.name}" ${newStatus === 'enable' ? 'enabled' : 'disabled'} successfully`
+        });
+      } catch (error) {
+        this.$message({ type: 'error', message: 'Failed to update section status' });
+        this.getList(); // revert the optimistic switch on failure
+      }
     },
     handleDeleteSection(sectionId, sectionName) {
       this.$confirm(`Do you really want to delete section "${sectionName}"?`, 'Warning', {
@@ -374,5 +473,16 @@ export default {
   padding: 20px;
   color: #909399;
   font-style: italic;
+}
+
+/* Status toggle switch — green when enabled, red when disabled.
+   element-plus 2.14 no longer applies active-color/inactive-color props, so style via classes. */
+.cls-status-switch .el-switch__core {
+  border-color: #f56c6c;
+  background-color: #f56c6c;
+}
+.cls-status-switch.is-checked .el-switch__core {
+  border-color: #13ce66;
+  background-color: #13ce66;
 }
 </style>

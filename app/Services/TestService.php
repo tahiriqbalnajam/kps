@@ -1,13 +1,15 @@
 <?php
+
 namespace App\Services;
 
+use App\Models\Student;
 use App\Models\Test;
 use App\Models\TestResult;
+use App\Notifications\TestOneSignalNotification;
 use Illuminate\Support\Arr;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Spatie\QueryBuilder\QueryBuilder;
 use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\QueryBuilder;
 
 class TestService
 {
@@ -17,9 +19,9 @@ class TestService
     {
         $limit = Arr::get($searchParams, 'limit', static::ITEM_PER_PAGE);
         $query = QueryBuilder::for(Test::class)
-            ->allowedIncludes(...['class', 'subject', 'teacher', 'section', 'testResults','testResults.student','testResults.student.parents'])
+            ->allowedIncludes(...['class', 'subject', 'teacher', 'section', 'testResults', 'testResults.student', 'testResults.student.parents'])
             ->allowedFilters(...[
-                'id','class_id', 'subject_id', 'teacher_id', 'title', 'date',
+                'id', 'class_id', 'subject_id', 'teacher_id', 'title', 'date',
                 AllowedFilter::exact('session_id'),
             ])
             ->orderBy('id', 'desc');
@@ -32,16 +34,17 @@ class TestService
     {
         $validatedData = $this->validateTestData($data);
         $test = Test::create($validatedData);
+
         return $test;
-        
+
     }
 
     public function createTestWithResults(array $data)
     {
         $validatedData = $this->validateTestData($data);
         $test = Test::create($validatedData);
-        $testresult = array();
-        foreach($data['students'] as $student){
+        $testresult = [];
+        foreach ($data['students'] as $student) {
             $testresult[] = [
                 'test_id' => $test->id,
                 'student_id' => $student['id'],
@@ -50,8 +53,47 @@ class TestService
             ];
         }
         TestResult::insert($testresult);
+
+        // Push result notification to the parents of every student in the test
+        // (subject name + obtained/total marks; absent students are notified as absent).
+        $this->sendTestResultPushNotifications($test, $data['students']);
+
         return $test;
 
+    }
+
+    /**
+     * Send a OneSignal push to each student's parent with the test result.
+     */
+    protected function sendTestResultPushNotifications(Test $test, array $students): void
+    {
+        $test->load('subject');
+        $subjectTitle = $test->subject->title ?? 'Test';
+        $totalMarks = (float) $test->total_marks;
+
+        $scoresByStudent = collect($students)->keyBy('id');
+        $studentsWithParents = Student::with('parents.user')
+            ->whereIn('id', $scoresByStudent->keys())
+            ->get();
+
+        foreach ($studentsWithParents as $student) {
+            $parentUser = $student->parents->user ?? null;
+            if (! $parentUser || ! $parentUser->player_id) {
+                continue;
+            }
+
+            $payload = $scoresByStudent->get($student->id);
+            $isAbsent = ($payload['absent'] ?? 'no') === 'yes';
+            $body = $isAbsent
+                ? "Your child {$student->name} was absent in the {$subjectTitle} test on {$test->date}."
+                : "Your child {$student->name} scored {$payload['score']} out of {$totalMarks} in {$subjectTitle}.";
+
+            try {
+                $parentUser->notify(new TestOneSignalNotification("Test Result: {$subjectTitle}", $body));
+            } catch (\Exception $e) {
+                // Never let a push failure fail the test save
+            }
+        }
     }
 
     public function getTestById($id)
@@ -67,8 +109,8 @@ class TestService
             $test = Test::findOrFail($id);
             // Check if test exists
             if ($test) {
-                $testresult = array();
-                foreach($data['students'] as $student){
+                $testresult = [];
+                foreach ($data['students'] as $student) {
                     $testresultarray = [
                         'test_id' => $test->id,
                         'student_id' => $student['id'],
@@ -76,8 +118,8 @@ class TestService
                         'absent' => $student['absent'] ?? 'no',
                     ];
                     $test_result_id = $student['test_result_id'] ?? '0';
-                    $testResult = TestResult::firstOrNew(array('id' => $test_result_id) );
-                    $testResult = TestResult::updateOrCreate( ['id' => $test_result_id],  $testresultarray );
+                    $testResult = TestResult::firstOrNew(['id' => $test_result_id]);
+                    $testResult = TestResult::updateOrCreate(['id' => $test_result_id], $testresultarray);
                 }
             } else {
                 return response()->json([
@@ -90,6 +132,7 @@ class TestService
             DB::rollback();
             throw $e;
         }
+
         return $test;
     }
 
@@ -97,6 +140,7 @@ class TestService
     {
         $test = Test::findOrFail($id);
         $test->delete();
+
         return response()->json(null, 204);
     }
 
@@ -117,11 +161,12 @@ class TestService
     public function getAllTestResults($searchParams = [])
     {
         $limit = Arr::get($searchParams, 'limit', static::ITEM_PER_PAGE);
+
         return QueryBuilder::for(TestResult::class)
             ->with('student')
             ->allowedIncludes(...['student', 'test', 'test.subject'])
             ->allowedFilters(...[
-                'id','test_id', 'student_id','absent'
+                'id', 'test_id', 'student_id', 'absent',
             ])
             ->paginate($limit)
             ->appends(request()->query());
@@ -130,6 +175,7 @@ class TestService
     public function createTestResult(array $data)
     {
         $validatedData = $this->validateTestResultData($data);
+
         return TestResult::create($validatedData);
     }
 
@@ -145,6 +191,7 @@ class TestService
         // ])->validate();
         $testResult = TestResult::findOrFail($id);
         $testResult->update($data);
+
         return $testResult;
     }
 
@@ -152,6 +199,7 @@ class TestService
     {
         $testResult = TestResult::findOrFail($id);
         $testResult->delete();
+
         return response()->json(null, 204);
     }
 

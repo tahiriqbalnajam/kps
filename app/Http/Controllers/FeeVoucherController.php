@@ -3,17 +3,17 @@
 namespace App\Http\Controllers;
 
 use App\Models\FeeVoucher;
-use App\Models\Student;
-use App\Models\Classes;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Database\QueryException;
 use App\Models\Settings;
+use App\Models\Student;
+use App\Notifications\TestOneSignalNotification;
 use Carbon\Carbon;
-use Spatie\QueryBuilder\QueryBuilder;
+use Illuminate\Database\QueryException;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\QueryBuilder;
 
 class FeeVoucherController extends Controller
 {
@@ -24,74 +24,74 @@ class FeeVoucherController extends Controller
     {
         try {
             $query = Student::with(['stdclasses', 'parents']);
-            
+
             // Apply filters
             if ($request->has('filter')) {
                 $filters = $request->input('filter');
-                
+
                 // Specific filters
-                if (!empty($filters['student_name'])) {
+                if (! empty($filters['student_name'])) {
                     $query->where('name', 'LIKE', "{$filters['student_name']}%");
                 }
-                if (!empty($filters['parent_name'])) {
+                if (! empty($filters['parent_name'])) {
                     $val = $filters['parent_name'];
-                    $query->whereHas('parents', function($q) use ($val) {
-                         $q->where('name', 'LIKE', "{$val}%");
+                    $query->whereHas('parents', function ($q) use ($val) {
+                        $q->where('name', 'LIKE', "{$val}%");
                     });
                 }
-                if (!empty($filters['admission_number'])) {
+                if (! empty($filters['admission_number'])) {
                     $query->where('adminssion_number', 'LIKE', "{$filters['admission_number']}%");
                 }
-                if (!empty($filters['roll_no'])) {
+                if (! empty($filters['roll_no'])) {
                     $query->where('roll_no', 'LIKE', "{$filters['roll_no']}%");
                 }
 
                 // Generic search
-                if (isset($filters['search']) && !empty($filters['search'])) {
+                if (isset($filters['search']) && ! empty($filters['search'])) {
                     $searchTerm = $filters['search'];
                     $query->where(function ($q) use ($searchTerm) {
                         $q->where('name', 'LIKE', "%{$searchTerm}%")
-                          ->orWhere('adminssion_number', 'LIKE', "%{$searchTerm}%")
-                          ->orWhereHas('parents', function ($pq) use ($searchTerm) {
-                              $pq->where('name', 'LIKE', "%{$searchTerm}%");
-                          });
+                            ->orWhere('adminssion_number', 'LIKE', "%{$searchTerm}%")
+                            ->orWhereHas('parents', function ($pq) use ($searchTerm) {
+                                $pq->where('name', 'LIKE', "%{$searchTerm}%");
+                            });
                     });
                 }
-                
+
                 if (isset($filters['stdclass'])) {
                     $query->where('class_id', $filters['stdclass']);
                 }
-                
+
                 if (isset($filters['gender'])) {
                     $query->where('gender', $filters['gender']);
                 }
-                
+
                 if (isset($filters['status'])) {
                     if ($filters['status'] === 'active') {
-                        $query->where(function($q) { 
-                            $q->where('status', 'active')->orWhere('status', 1); 
+                        $query->where(function ($q) {
+                            $q->where('status', 'active')->orWhere('status', 1);
                         });
                     } else {
                         $query->where('status', $filters['status']);
                     }
                 }
             }
-            
+
             // Pagination
             $page = $request->input('page', 1);
             $limit = $request->input('limit', 15);
-            
+
             $students = $query->paginate($limit, ['*'], 'page', $page);
-            
+
             return response()->json([
                 'success' => true,
-                'students' => $students
+                'students' => $students,
             ]);
-            
+
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to fetch students: ' . $e->getMessage()
+                'message' => 'Failed to fetch students: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -116,26 +116,26 @@ class FeeVoucherController extends Controller
                 'custom_amount' => 'nullable|numeric|min:0',
                 'fee_month' => 'nullable|date_format:Y-m',
                 'selected_fee_types' => 'nullable|array',
-                'notes' => 'nullable|string|max:500'
+                'notes' => 'nullable|string|max:500',
             ]);
 
             // Check for existing vouchers before generating new ones
             $duplicates = [];
             foreach ($request->vouchers as $voucherData) {
                 $existingQuery = FeeVoucher::where('student_id', $voucherData['student_id'])
-                                         ->where('status', '!=', 'cancelled');
-                
+                    ->where('status', '!=', 'cancelled');
+
                 if ($request->voucher_type === 'monthly' && $request->fee_month) {
                     $existingQuery->where('voucher_type', 'monthly')
-                                 ->where('fee_month', $request->fee_month);
-                } else if ($request->voucher_type === 'custom') {
+                        ->where('fee_month', $request->fee_month);
+                } elseif ($request->voucher_type === 'custom') {
                     $existingQuery->where('voucher_type', 'custom')
-                                 ->where('due_date', $request->due_date);
-                } else if ($request->voucher_type === 'multiple' && $request->selected_fee_types) {
+                        ->where('due_date', $request->due_date);
+                } elseif ($request->voucher_type === 'multiple' && $request->selected_fee_types) {
                     $existingQuery->where('voucher_type', 'multiple')
-                                 ->where('fee_month', $request->fee_month);
+                        ->where('fee_month', $request->fee_month);
                 }
-                
+
                 $existing = $existingQuery->first();
                 if ($existing) {
                     $duplicates[] = [
@@ -143,30 +143,30 @@ class FeeVoucherController extends Controller
                         'admission_number' => $voucherData['admission_number'],
                         'existing_voucher' => $existing->voucher_number,
                         'type' => $request->voucher_type,
-                        'month' => $request->fee_month
+                        'month' => $request->fee_month,
                     ];
                 }
             }
-            
-            if (!empty($duplicates)) {
+
+            if (! empty($duplicates)) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Duplicate vouchers found for some students',
-                    'duplicates' => $duplicates
+                    'duplicates' => $duplicates,
                 ], 422);
             }
 
             $savedVouchers = [];
             $maxRetries = 3;
             $voucherCreated = false;
-            $datePrefix = 'IDL-' . now()->format('ymd');
+            $datePrefix = 'IDL-'.now()->format('ymd');
 
-            for ($retry = 0; $retry < $maxRetries && !$voucherCreated; $retry++) {
+            for ($retry = 0; $retry < $maxRetries && ! $voucherCreated; $retry++) {
                 try {
                     DB::beginTransaction();
 
                     // Lock the latest voucher for today to prevent race conditions
-                    $lastVoucher = FeeVoucher::where('voucher_number', 'like', $datePrefix . '-%')
+                    $lastVoucher = FeeVoucher::where('voucher_number', 'like', $datePrefix.'-%')
                         ->orderBy('voucher_number', 'desc')
                         ->lockForUpdate()
                         ->value('voucher_number');
@@ -178,48 +178,48 @@ class FeeVoucherController extends Controller
 
                     foreach ($request->vouchers as $index => $voucherData) {
                         $voucher = FeeVoucher::create([
-                            'voucher_number' => $datePrefix . '-' . str_pad($lastSeq + $index + 1, 3, '0', STR_PAD_LEFT),
-                    'student_id' => $voucherData['student_id'],
-                    'student_name' => $voucherData['student_name'],
-                    'admission_number' => $voucherData['admission_number'],
-                    'parent_name' => $voucherData['parent_name'],
-                    'parent_phone' => $voucherData['parent_phone'] ?? null,
-                    'parent_email' => $voucherData['parent_email'] ?? null,
-                    'class_name' => $voucherData['class_name'],
-                    'fee_amount' => (float) $voucherData['fee_amount'],
-                    'fine_amount' => (float) $request->fine_amount,
-                    'total_with_fine' => (float) $voucherData['fee_amount'] + (float) $request->fine_amount,
-                    'due_date' => $request->due_date,
-                    'voucher_type' => $request->voucher_type,
-                    'custom_amount' => $request->custom_amount ? (float) $request->custom_amount : null,
-                    'fee_month' => $request->fee_month,
-                    'fee_breakdown' => $voucherData['fee_breakdown'] ?? null,
-                    'selected_fee_types' => $request->selected_fee_types,
-                    'notes' => $request->notes,
-                    'status' => 'unpaid',
-                    'generated_by' => Auth::id() ?? 1,
-                    'generated_at' => now()
-                ]);
-                
-                $savedVouchers[] = $voucher;
-            }
-            
+                            'voucher_number' => $datePrefix.'-'.str_pad($lastSeq + $index + 1, 3, '0', STR_PAD_LEFT),
+                            'student_id' => $voucherData['student_id'],
+                            'student_name' => $voucherData['student_name'],
+                            'admission_number' => $voucherData['admission_number'],
+                            'parent_name' => $voucherData['parent_name'],
+                            'parent_phone' => $voucherData['parent_phone'] ?? null,
+                            'parent_email' => $voucherData['parent_email'] ?? null,
+                            'class_name' => $voucherData['class_name'],
+                            'fee_amount' => (float) $voucherData['fee_amount'],
+                            'fine_amount' => (float) $request->fine_amount,
+                            'total_with_fine' => (float) $voucherData['fee_amount'] + (float) $request->fine_amount,
+                            'due_date' => $request->due_date,
+                            'voucher_type' => $request->voucher_type,
+                            'custom_amount' => $request->custom_amount ? (float) $request->custom_amount : null,
+                            'fee_month' => $request->fee_month,
+                            'fee_breakdown' => $voucherData['fee_breakdown'] ?? null,
+                            'selected_fee_types' => $request->selected_fee_types,
+                            'notes' => $request->notes,
+                            'status' => 'unpaid',
+                            'generated_by' => Auth::id() ?? 1,
+                            'generated_at' => now(),
+                        ]);
+
+                        $savedVouchers[] = $voucher;
+                    }
+
                     DB::commit();
                     $voucherCreated = true;
 
                     return response()->json([
                         'success' => true,
-                        'message' => count($savedVouchers) . ' vouchers generated successfully',
-                        'saved_vouchers' => $savedVouchers
+                        'message' => count($savedVouchers).' vouchers generated successfully',
+                        'saved_vouchers' => $savedVouchers,
                     ]);
 
-                } catch (\Illuminate\Database\QueryException $e) {
+                } catch (QueryException $e) {
                     DB::rollBack();
                     // Retry only on duplicate key errors
                     if ($e->getCode() != 23000 || $retry >= $maxRetries - 1) {
                         return response()->json([
                             'success' => false,
-                            'message' => 'Failed to generate vouchers: ' . $e->getMessage()
+                            'message' => 'Failed to generate vouchers: '.$e->getMessage(),
                         ], 500);
                     }
                     // Otherwise continue to retry with a fresh sequence lookup
@@ -228,9 +228,10 @@ class FeeVoucherController extends Controller
             }
         } catch (\Exception $e) {
             DB::rollBack();
+
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to generate vouchers: ' . $e->getMessage()
+                'message' => 'Failed to generate vouchers: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -245,67 +246,67 @@ class FeeVoucherController extends Controller
 
             $vouchers = QueryBuilder::for(FeeVoucher::class)
                 ->allowedFilters(...[
-                AllowedFilter::exact('status'),
-                AllowedFilter::partial('class_name'), // Keeping partial for class as it's often short
-                AllowedFilter::exact('voucher_type'),
-                AllowedFilter::callback('date_from', function ($query, $value) {
-                    $query->whereDate('generated_at', '>=', $value);
-                }),
-                AllowedFilter::callback('date_to', function ($query, $value) {
-                    $query->whereDate('generated_at', '<=', $value);
-                }),
-                AllowedFilter::callback('paid_from', function ($query, $value) {
-                    $query->whereDate('payment_date', '>=', $value);
-                }),
-                AllowedFilter::callback('paid_to', function ($query, $value) {
-                    $query->whereDate('payment_date', '<=', $value);
-                }),
-                // Name search using FULLTEXT index (index-backed, word-level matching)
-                AllowedFilter::callback('student_name', function ($query, $value) {
-                    $query->whereRaw(
-                        "MATCH(student_name) AGAINST(? IN BOOLEAN MODE)",
-                        ['+' . $value . '*']
-                    );
-                }),
-                AllowedFilter::callback('name', function ($query, $value) {
-                    $query->whereRaw(
-                        "MATCH(student_name) AGAINST(? IN BOOLEAN MODE)",
-                        ['+' . $value . '*']
-                    );
-                }),
-                AllowedFilter::callback('parent_name', function ($query, $value) {
-                    $query->whereRaw(
-                        "MATCH(parent_name) AGAINST(? IN BOOLEAN MODE)",
-                        ['+' . $value . '*']
-                    );
-                }),
-                AllowedFilter::callback('voucher_number', function ($query, $value) {
-                    $query->where('voucher_number', 'LIKE', "{$value}%");
-                }),
-                AllowedFilter::callback('roll_no', function ($query, $value) {
-                    $query->whereHas('student', function ($q) use ($value) {
-                        $q->where('roll_no', 'LIKE', "{$value}%");
-                    });
-                }),
-                // Generic search: FULLTEXT for names, prefix LIKE for indexed identifiers
-                AllowedFilter::callback('search', function ($query, $value) {
-                    $query->where(function ($q) use ($value) {
-                        $q->whereRaw(
-                            "MATCH(student_name, parent_name) AGAINST(? IN BOOLEAN MODE)",
-                            ['+' . $value . '*']
-                        )
-                          ->orWhere('voucher_number', 'LIKE', "{$value}%")
-                          ->orWhere('admission_number', 'LIKE', "{$value}%")
-                          ->orWhere('parent_phone', 'LIKE', "{$value}%");
-                    });
-                }),
-                AllowedFilter::callback('overdue_only', function ($query, $value) {
-                    if ($value) {
-                        $query->whereIn('status', ['unpaid', 'partially_paid'])
-                              ->where('due_date', '<', now()->toDateString());
-                    }
-                }),
-            ])
+                    AllowedFilter::exact('status'),
+                    AllowedFilter::partial('class_name'), // Keeping partial for class as it's often short
+                    AllowedFilter::exact('voucher_type'),
+                    AllowedFilter::callback('date_from', function ($query, $value) {
+                        $query->whereDate('generated_at', '>=', $value);
+                    }),
+                    AllowedFilter::callback('date_to', function ($query, $value) {
+                        $query->whereDate('generated_at', '<=', $value);
+                    }),
+                    AllowedFilter::callback('paid_from', function ($query, $value) {
+                        $query->whereDate('payment_date', '>=', $value);
+                    }),
+                    AllowedFilter::callback('paid_to', function ($query, $value) {
+                        $query->whereDate('payment_date', '<=', $value);
+                    }),
+                    // Name search using FULLTEXT index (index-backed, word-level matching)
+                    AllowedFilter::callback('student_name', function ($query, $value) {
+                        $query->whereRaw(
+                            'MATCH(student_name) AGAINST(? IN BOOLEAN MODE)',
+                            ['+'.$value.'*']
+                        );
+                    }),
+                    AllowedFilter::callback('name', function ($query, $value) {
+                        $query->whereRaw(
+                            'MATCH(student_name) AGAINST(? IN BOOLEAN MODE)',
+                            ['+'.$value.'*']
+                        );
+                    }),
+                    AllowedFilter::callback('parent_name', function ($query, $value) {
+                        $query->whereRaw(
+                            'MATCH(parent_name) AGAINST(? IN BOOLEAN MODE)',
+                            ['+'.$value.'*']
+                        );
+                    }),
+                    AllowedFilter::callback('voucher_number', function ($query, $value) {
+                        $query->where('voucher_number', 'LIKE', "{$value}%");
+                    }),
+                    AllowedFilter::callback('roll_no', function ($query, $value) {
+                        $query->whereHas('student', function ($q) use ($value) {
+                            $q->where('roll_no', 'LIKE', "{$value}%");
+                        });
+                    }),
+                    // Generic search: FULLTEXT for names, prefix LIKE for indexed identifiers
+                    AllowedFilter::callback('search', function ($query, $value) {
+                        $query->where(function ($q) use ($value) {
+                            $q->whereRaw(
+                                'MATCH(student_name, parent_name) AGAINST(? IN BOOLEAN MODE)',
+                                ['+'.$value.'*']
+                            )
+                                ->orWhere('voucher_number', 'LIKE', "{$value}%")
+                                ->orWhere('admission_number', 'LIKE', "{$value}%")
+                                ->orWhere('parent_phone', 'LIKE', "{$value}%");
+                        });
+                    }),
+                    AllowedFilter::callback('overdue_only', function ($query, $value) {
+                        if ($value) {
+                            $query->whereIn('status', ['unpaid', 'partially_paid'])
+                                ->where('due_date', '<', now()->toDateString());
+                        }
+                    }),
+                ])
                 ->orderByRaw("
                     CASE 
                         WHEN status = 'unpaid' AND due_date < CURDATE() THEN 0
@@ -323,13 +324,13 @@ class FeeVoucherController extends Controller
 
             return response()->json([
                 'success' => true,
-                'vouchers' => $vouchers
+                'vouchers' => $vouchers,
             ]);
 
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to fetch vouchers: ' . $e->getMessage()
+                'message' => 'Failed to fetch vouchers: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -341,16 +342,16 @@ class FeeVoucherController extends Controller
     {
         try {
             $voucher = FeeVoucher::findOrFail($id);
-            
+
             return response()->json([
                 'success' => true,
-                'voucher' => $voucher
+                'voucher' => $voucher,
             ]);
-            
+
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Voucher not found: ' . $e->getMessage()
+                'message' => 'Voucher not found: '.$e->getMessage(),
             ], 404);
         }
     }
@@ -369,9 +370,9 @@ class FeeVoucherController extends Controller
     {
         try {
             $request->validate([
-                'status'              => 'required|in:paid,unpaid,partially_paid,cancelled',
-                'paid_amount'         => 'nullable|numeric|min:0',
-                'payment_date'        => 'nullable|date',
+                'status' => 'required|in:paid,unpaid,partially_paid,cancelled',
+                'paid_amount' => 'nullable|numeric|min:0',
+                'payment_date' => 'nullable|date',
                 'pending_voucher_ids' => 'nullable|array',
                 'manually_settle_ids' => 'nullable|array',
                 'settle_pending_only' => 'nullable|boolean',
@@ -385,10 +386,11 @@ class FeeVoucherController extends Controller
                 // --- Cancellation: no payment logic needed ---
                 if ($request->status === 'cancelled') {
                     $voucher->update([
-                        'status'     => 'cancelled',
+                        'status' => 'cancelled',
                         'updated_by' => Auth::id() ?? 1,
                     ]);
                     DB::commit();
+
                     return response()->json([
                         'success' => true,
                         'message' => 'Voucher cancelled successfully',
@@ -403,34 +405,36 @@ class FeeVoucherController extends Controller
                         $request->payment_date ?? now()->toDateString()
                     );
                     DB::commit();
+
                     return response()->json([
-                        'success'          => true,
-                        'message'          => $settledCount > 0
+                        'success' => true,
+                        'message' => $settledCount > 0
                             ? "{$settledCount} pending voucher(s) settled"
                             : 'No pending vouchers to settle',
-                        'voucher'          => $voucher->fresh(),
-                        'settled_count'    => $settledCount,
+                        'voucher' => $voucher->fresh(),
+                        'settled_count' => $settledCount,
                     ]);
                 }
 
                 // Fine only applies after due date
-                $dueDate     = $voucher->due_date;
-                $today       = now()->toDateString();
+                $dueDate = $voucher->due_date;
+                $today = now()->toDateString();
                 $fineApplies = $dueDate && $today > $dueDate;
                 $targetAmount = round((float) ($fineApplies ? $voucher->total_with_fine : $voucher->fee_amount), 2);
 
-                $alreadyPaid  = round((float) ($voucher->paid_amount ?? 0), 2);
-                $newPayment   = round((float) ($request->paid_amount ?? 0), 2);
-                $paymentDate  = $request->payment_date ?? now()->toDateString();
+                $alreadyPaid = round((float) ($voucher->paid_amount ?? 0), 2);
+                $newPayment = round((float) ($request->paid_amount ?? 0), 2);
+                $paymentDate = $request->payment_date ?? now()->toDateString();
 
                 if ($newPayment > 0) {
                     // --- Overpayment guard ---
                     $remaining = round($targetAmount - $alreadyPaid, 2);
                     if ($newPayment > $remaining + 0.005) {
                         DB::rollBack();
+
                         return response()->json([
-                            'success'          => false,
-                            'message'          => "Payment of Rs. {$newPayment} exceeds the remaining balance of Rs. {$remaining}.",
+                            'success' => false,
+                            'message' => "Payment of Rs. {$newPayment} exceeds the remaining balance of Rs. {$remaining}.",
                             'remaining_amount' => $remaining,
                         ], 422);
                     }
@@ -440,17 +444,17 @@ class FeeVoucherController extends Controller
 
                     // --- Auto-determine status (ignores the request `status` field) ---
                     if ($newCumulativeTotal >= $targetAmount - 0.005) {
-                        $resolvedStatus     = 'paid';
+                        $resolvedStatus = 'paid';
                         $newCumulativeTotal = $targetAmount; // remove float dust
                     } else {
                         $resolvedStatus = 'partially_paid';
                     }
 
                     $voucher->update([
-                        'status'       => $resolvedStatus,
-                        'paid_amount'  => $newCumulativeTotal,
+                        'status' => $resolvedStatus,
+                        'paid_amount' => $newCumulativeTotal,
                         'payment_date' => $paymentDate,
-                        'updated_by'   => Auth::id() ?? 1,
+                        'updated_by' => Auth::id() ?? 1,
                     ]);
 
                 } else {
@@ -458,7 +462,7 @@ class FeeVoucherController extends Controller
                     // (handles resets like marking back to unpaid by admin)
                     $resolvedStatus = $request->status;
                     $voucher->update([
-                        'status'     => $resolvedStatus,
+                        'status' => $resolvedStatus,
                         'updated_by' => Auth::id() ?? 1,
                     ]);
                 }
@@ -481,13 +485,18 @@ class FeeVoucherController extends Controller
 
                 DB::commit();
 
-                $freshVoucher     = $voucher->fresh();
-                $remainingAfter   = round($targetAmount - (float) ($freshVoucher->paid_amount ?? 0), 2);
+                $freshVoucher = $voucher->fresh();
+                $remainingAfter = round($targetAmount - (float) ($freshVoucher->paid_amount ?? 0), 2);
+
+                // Push fee status to the student's parent (paid / partially paid)
+                if (in_array($resolvedStatus, ['paid', 'partially_paid'])) {
+                    $this->sendFeeStatusPush($freshVoucher, $resolvedStatus);
+                }
 
                 $message = match ($resolvedStatus) {
-                    'paid'           => 'Voucher marked as fully paid',
+                    'paid' => 'Voucher marked as fully paid',
                     'partially_paid' => "Partial payment of Rs. {$newPayment} recorded. Remaining: Rs. {$remainingAfter}",
-                    default          => 'Voucher status updated successfully',
+                    default => 'Voucher status updated successfully',
                 };
 
                 if ($settledCount > 0) {
@@ -495,11 +504,11 @@ class FeeVoucherController extends Controller
                 }
 
                 return response()->json([
-                    'success'          => true,
-                    'message'          => $message,
-                    'voucher'          => $freshVoucher,
+                    'success' => true,
+                    'message' => $message,
+                    'voucher' => $freshVoucher,
                     'remaining_amount' => $remainingAfter,
-                    'settled_count'    => $settledCount,
+                    'settled_count' => $settledCount,
                 ]);
 
             } catch (\Exception $e) {
@@ -510,7 +519,7 @@ class FeeVoucherController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to update voucher: ' . $e->getMessage()
+                'message' => 'Failed to update voucher: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -528,7 +537,7 @@ class FeeVoucherController extends Controller
     private function computeCoveredPendingIds(FeeVoucher $voucher, float $alreadyPaid, float $newPayment): array
     {
         $pendingItems = collect($voucher->fee_breakdown ?? [])
-            ->filter(fn ($item) => !empty($item['pending_voucher_id']))
+            ->filter(fn ($item) => ! empty($item['pending_voucher_id']))
             ->values();
 
         if ($pendingItems->isEmpty()) {
@@ -537,12 +546,12 @@ class FeeVoucherController extends Controller
 
         $pendingIncluded = (float) $pendingItems->sum(fn ($item) => (float) ($item['amount'] ?? 0));
 
-        $isOverdue  = $voucher->due_date && $voucher->due_date < now()->toDateString();
-        $ownAmount  = max(0, round((float) $voucher->fee_amount - $pendingIncluded, 2));
+        $isOverdue = $voucher->due_date && $voucher->due_date < now()->toDateString();
+        $ownAmount = max(0, round((float) $voucher->fee_amount - $pendingIncluded, 2));
         $ownAmount += $isOverdue ? (float) $voucher->fine_amount : 0;
 
         $cumulative = round($alreadyPaid + $newPayment, 2);
-        $coverLeft  = round($cumulative - $ownAmount, 2);
+        $coverLeft = round($cumulative - $ownAmount, 2);
 
         $covered = [];
         foreach ($pendingItems as $item) {
@@ -573,26 +582,59 @@ class FeeVoucherController extends Controller
         }
 
         $paymentDate = $paymentDate ?? now()->toDateString();
-        $settled     = 0;
+        $settled = 0;
 
         FeeVoucher::whereIn('id', $ids)
             ->whereNotIn('status', ['paid', 'cancelled'])
             ->get()
             ->each(function ($pendingVoucher) use (&$settled, $paymentDate) {
                 $isOverdue = $pendingVoucher->due_date && $pendingVoucher->due_date < now()->toDateString();
-                $target    = (float) ($isOverdue ? $pendingVoucher->total_with_fine : $pendingVoucher->fee_amount);
+                $target = (float) ($isOverdue ? $pendingVoucher->total_with_fine : $pendingVoucher->fee_amount);
 
                 $pendingVoucher->update([
-                    'status'       => 'paid',
-                    'paid_amount'  => max((float) ($pendingVoucher->paid_amount ?? 0), $target),
+                    'status' => 'paid',
+                    'paid_amount' => max((float) ($pendingVoucher->paid_amount ?? 0), $target),
                     'payment_date' => $paymentDate,
-                    'updated_by'   => Auth::id() ?? 1,
+                    'updated_by' => Auth::id() ?? 1,
                 ]);
+
+                // Push fee status to the student's parent
+                $this->sendFeeStatusPush($pendingVoucher->fresh(), 'paid');
 
                 $settled++;
             });
 
         return $settled;
+    }
+
+    /**
+     * Push a fee status notification to the voucher's student's parent (OneSignal).
+     * No-op when the parent has no registered device (player_id).
+     */
+    private function sendFeeStatusPush(FeeVoucher $voucher, string $status): void
+    {
+        $student = $voucher->student()->with('parents.user')->first();
+        $parentUser = $student?->parents?->user;
+
+        if (! $parentUser || ! $parentUser->player_id) {
+            return;
+        }
+
+        $statusLabel = $status === 'paid' ? 'paid in full' : 'partially paid';
+        $paidAmount = number_format((float) ($voucher->paid_amount ?? 0), 2);
+        $body = "Your child {$student->name}'s fee voucher of Rs. {$paidAmount} has been marked as {$statusLabel}.";
+
+        if ($status === 'partially_paid') {
+            $target = (float) ($voucher->fee_amount ?? 0);
+            $remaining = max($target - (float) ($voucher->paid_amount ?? 0), 0);
+            $body .= ' Remaining balance: Rs. '.number_format($remaining, 2).'.';
+        }
+
+        try {
+            $parentUser->notify(new TestOneSignalNotification('Fee Payment Update', $body));
+        } catch (\Exception $e) {
+            // Never let a push failure fail the payment flow
+        }
     }
 
     /**
@@ -602,26 +644,26 @@ class FeeVoucherController extends Controller
     {
         try {
             $voucher = FeeVoucher::findOrFail($id);
-            
+
             // Only allow deletion of vouchers where no money has been received
             if (in_array($voucher->status, ['paid', 'partially_paid'])) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Cannot delete paid or partially paid vouchers. Cancel instead.'
+                    'message' => 'Cannot delete paid or partially paid vouchers. Cancel instead.',
                 ], 400);
             }
-            
+
             $voucher->delete();
-            
+
             return response()->json([
                 'success' => true,
-                'message' => 'Voucher deleted successfully'
+                'message' => 'Voucher deleted successfully',
             ]);
-            
+
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to delete voucher: ' . $e->getMessage()
+                'message' => 'Failed to delete voucher: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -640,7 +682,7 @@ class FeeVoucherController extends Controller
                 $studentIds = explode(',', $request->student_ids);
                 $query->whereIn('student_id', $studentIds);
             }
-            
+
             // Apply filters
             if ($request->filled('urgency')) {
                 switch ($request->urgency) {
@@ -655,66 +697,66 @@ class FeeVoucherController extends Controller
                         break;
                 }
             }
-            
+
             if ($request->filled('class_name')) {
                 $query->where('class_name', $request->class_name);
             }
-            
+
             if ($request->filled('search')) {
                 $search = $request->search;
-                $query->where(function($q) use ($search) {
+                $query->where(function ($q) use ($search) {
                     $q->whereRaw(
-                        "MATCH(student_name, parent_name) AGAINST(? IN BOOLEAN MODE)",
-                        ['+' . $search . '*']
+                        'MATCH(student_name, parent_name) AGAINST(? IN BOOLEAN MODE)',
+                        ['+'.$search.'*']
                     )
-                      ->orWhere('voucher_number', 'like', "{$search}%");
+                        ->orWhere('voucher_number', 'like', "{$search}%");
                 });
             }
-            
+
             if ($request->filled('due_from') && $request->filled('due_to')) {
                 $query->whereBetween('due_date', [$request->due_from, $request->due_to]);
             }
-            
+
             // Check for overdue vouchers (legacy support)
             if ($request->boolean('overdue_only')) {
                 $query->where('due_date', '<', now()->toDateString());
             }
-            
+
             $vouchers = $query->orderBy('due_date', 'asc')->get();
-            
+
             // Add computed fields for frontend
-            $vouchers = $vouchers->map(function($voucher) {
+            $vouchers = $vouchers->map(function ($voucher) {
                 $voucher->parent_phone = $voucher->parent_phone ?? '';
                 $voucher->parent_email = $voucher->parent_email ?? '';
-                
+
                 // Fine only applies after due date
                 $isOverdue = $voucher->due_date < now()->toDateString();
-                $paidAmount  = round(floatval($voucher->paid_amount ?? 0), 2);
+                $paidAmount = round(floatval($voucher->paid_amount ?? 0), 2);
                 $relevantTotal = $isOverdue
                     ? round(floatval($voucher->total_with_fine), 2)
                     : round(floatval($voucher->fee_amount), 2);
-                $voucher->remaining_amount      = max(0, $relevantTotal - $paidAmount);
+                $voucher->remaining_amount = max(0, $relevantTotal - $paidAmount);
                 $voucher->total_amount_with_fine = $voucher->remaining_amount; // backward-compat alias
-                
+
                 // Also set the amount field for backward compatibility
                 $voucher->amount = $voucher->fee_amount;
-                
+
                 return $voucher;
             });
-            
+
             // Get reminders sent today count
             $remindersSentToday = FeeVoucher::where('last_reminder_sent', '>=', now()->startOfDay())->count();
-            
+
             return response()->json([
                 'success' => true,
                 'vouchers' => $vouchers,
-                'reminders_sent_today' => $remindersSentToday
+                'reminders_sent_today' => $remindersSentToday,
             ]);
-            
+
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to fetch outstanding vouchers: ' . $e->getMessage()
+                'message' => 'Failed to fetch outstanding vouchers: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -731,10 +773,10 @@ class FeeVoucherController extends Controller
                     AllowedFilter::partial('class_name'),
                     AllowedFilter::exact('voucher_type'),
                     // Allow these filters but do nothing in base query (handled manually below for split logic)
-                    AllowedFilter::callback('date_from', function(){}),
-                    AllowedFilter::callback('date_to', function(){}),
-                    AllowedFilter::callback('paid_from', function(){}),
-                    AllowedFilter::callback('paid_to', function(){}),
+                    AllowedFilter::callback('date_from', function () {}),
+                    AllowedFilter::callback('date_to', function () {}),
+                    AllowedFilter::callback('paid_from', function () {}),
+                    AllowedFilter::callback('paid_to', function () {}),
                 ]);
 
             // 2. Generation Query (for Total, Unpaid, Generated Amount, Pending)
@@ -749,24 +791,24 @@ class FeeVoucherController extends Controller
             // 3. Payment Query (for Paid Count, Collected Amount)
             $payQuery = clone $baseQuery;
             $hasPaymentFilter = false;
-            
-            // If paid_from/to is provided, use them. 
+
+            // If paid_from/to is provided, use them.
             // If NOT provided but date_from/to IS provided, use date_from/to for payment query too (to align contexts if not explicitly separated)
             // But frontend will be updated to send both identical for "Today"/"Month" stats.
-            
+
             if ($request->filled('filter.paid_from')) {
                 $payQuery->whereDate('payment_date', '>=', $request->input('filter.paid_from'));
                 $hasPaymentFilter = true;
             } elseif ($request->filled('filter.date_from')) {
-                 // Fallback: If looking at "Today", we want paid today
-                 $payQuery->whereDate('payment_date', '>=', $request->input('filter.date_from'));
+                // Fallback: If looking at "Today", we want paid today
+                $payQuery->whereDate('payment_date', '>=', $request->input('filter.date_from'));
             }
 
             if ($request->filled('filter.paid_to')) {
                 $payQuery->whereDate('payment_date', '<=', $request->input('filter.paid_to'));
                 $hasPaymentFilter = true;
             } elseif ($request->filled('filter.date_to')) {
-                 $payQuery->whereDate('payment_date', '<=', $request->input('filter.date_to'));
+                $payQuery->whereDate('payment_date', '<=', $request->input('filter.date_to'));
             }
 
             // Clones for specific counts
@@ -780,44 +822,44 @@ class FeeVoucherController extends Controller
 
             $stats = [
                 'total_vouchers' => $genQueryForCount->count(),
-                
+
                 // Paid Vouchers: Count of vouchers PAID in the period (status paid/partial? or just paid)
                 // Ususally "Paid Vouchers" implies fully paid.
                 'paid_vouchers' => $payQueryForCount->where('status', 'paid')->count(),
-                
+
                 'unpaid_vouchers' => $genQueryUnpaid->where('status', 'unpaid')->count(),
-                
+
                 // Overdue: Vouchers generated in period that are overdue? Or currently overdue?
                 // Visual consistency: Vouchers belonging to this generation batch that are overdue.
                 'overdue_vouchers' => (clone $genQuery)->whereIn('status', ['unpaid', 'partially_paid'])
-                                                ->where('due_date', '<', now()->toDateString())
-                                                ->count(),
-                                                
+                    ->where('due_date', '<', now()->toDateString())
+                    ->count(),
+
                 'total_amount_generated' => $genQueryForSum->sum('total_with_fine'),
-                
+
                 // Collected: Sum of payments made in the period
                 'total_amount_collected' => $payQueryForSum->sum('paid_amount'),
-                
+
                 // Pending: Amount remaining from vouchers GENERATED in this period.
                 // Fine only applies to overdue vouchers (due_date < today).
                 'pending_amount' => $genQueryPending->whereIn('status', ['unpaid', 'partially_paid'])
-                                        ->sum(DB::raw("
+                    ->sum(DB::raw('
                                             CASE
                                                 WHEN due_date < CURDATE() THEN COALESCE(total_with_fine, 0) - COALESCE(paid_amount, 0)
                                                 ELSE COALESCE(fee_amount, 0) - COALESCE(paid_amount, 0)
                                             END
-                                        "))
+                                        ')),
             ];
 
             return response()->json([
                 'success' => true,
-                'statistics' => $stats
+                'statistics' => $stats,
             ]);
 
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to fetch statistics: ' . $e->getMessage()
+                'message' => 'Failed to fetch statistics: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -833,7 +875,7 @@ class FeeVoucherController extends Controller
             'template' => 'required|in:gentle,urgent,final,custom',
             'custom_message' => 'required_if:template,custom|string|max:500',
             'channels' => 'required|array',
-            'channels.*' => 'in:sms,whatsapp,email'
+            'channels.*' => 'in:sms,whatsapp,email',
         ]);
 
         try {
@@ -841,7 +883,7 @@ class FeeVoucherController extends Controller
             $template = $request->template;
             $customMessage = $request->custom_message;
             $channels = $request->channels;
-            
+
             $vouchers = FeeVoucher::whereIn('id', $voucherIds)->get();
             $sentCount = 0;
             $failedCount = 0;
@@ -850,22 +892,22 @@ class FeeVoucherController extends Controller
                 try {
                     // Prepare message based on template
                     $message = $this->prepareReminderMessage($voucher, $template, $customMessage);
-                    
+
                     // Send via selected channels
                     $sent = false;
-                    
+
                     if (in_array('sms', $channels)) {
                         $sent = $this->sendSMS($voucher->parent_phone, $message) || $sent;
                     }
-                    
+
                     if (in_array('whatsapp', $channels)) {
                         $sent = $this->sendWhatsApp($voucher->parent_phone, $message) || $sent;
                     }
-                    
+
                     if (in_array('email', $channels)) {
                         $sent = $this->sendEmail($voucher->parent_email, $message, $voucher) || $sent;
                     }
-                    
+
                     if ($sent) {
                         // Update last reminder sent date
                         $voucher->update(['last_reminder_sent' => now()]);
@@ -873,7 +915,7 @@ class FeeVoucherController extends Controller
                     } else {
                         $failedCount++;
                     }
-                    
+
                 } catch (\Exception $e) {
                     $failedCount++;
                 }
@@ -883,13 +925,13 @@ class FeeVoucherController extends Controller
                 'success' => true,
                 'message' => "Reminders processed: {$sentCount} sent, {$failedCount} failed",
                 'sent_count' => $sentCount,
-                'failed_count' => $failedCount
+                'failed_count' => $failedCount,
             ]);
 
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to send reminders: ' . $e->getMessage()
+                'message' => 'Failed to send reminders: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -901,7 +943,7 @@ class FeeVoucherController extends Controller
     {
         try {
             $voucher = FeeVoucher::findOrFail($id);
-            
+
             // Return voucher data in the same format as generation
             return response()->json([
                 'success' => true,
@@ -926,14 +968,14 @@ class FeeVoucherController extends Controller
                     'fee_breakdown' => $voucher->fee_breakdown, // Already decoded by Laravel cast
                     'notes' => $voucher->notes,
                     'status' => $voucher->status,
-                    'generated_date' => $voucher->generated_at ? $voucher->generated_at->toISOString() : $voucher->created_at->toISOString()
-                ]
+                    'generated_date' => $voucher->generated_at ? $voucher->generated_at->toISOString() : $voucher->created_at->toISOString(),
+                ],
             ]);
-                
+
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to get voucher data: ' . $e->getMessage()
+                'message' => 'Failed to get voucher data: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -944,13 +986,13 @@ class FeeVoucherController extends Controller
     private function prepareReminderMessage($voucher, $template, $customMessage = null)
     {
         $templates = [
-            'gentle' => "Dear {parent_name}, this is a gentle reminder that the school fee of Rs. {amount} for {student_name} (Voucher #{voucher_number}) is due on {due_date}. Please make the payment at your earliest convenience. Thank you.",
-            
-            'urgent' => "URGENT REMINDER: The school fee of Rs. {amount} for {student_name} (Voucher #{voucher_number}) is overdue. Please make immediate payment to avoid additional charges.",
-            
-            'final' => "FINAL NOTICE: This is the final reminder for overdue school fee of Rs. {amount} for {student_name} (Voucher #{voucher_number}). Please pay immediately to avoid further action.",
-            
-            'custom' => $customMessage
+            'gentle' => 'Dear {parent_name}, this is a gentle reminder that the school fee of Rs. {amount} for {student_name} (Voucher #{voucher_number}) is due on {due_date}. Please make the payment at your earliest convenience. Thank you.',
+
+            'urgent' => 'URGENT REMINDER: The school fee of Rs. {amount} for {student_name} (Voucher #{voucher_number}) is overdue. Please make immediate payment to avoid additional charges.',
+
+            'final' => 'FINAL NOTICE: This is the final reminder for overdue school fee of Rs. {amount} for {student_name} (Voucher #{voucher_number}). Please pay immediately to avoid further action.',
+
+            'custom' => $customMessage,
         ];
 
         $message = $templates[$template] ?? $templates['gentle'];
@@ -975,6 +1017,7 @@ class FeeVoucherController extends Controller
     {
         // Log SMS sending (replace with actual SMS service)
         Log::info("SMS sent to {$phone}: {$message}");
+
         return true;
     }
 
@@ -985,6 +1028,7 @@ class FeeVoucherController extends Controller
     {
         // Log WhatsApp sending (replace with actual WhatsApp service)
         Log::info("WhatsApp sent to {$phone}: {$message}");
+
         return true;
     }
 
@@ -993,15 +1037,16 @@ class FeeVoucherController extends Controller
      */
     private function sendEmail($email, $message, $voucher)
     {
-        if (!$email) {
+        if (! $email) {
             return false;
         }
-        
+
         // Log email sending (replace with actual email service)
         Log::info("Email sent to {$email}: {$message}");
+
         return true;
     }
-    
+
     /**
      * Get voucher settings and school information
      */
@@ -1018,7 +1063,7 @@ class FeeVoucherController extends Controller
                 'website',  // Actual key in database
                 'tagline',  // Additional field from database
                 'default_fine_amount',
-                'default_due_days'
+                'default_due_days',
             ])->pluck('setting_value', 'setting_key');
 
             return response()->json([
@@ -1032,17 +1077,17 @@ class FeeVoucherController extends Controller
                     'school_website' => $settingsCollection->get('website', ''),               // Map website to school_website
                     'school_tagline' => $settingsCollection->get('tagline', ''),               // Add tagline
                     'default_fine_amount' => (int) $settingsCollection->get('default_fine_amount', 0),
-                    'default_due_days' => (int) $settingsCollection->get('default_due_days', 30)
-                ]
+                    'default_due_days' => (int) $settingsCollection->get('default_due_days', 30),
+                ],
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to load settings: ' . $e->getMessage()
+                'message' => 'Failed to load settings: '.$e->getMessage(),
             ], 500);
         }
     }
-    
+
     /**
      * Save voucher settings (placeholder)
      */
@@ -1050,21 +1095,21 @@ class FeeVoucherController extends Controller
     {
         return response()->json([
             'success' => true,
-            'message' => 'Settings saved successfully'
+            'message' => 'Settings saved successfully',
         ]);
     }
-    
+
     /**
      * Print multiple vouchers (placeholder)
      */
     public function printVouchers(Request $request)
     {
         $voucherIds = $request->voucher_ids ?? [];
-        
+
         return response()->json([
             'success' => true,
-            'message' => count($voucherIds) . ' vouchers prepared for printing',
-            'print_url' => '/vouchers/print/' . implode(',', $voucherIds)
+            'message' => count($voucherIds).' vouchers prepared for printing',
+            'print_url' => '/vouchers/print/'.implode(',', $voucherIds),
         ]);
     }
 
@@ -1079,7 +1124,7 @@ class FeeVoucherController extends Controller
                 'student_ids.*' => 'integer|exists:students,id',
                 'due_date' => 'required|date',
                 'voucher_type' => 'required|string|in:monthly,custom,multiple',
-                'fee_month' => 'nullable|date_format:Y-m'
+                'fee_month' => 'nullable|date_format:Y-m',
             ]);
 
             $query = FeeVoucher::with('student')
@@ -1087,7 +1132,7 @@ class FeeVoucherController extends Controller
                 ->where('due_date', $validated['due_date']);
 
             // For monthly fees, also check the fee month
-            if ($validated['voucher_type'] === 'monthly' && !empty($validated['fee_month'])) {
+            if ($validated['voucher_type'] === 'monthly' && ! empty($validated['fee_month'])) {
                 $query->where('fee_month', $validated['fee_month']);
             }
 
@@ -1101,7 +1146,7 @@ class FeeVoucherController extends Controller
                     'due_date' => $voucher->due_date,
                     'fee_month' => $voucher->fee_month,
                     'voucher_type' => $voucher->voucher_type,
-                    'status' => $voucher->status
+                    'status' => $voucher->status,
                 ];
             });
 
@@ -1109,17 +1154,18 @@ class FeeVoucherController extends Controller
                 'success' => true,
                 'existing_vouchers' => $formattedExisting,
                 'count' => $existingVouchers->count(),
-                'message' => $existingVouchers->count() > 0 
-                    ? $existingVouchers->count() . ' duplicate voucher(s) found'
-                    : 'No duplicate vouchers found'
+                'message' => $existingVouchers->count() > 0
+                    ? $existingVouchers->count().' duplicate voucher(s) found'
+                    : 'No duplicate vouchers found',
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Error checking existing vouchers: ' . $e->getMessage());
+            Log::error('Error checking existing vouchers: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to check existing vouchers',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -1184,10 +1230,10 @@ class FeeVoucherController extends Controller
                         'total_vouchers' => (clone $baseQuery)->count(),
                         'total_amount' => round((clone $baseQuery)->sum('total_with_fine'), 2),
                         'total_paid' => round((clone $baseQuery)->sum('paid_amount'), 2),
-                        'total_remaining' => round((clone $baseQuery)->sum(DB::raw("
+                        'total_remaining' => round((clone $baseQuery)->sum(DB::raw('
                             CASE WHEN due_date < CURDATE() THEN COALESCE(total_with_fine, 0) ELSE COALESCE(fee_amount, 0) END
-                        ")) - (clone $baseQuery)->sum('paid_amount'), 2),
-                        'by_status' => (clone $baseQuery)->selectRaw("status, count(*) as count, sum(total_with_fine) as total, sum(paid_amount) as paid")
+                        ')) - (clone $baseQuery)->sum('paid_amount'), 2),
+                        'by_status' => (clone $baseQuery)->selectRaw('status, count(*) as count, sum(total_with_fine) as total, sum(paid_amount) as paid')
                             ->groupBy('status')->get(),
                         'on_time_count' => (clone $baseQuery)->where('status', 'paid')
                             ->whereRaw('payment_date <= due_date')->count(),
@@ -1280,7 +1326,7 @@ class FeeVoucherController extends Controller
                     // vouchers with fee_amount = 0 or custom_amount significantly lower than standard
                     $query->where(function ($q) {
                         $q->where('fee_amount', 0)
-                          ->orWhere('voucher_type', 'custom');
+                            ->orWhere('voucher_type', 'custom');
                     });
 
                     $baseQuery = clone $query;
@@ -1318,10 +1364,10 @@ class FeeVoucherController extends Controller
                     break;
 
                 case 8: // Student Ledger / Statement
-                    if (!$studentId) {
+                    if (! $studentId) {
                         return response()->json([
                             'success' => false,
-                            'message' => 'student_id is required for student ledger'
+                            'message' => 'student_id is required for student ledger',
                         ], 422);
                     }
 
@@ -1335,9 +1381,9 @@ class FeeVoucherController extends Controller
                         'parent_name' => (clone $baseQuery)->value('parent_name'),
                         'total_charged' => round((clone $baseQuery)->sum('total_with_fine'), 2),
                         'total_paid' => round((clone $baseQuery)->sum('paid_amount'), 2),
-                        'balance' => round((clone $baseQuery)->sum(DB::raw("
+                        'balance' => round((clone $baseQuery)->sum(DB::raw('
                             CASE WHEN due_date < CURDATE() THEN COALESCE(total_with_fine, 0) ELSE COALESCE(fee_amount, 0) END
-                        ")) - (clone $baseQuery)->sum('paid_amount'), 2),
+                        ')) - (clone $baseQuery)->sum('paid_amount'), 2),
                         'total_vouchers' => (clone $baseQuery)->count(),
                         'paid_vouchers' => (clone $baseQuery)->where('status', 'paid')->count(),
                         'unpaid_vouchers' => (clone $baseQuery)->whereIn('status', ['unpaid', 'partially_paid'])->count(),
@@ -1349,7 +1395,7 @@ class FeeVoucherController extends Controller
                 default:
                     return response()->json([
                         'success' => false,
-                        'message' => 'Invalid report type'
+                        'message' => 'Invalid report type',
                     ], 422);
             }
 
@@ -1361,10 +1407,11 @@ class FeeVoucherController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Error generating fee report: ' . $e->getMessage());
+            Log::error('Error generating fee report: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to generate report: ' . $e->getMessage()
+                'message' => 'Failed to generate report: '.$e->getMessage(),
             ], 500);
         }
     }

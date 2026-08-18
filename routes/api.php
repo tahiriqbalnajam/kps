@@ -25,6 +25,7 @@ Route::get('students/{id}/progress-report', 'StudentReportController@generateRep
 //classes
 Route::apiResource('classes', 'ClassesController');
 Route::post('classes/bulk-update-priority', 'ClassesController@bulkUpdatePriority');
+Route::post('classes/{class}/toggle-status', 'ClassesController@toggleStatus');
 // Academic Sessions
 Route::get('academic-sessions/active', 'AcademicSessionController@active');
 Route::post('academic-sessions/{id}/set-active', 'AcademicSessionController@setActive');
@@ -152,6 +153,7 @@ Route::apiResource('balances', 'BalanceController');
 Route::apiResource('teacher-observations', 'TeacherObservationController');
 Route::get('teacher-observations/progress/{teacherId}', 'TeacherObservationController@getTeacherProgress');
 Route::apiResource('sections', 'App\Http\Controllers\SectionController');
+Route::post('sections/{section}/toggle-status', 'App\Http\Controllers\SectionController@toggleStatus');
 Route::namespace('Api')->group(function() {
     Route::post('auth/login', 'AuthController@login');
     Route::apiResource('getusers', 'UserController');

@@ -2,19 +2,19 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Classes;
-use App\Models\Parents;
-use App\Models\Student;
-use Carbon\Carbon;
-use App\Models\ClassSession;
-use Carbon\CarbonPeriod;
-use App\Models\StudentAttendance;
-use Illuminate\Http\Request;
 use App\Laravue\JsonResponse;
+use App\Models\Parents;
 use App\Models\Settings;
-use Illuminate\Support\Facades\DB;
 use App\Models\SmsQueue;
+use App\Models\Student;
+use App\Models\StudentAttendance;
+use App\Notifications\TestOneSignalNotification;
 use App\Services\Contracts\AttendanceServiceInterface;
+use Carbon\Carbon;
+use Carbon\CarbonPeriod;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 
 class StudentAttendanceController extends Controller
 {
@@ -24,10 +24,11 @@ class StudentAttendanceController extends Controller
     {
         $this->attendanceService = $attendanceService;
     }
+
     /**
      * Display a listing of the resource.
      *
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public function index(Request $request)
     {
@@ -35,88 +36,106 @@ class StudentAttendanceController extends Controller
         $date = $request->month;
         $start_month = Carbon::createFromFormat('Y-m-d', $date)->firstOfMonth()->format('Y-m-d');
         $end_month = Carbon::createFromFormat('Y-m-d', $date)->lastOfMonth()->format('Y-m-d');
-       
+
         $attendance = StudentAttendance::where('class_id', $class_id)
-                                        ->whereBetween('attendance_date',array($start_month,$end_month))
-                                        ->orderBy('student_id')
-                                        ->toSql();        
-        
-         return response()->json(new JsonResponse(['attendance' => $attendance]));
+            ->whereBetween('attendance_date', [$start_month, $end_month])
+            ->orderBy('student_id')
+            ->toSql();
+
+        return response()->json(new JsonResponse(['attendance' => $attendance]));
 
     }
 
-    public function absent_student_each_class(Request $request) {
+    public function absent_student_each_class(Request $request)
+    {
         $data = $request->all();
         $data = $this->attendanceService->absent_student_each_class($data);
+
         return response()->json(new JsonResponse(['class_student' => $data]));
     }
 
-    public function get_att_comment($student_id) {
+    public function get_att_comment($student_id)
+    {
         $data = $this->attendanceService->get_student_attendace_comments($student_id);
+
         return response()->json(new JsonResponse(['comments' => $data]));
 
     }
 
-    public function absent_comment(Request $request) {
+    public function absent_comment(Request $request)
+    {
         $data = $request->all();
         $data = $this->attendanceService->absent_comment($data);
+
         return response()->json(new JsonResponse(['attendance' => $data]));
 
     }
 
-
-    public function student_attendance_marked(Request $request) {
+    public function student_attendance_marked(Request $request)
+    {
         $search = $request->all();
         $attendance = $this->attendanceService->student_attendance_marked($search);
+
         return response()->json(new JsonResponse(['attendance' => $attendance]));
     }
 
-
-    public function student_daily_classwise_attendance_report(Request $request) {
+    public function student_daily_classwise_attendance_report(Request $request)
+    {
         $search = $request->all();
         $attendance = $this->attendanceService->student_daily_classwise($search);
+
         return response()->json(new JsonResponse(['attendance' => $attendance]));
     }
 
-    public function student_monthly_attendance_report(Request $request) {
+    public function student_monthly_attendance_report(Request $request)
+    {
         $search = $request->all();
         $attendance = $this->attendanceService->student_monthly_attendance_report($search);
+
         return response()->json(new JsonResponse(['students' => $attendance]));
     }
 
-    public function student_attendance_total($student_id) {
+    public function student_attendance_total($student_id)
+    {
         $attendance = $this->attendanceService->student_attendance_total($student_id);
+
         return response()->json(new JsonResponse(['attendance' => $attendance]));
     }
-    
-    public function attendance_student_monthly(Request $request) {
+
+    public function attendance_student_monthly(Request $request)
+    {
         $student_id = $request->student_id;
         $date = $request->month;
         $start_month = Carbon::createFromFormat('Y-m-d', $date)->firstOfMonth()->format('Y-m-d');
         $end_month = Carbon::createFromFormat('Y-m-d', $date)->lastOfMonth()->format('Y-m-d');
         $attendance = StudentAttendance::where('student_id', $student_id)
-                                        ->whereBetween('attendance_date',array($start_month,$end_month))
-                                        ->orderBy('attendance_date')
-                                        ->get();
+            ->whereBetween('attendance_date', [$start_month, $end_month])
+            ->orderBy('attendance_date')
+            ->get();
+
         return response()->json(new JsonResponse(['attendance' => $attendance]));
     }
 
-    public function student_att_report(Request $request) {
+    public function student_att_report(Request $request)
+    {
         $student_id = $request->student_id;
-        if($student_id == null)
+        if ($student_id == null) {
             return response()->json(new JsonResponse(['attendance' => []]));
-        
+        }
+
         $attendance = DB::SELECT("SELECT student_id, DATE_FORMAT(attendance_date,'%m-%Y') as month, COUNT(student_id) as absent 
                                     FROM `student_attendances` 
-                                    WHERE status = 'absent' AND attendance_date > now() - INTERVAL 12 month  AND student_id = ".$student_id."
-                                    GROUP BY month, student_id;");
+                                    WHERE status = 'absent' AND attendance_date > now() - INTERVAL 12 month  AND student_id = ".$student_id.'
+                                    GROUP BY month, student_id;');
+
         return response()->json(new JsonResponse(['attendance' => $attendance]));
     }
 
     /**
      * Show the form for creating a new resource.
-     *[] 
-     * @return \Illuminate\Http\Response
+     *[]
+     *
+     * @return Response
      */
     public function create()
     {
@@ -126,8 +145,7 @@ class StudentAttendanceController extends Controller
     /**
      * Store a newly created resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public function store(Request $request)
     {
@@ -139,8 +157,8 @@ class StudentAttendanceController extends Controller
             return response()->json([
                 'message' => 'Attendance cannot be taken on Sundays.',
                 'errors' => [
-                    'date' => ['Attendance is not allowed on Sundays.']
-                ]
+                    'date' => ['Attendance is not allowed on Sundays.'],
+                ],
             ], 422);
         }
         $students = $request->input('students', []);
@@ -156,83 +174,113 @@ class StudentAttendanceController extends Controller
 
         // Fetch relevant settings once before the loop
         $settingsCollection = Settings::whereIn('setting_key', [
-            'school_name', 
-            'address', 
-            'phone', 
+            'school_name',
+            'address',
+            'phone',
             'absent_sms_template',
-            'message_channel'
+            'message_channel',
         ])->pluck('setting_value', 'setting_key');
 
         $schoolName = $settingsCollection->get('school_name', 'Your School'); // Default if not set
         $schoolAddress = $settingsCollection->get('address', '');
         $schoolPhone = $settingsCollection->get('phone', '');
-        $absentSmsTemplate = $settingsCollection->get('absent_sms_template', "Dear [[parent_name]], your child [[student_name]] (Class [[class_title]]) is absent today. Please ensure attendance. Thank you. - [[school_name]]"); // Default template
+        $absentSmsTemplate = $settingsCollection->get('absent_sms_template', 'Dear [[parent_name]], your child [[student_name]] (Class [[class_title]]) is absent today. Please ensure attendance. Thank you. - [[school_name]]'); // Default template
         $messageChannel = $settingsCollection->get('message_channel', 'sms'); // Default channel
 
         $attendance = [];
-        foreach($students as $data){
+        $absentStudents = [];
+        foreach ($students as $data) {
             $attendance[] = [
                 'class_id' => $data['class_id'],
                 'student_id' => $data['id'],
                 'status' => $data['attendance'],
-                'attendance_date' =>  $date,
+                'attendance_date' => $date,
             ];
-            
-           if(strtolower($data['attendance']) == 'absent') {
-               $sms = []; // Initialize sms array here
-               $sms['student_id'] = $data['id'];
-               $sms['channel'] = $messageChannel; // Use channel from settings
 
-               // Prepare data for placeholder replacement
-               $parentName = $data['parents']['name'] ?? 'Parent';
-               $studentName = $data['name'] ?? 'Student';
-               $className = $data['stdclasses']['name'] ?? 'N/A';
+            if (strtolower($data['attendance']) == 'absent') {
+                $absentStudents[] = [
+                    'id' => $data['id'],
+                    'name' => $data['name'] ?? 'Student',
+                    'class' => $data['stdclasses']['name'] ?? 'N/A',
+                ];
+                $sms = []; // Initialize sms array here
+                $sms['student_id'] = $data['id'];
+                $sms['channel'] = $messageChannel; // Use channel from settings
 
-               // Replace placeholders in the template
-               $message = str_replace(
-                   ['[[parent_name]]', '[[student_name]]', '[[class_title]]', '[[school_name]]', '[[school_address]]', '[[school_phone]]'],
-                   [$parentName, $studentName, $className, $schoolName, $schoolAddress, $schoolPhone],
-                   $absentSmsTemplate
-               );
+                // Prepare data for placeholder replacement
+                $parentName = $data['parents']['name'] ?? 'Parent';
+                $studentName = $data['name'] ?? 'Student';
+                $className = $data['stdclasses']['name'] ?? 'N/A';
 
-               $sms['message'] = $message; // Assign the processed message
-               $sms['phone'] = isset($data['parents']['phone']) ? $this->format_phone($data['parents']['phone']) : null;
-               
-               // Only create SMS queue if phone number is valid
-               if ($sms['phone']) {
-                   SmsQueue::create($sms);
-               }
-           }
+                // Replace placeholders in the template
+                $message = str_replace(
+                    ['[[parent_name]]', '[[student_name]]', '[[class_title]]', '[[school_name]]', '[[school_address]]', '[[school_phone]]'],
+                    [$parentName, $studentName, $className, $schoolName, $schoolAddress, $schoolPhone],
+                    $absentSmsTemplate
+                );
+
+                $sms['message'] = $message; // Assign the processed message
+                $sms['phone'] = isset($data['parents']['phone']) ? $this->format_phone($data['parents']['phone']) : null;
+
+                // Only create SMS queue if phone number is valid
+                if ($sms['phone']) {
+                    SmsQueue::create($sms);
+                }
+            }
         }
         // Use insert for better performance if attendance array is not empty
-        if (!empty($attendance)) {
+        if (! empty($attendance)) {
             StudentAttendance::insert($attendance);
         }
 
-        // Consider returning a response, e.g., success message
+        // Push notification to parents of absent students only (OneSignal).
+        // The push body reuses the same template message as the SMS.
+        if (! empty($absentStudents)) {
+            $parentsByStudent = Student::with('parents.user')
+                ->whereIn('id', collect($absentStudents)->pluck('id'))
+                ->get()
+                ->keyBy('id');
+
+            foreach ($absentStudents as $absent) {
+                $parentUser = $parentsByStudent->get($absent['id'])?->parents?->user;
+                if (! $parentUser || ! $parentUser->player_id) {
+                    continue;
+                }
+                try {
+                    $parentUser->notify(new TestOneSignalNotification(
+                        'Attendance Alert',
+                        "Your child {$absent['name']} (Class {$absent['class']}) is absent today. - {$schoolName}"
+                    ));
+                } catch (\Exception $e) {
+                    // Never let a push failure fail the attendance save
+                }
+            }
+        }
+
         return response()->json(new JsonResponse(['message' => 'Attendance recorded successfully.']));
     }
 
-
-    function format_phone($phone) {
+    public function format_phone($phone)
+    {
         if (empty($phone)) {
             return null; // Return null for empty phone numbers
         }
         $phone = preg_replace('/[^0-9]/', '', $phone); // Remove non-numeric characters
-        $phone = ltrim($phone, '0'); //remove 0 from start if exists
+        $phone = ltrim($phone, '0'); // remove 0 from start if exists
         // Add 92 prefix if it doesn't start with 92 and has a reasonable length (e.g., 10 digits for Pakistan mobile)
-        if (strlen($phone) === 10 && strpos($phone, "92") !== 0) {
-             $phone = '92' . $phone;
-        } else if (strlen($phone) !== 12 || strpos($phone, "92") !== 0) {
+        if (strlen($phone) === 10 && strpos($phone, '92') !== 0) {
+            $phone = '92'.$phone;
+        } elseif (strlen($phone) !== 12 || strpos($phone, '92') !== 0) {
             // Basic validation: if it's not 12 digits starting with 92 after formatting, consider it invalid for this context
-             // Log::warning("Invalid phone format after processing: " . $phone); // Optional: Log invalid formats
-             return null; 
+            // Log::warning("Invalid phone format after processing: " . $phone); // Optional: Log invalid formats
+            return null;
         }
-       
+
         return $phone;
     }
 
-    function dailyclasswise(Request $request) {
+    public function dailyclasswise(Request $request)
+    {
         $date = $request->attendance_date;
 
         $attendance = (DB::SELECT("SELECT c.name,
@@ -313,7 +361,7 @@ class StudentAttendanceController extends Controller
      * Display the specified resource.
      *
      * @param  \App\StudentAttendance  $studentAttendance
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public function show(StudentAttendance $studentAttendance)
     {
@@ -324,7 +372,7 @@ class StudentAttendanceController extends Controller
      * Show the form for editing the specified resource.
      *
      * @param  \App\StudentAttendance  $studentAttendance
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public function edit(StudentAttendance $studentAttendance)
     {
@@ -334,9 +382,8 @@ class StudentAttendanceController extends Controller
     /**
      * Update the specified resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @param  \App\StudentAttendance  $studentAttendance
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public function update(Request $request, StudentAttendance $studentAttendance)
     {
@@ -347,36 +394,39 @@ class StudentAttendanceController extends Controller
      * Remove the specified resource from storage.
      *
      * @param  \App\StudentAttendance  $studentAttendance
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public function destroy(StudentAttendance $studentAttendance)
     {
         //
     }
 
-    public function annual_attendance_top3(Request $request) {
+    public function annual_attendance_top3(Request $request)
+    {
         $data = $request->all();
         $report = $this->attendanceService->annual_attendance_top3($data);
+
         return response()->json(new JsonResponse(['report' => $report]));
     }
 
-    public function get_attendance_summry(Request $request) {
+    public function get_attendance_summry(Request $request)
+    {
         $month = $request->month;
         $summary = $this->attendanceService->get_attendance_summry($month);
+
         return response()->json(new JsonResponse(['summary' => $summary]));
     }
 
     /**
      * Get daily attendance data for graph
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public function getDailyAttendanceGraph(Request $request)
     {
         $startDate = $request->start_date;
         $endDate = $request->end_date;
-        
+
         // Create an array of all dates in the range
         $period = CarbonPeriod::create($startDate, $endDate);
         $dates = [];
