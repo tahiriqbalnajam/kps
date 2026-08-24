@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Classes;
+use App\Models\ClassSession;
 use App\Models\Holiday;
 use App\Models\Student;
 use App\Models\StudentAttendance;
@@ -125,6 +126,8 @@ class AttendanceService implements AttendanceServiceInterface
         // totals or drop the class from the report. Present/absent counts are
         // DISTINCT per student so a stray duplicate attendance row cannot
         // inflate them either.
+        $session = ClassSession::getDefault();
+
         $query = DB::table('classes as cl')
             ->selectRaw('
                 cl.name AS class_title,
@@ -140,8 +143,12 @@ class AttendanceService implements AttendanceServiceInterface
                 COALESCE(ROUND((COUNT(DISTINCT CASE WHEN sa.status = "present" THEN s.id END) / COUNT(DISTINCT s.id)) * 100, 0), 0) AS present_percentage,
                 COALESCE(ROUND((COUNT(DISTINCT CASE WHEN (sa.status = "absent" OR sa.status = "leave") THEN s.id END) / COUNT(DISTINCT s.id)) * 100, 0), 0) AS absent_percentage
             ')
-            ->leftJoin('students as s', function ($join) use ($pef_filter) {
-                $join->on('s.class_id', '=', 'cl.id');
+            ->leftJoin('students as s', function ($join) use ($pef_filter, $session) {
+                $join->on('s.class_id', '=', 'cl.id')
+                    // Only the current roster counts in totals: disabled and
+                    // previous-session students were inflating every class.
+                    ->where('s.status', 'enable')
+                    ->where('s.session_id', $session ? $session->id : 0);
                 if ($pef_filter) {
                     $join->whereRaw("s.pef_admission = 'yes' AND s.nadra_pending = 'No'");
                 }
@@ -152,7 +159,10 @@ class AttendanceService implements AttendanceServiceInterface
                     ->where('sa.attendance_date', $date);
             })
             ->groupBy('cl.id')
-            ->havingRaw('COUNT(DISTINCT sa.id) > 0')
+            // Every class with students is listed — even one with no marks yet
+            // that day — so the report always adds up to the session's real
+            // strength. Only empty classes are omitted.
+            ->havingRaw('COUNT(DISTINCT s.id) > 0')
             ->get();
 
         return $query;
