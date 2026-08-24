@@ -377,8 +377,8 @@
     <admission-certificate  v-if="openadmitcert" :openadmitcert="openadmitcert" :stdid="stdid" @closeAdmitCert="closeAdmitCert()"/>
     <pay-fee v-if="openpayfee" :openpayfee="openpayfee" :stdid="stdid" @donePayFee="donePayFee" />
     <fee-detail v-if="openfeedetail" :openfeedetail="openfeedetail" :stdid="studentid" @doneFeeDetail="doneFeeDetail" />
-    <character-certificate  v-if="showcharactercertificate" :showcharactercertificate="showcharactercertificate" :stdid="studentid" @doneFeeDetail="doneFeeDetail" />
-    <school-leaving-certificate  v-if="showschoolleavingcertificate" :showschoolleavingcertificate="showschoolleavingcertificate" :stdid="studentid" @doneFeeDetail="doneFeeDetail" />
+    <character-certificate  v-if="showcharactercertificate" :showcharactercertificate="showcharactercertificate" :stdid="studentid" @closeCharacterCertificate="doneCharacterCertificate" />
+    <school-leaving-certificate  v-if="showschoolleavingcertificate" :showschoolleavingcertificate="showschoolleavingcertificate" :stdid="studentid" @closeSchoolLeavingCertificate="doneSchoolLeavingCertificate" />
     <fee-print v-if="openfeeprint" :feeid="feeid" :openfeeprint="openfeeprint" @doneFeePrint="doneFeePrint" />
     <student-idcard v-if="showIDCard"
       :showcardprop="showIDCard"
@@ -785,6 +785,12 @@ export default {
     SchoolLeavingCertificate(id) {
       this.showschoolleavingcertificate = true;
       this.studentid = id;
+    },
+    doneCharacterCertificate() {
+      this.showcharactercertificate = false;
+    },
+    doneSchoolLeavingCertificate() {
+      this.showschoolleavingcertificate = false;
     },
     async handleDownload() {
       if (this.total === 0) {

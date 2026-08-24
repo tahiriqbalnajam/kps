@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Import;
 use App\Models\Classes;
+use App\Models\ClassSession;
 use App\Models\Parents;
 use App\Models\Student;
 use App\Models\Stdclass;
@@ -197,6 +198,7 @@ class ImportController extends Controller
         // Create student
         Student::create([
             'name' => $record['student_name'],
+            'session_id' => ClassSession::getDefault()?->id,
             'parent_id' => $parent->id,
             'class_id' => $class->id,
             'monthly_fee' => $record['monthly_fee'],

@@ -39,4 +39,12 @@ class ClassSession extends Model
     {
         return static::where('is_active', true)->first();
     }
+
+    // Helper: session new students should attach to.
+    // Falls back to the newest session when none is flagged active, so
+    // schools with a single (unflagged) session don't save NULL session_id.
+    public static function getDefault()
+    {
+        return static::getActive() ?? static::orderBy('id', 'desc')->first();
+    }
 }

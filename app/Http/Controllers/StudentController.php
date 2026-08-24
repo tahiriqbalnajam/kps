@@ -71,7 +71,7 @@ class StudentController extends Controller
     {
         $data = $request->all();
         if (empty($data['session_id'])) {
-            $activeSession = ClassSession::getActive();
+            $activeSession = ClassSession::getDefault();
             if ($activeSession) {
                 $data['session_id'] = $activeSession->id;
             }
@@ -103,7 +103,7 @@ class StudentController extends Controller
     {
         $input = $request->all();
         if (empty($input['session_id'])) {
-            $activeSession = ClassSession::getActive();
+            $activeSession = ClassSession::getDefault();
             if ($activeSession) {
                 $input['session_id'] = $activeSession->id;
             }

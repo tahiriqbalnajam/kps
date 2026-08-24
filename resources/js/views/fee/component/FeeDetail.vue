@@ -9,22 +9,25 @@
     @close="donePayFee()"
   >
     <div class="demo-drawer__content">
-      <h2>{{ Object.entries(fees)[0][1]['student']['name'] }} ( {{ Object.entries(fees)[0][1]['student']['stdclasses']['name'] }} )</h2>
-      <table class="tblwdborder">
-        <tr>
-          <th>Amount</th>
-          <th>Fee Period</th>
-          <th>Paid At</th>
-        </tr>
-        <tr v-for="fee in fees" :key="fee.id">
-          <td>{{ fee.amount }}</td>
-          <td>{{ formateDate(fee.payment_from_date)}} to {{ formateDate(fee.payment_to_date)}}</td>
-          <td>{{formateDate(fee.created_at)}}</td>
-        </tr>
-      </table>
-      <div class="demo-drawer__footer">
-        <el-button @click="Print()">Print</el-button>
-      </div>
+      <template v-if="fees.length">
+        <h2>{{ fees[0].student?.name }} ( {{ fees[0].student?.stdclasses?.name }} )</h2>
+        <table class="tblwdborder">
+          <tr>
+            <th>Amount</th>
+            <th>Fee Period</th>
+            <th>Paid At</th>
+          </tr>
+          <tr v-for="fee in fees" :key="fee.id">
+            <td>{{ fee.amount }}</td>
+            <td>{{ formateDate(fee.payment_from_date)}} to {{ formateDate(fee.payment_to_date)}}</td>
+            <td>{{formateDate(fee.created_at)}}</td>
+          </tr>
+        </table>
+        <div class="demo-drawer__footer">
+          <el-button @click="Print()">Print</el-button>
+        </div>
+      </template>
+      <el-empty v-else description="No fee records found for this student" />
     </div>
   </el-drawer>
 </template>

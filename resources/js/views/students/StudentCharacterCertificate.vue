@@ -1,6 +1,6 @@
 <template>
     <div>
-        <el-dialog v-model="rdata.dialogVisible" title="Character Certificate" width="80%" top="5vh">
+        <el-dialog v-model="rdata.dialogVisible" title="Character Certificate" width="80%" top="5vh" @close="closeDialog">
             <!-- Add Print Button -->
             <div class="print-actions">
                 <el-button type="primary" @click="printCertificate">
@@ -16,13 +16,13 @@
                         <template v-if="rdata.settings.school_name">
                             <h1 class="school-name">{{ rdata.settings.school_name }}</h1>
                         </template>
-                        <template v-if="rdata.settings.tagline">
+                        <template v-if="isMeaningfulValue(rdata.settings.tagline)">
                             <div class="school-motto">" {{ rdata.settings.tagline }} "</div>
                         </template>
                         <div v-if="hasContactInfo" class="contact-info">
-                            <span v-if="rdata.settings.phone"><i class="el-icon-phone"></i> {{ rdata.settings.phone }}</span>
-                            <template v-if="rdata.settings.website">| <span><i class="el-icon-globe"></i> {{ rdata.settings.website }}</span> |</template>
-                            <span v-if="rdata.settings.address"><i class="el-icon-location"></i> {{ rdata.settings.address }}</span>
+                            <span v-if="isMeaningfulValue(rdata.settings.phone)"><i class="el-icon-phone"></i> {{ rdata.settings.phone }}</span>
+                            <template v-if="isMeaningfulValue(rdata.settings.website)">| <span><i class="el-icon-globe"></i> {{ rdata.settings.website }}</span> |</template>
+                            <span v-if="isMeaningfulValue(rdata.settings.address)"><i class="el-icon-location"></i> {{ rdata.settings.address }}</span>
                         </div>
                         <div class="document-title">Character Certificate</div>
                     </div>
@@ -80,7 +80,8 @@ export default {
         showcharactercertificate: Boolean,
         stdid: Number
     },
-    setup(props) {
+    emits: ['closeCharacterCertificate'],
+    setup(props, { emit }) {
         const { showcharactercertificate, stdid } = toRefs(props);
 
         const resource = new Resource('students');
@@ -108,6 +109,14 @@ export default {
                 rdata.dialogVisible = newValue;
             }
         });
+
+        // Notify parent when closed so it can unmount us (v-if).
+        // Without this the parent flag stays true and the dialog
+        // cannot reopen (and would show stale student data).
+        const closeDialog = () => {
+            rdata.dialogVisible = false;
+            emit('closeCharacterCertificate');
+        };
 
         const convertDate = (date) => {
             if (!date) 
@@ -147,8 +156,14 @@ export default {
             // You can use the searchText value to filter the items or make an API call
         };
 
+        const isMeaningfulValue = (value) => {
+            const v = String(value || '').trim().toLowerCase();
+            // Default placeholders from settings — treat as not set
+            return v !== '' && v !== 'this is our tagline test' && v !== 'website';
+        };
+
         const hasContactInfo = computed(() => {
-            return rdata.settings.phone || rdata.settings.website || rdata.settings.address;
+            return isMeaningfulValue(rdata.settings.phone) || isMeaningfulValue(rdata.settings.website) || isMeaningfulValue(rdata.settings.address);
         });
 
         const getCurrentDate = () => {
@@ -198,9 +213,11 @@ export default {
             convertDateToWords,
             resource,
             hasContactInfo,
+            isMeaningfulValue,
             getCurrentDate,
             getCurrentSession,
             printCertificate,
+            closeDialog,
         };
     },
 };

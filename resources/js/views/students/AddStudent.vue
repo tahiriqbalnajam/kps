@@ -256,6 +256,7 @@
 </template>
 <script>
 import Resource from '@/api/resource';
+import { sessionStore } from '@/store/session';
 import AddClass from '@/views/stdclasses/AddClass.vue';
 import AddParent from '@/views/parents/AddParent.vue';
 const stdRes = new Resource('students');
@@ -558,14 +559,19 @@ export default {
       this.parents = [data.data.parent];
     },
     async getActiveSession() {
+      let session = null;
       try {
         const { data } = await sessionRes.get('active');
-        if (data.session) {
-          this.student.session_id = data.session.id;
-          this.resetStudent.session_id = data.session.id;
-        }
+        session = data.session;
       } catch (e) {
-        // If the active endpoint fails, the backend fallback will handle it
+        // Fall through to the session store below
+      }
+      // No session flagged active (e.g. a school with a single session):
+      // fall back to the store's current session so session_id is never empty.
+      session ??= sessionStore().currentSession;
+      if (session) {
+        this.student.session_id = session.id;
+        this.resetStudent.session_id = session.id;
       }
     },
     async getClasses() {
@@ -599,12 +605,13 @@ export default {
     closeAddClassPopup() {
       this.getClasses();
       this.addstdclasspop = false;
+      const sessionId = this.student.session_id;
       this.student = {
         id: '',
         name: '',
         parent_id: '',
         class_id: '',
-        session_id: '',
+        session_id: sessionId,
         dob: '',
         gender: 'Male',
         monthly_fee: '',
