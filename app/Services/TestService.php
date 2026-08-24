@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\ClassSession;
 use App\Models\Student;
 use App\Models\Test;
 use App\Models\TestResult;
@@ -161,6 +162,7 @@ class TestService
     public function getAllTestResults($searchParams = [])
     {
         $limit = Arr::get($searchParams, 'limit', static::ITEM_PER_PAGE);
+        $activeSession = ClassSession::getActive();
 
         return QueryBuilder::for(TestResult::class)
             ->with('student')
@@ -168,6 +170,11 @@ class TestService
             ->allowedFilters(...[
                 'id', 'test_id', 'student_id', 'absent',
             ])
+            ->when($activeSession, function ($query) use ($activeSession) {
+                $query->whereHas('test', function ($q) use ($activeSession) {
+                    $q->where('session_id', $activeSession->id);
+                });
+            })
             ->paginate($limit)
             ->appends(request()->query());
     }
