@@ -81,7 +81,11 @@
           {{ genderShort(scope.row.gender) }}
         </template>
       </el-table-column>
-      <el-table-column label="Address" prop="address" show-overflow-tooltip />
+      <el-table-column label="Assigned Class" min-width="110">
+        <template #default="scope">
+          {{ scope.row.class_name || '—' }}
+        </template>
+      </el-table-column>
       <el-table-column label="Pay" prop="pay" />
       <el-table-column align="right">
         <template slot="header" #header="scope">
@@ -509,8 +513,8 @@ export default {
     handleDownload() {
       this.downloadLoading = true;
       import('@/vendor/Export2Excel').then(excel => {
-        const tHeader = ['Name', 'Gender', 'DOB', 'CNIC', 'Pay', 'Phone', 'Address'];
-        const filterVal = ['name', 'gender', 'dob', 'cnic', 'pay', 'phone', 'address'];
+        const tHeader = ['Name', 'Gender', 'DOB', 'CNIC', 'Pay', 'Phone', 'Assigned Class'];
+        const filterVal = ['name', 'gender', 'dob', 'cnic', 'pay', 'phone', 'class_name'];
         const data = this.formatJson(filterVal, this.list);
         excel.export_json_to_excel({
           header: tHeader,

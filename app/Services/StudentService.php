@@ -1,19 +1,21 @@
 <?php
+
 namespace App\Services;
 
+use App\Models\ClassSession;
 use App\Models\Role;
-use App\Models\User;
 use App\Models\Student;
-use App\Models\TestResult;
-use Illuminate\Support\Arr;
 use App\Models\StudentAttendance;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-use Spatie\QueryBuilder\QueryBuilder;
-use Spatie\QueryBuilder\AllowedFilter;
+use App\Models\TestResult;
+use App\Models\User;
 use App\Services\Contracts\StudentServiceInterface;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
+use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\QueryBuilder;
 
 class StudentService implements StudentServiceInterface
 {
@@ -22,13 +24,13 @@ class StudentService implements StudentServiceInterface
     public function listStudents(array $searchParams)
     {
         $limit = Arr::get($searchParams, 'limit', static::ITEM_PER_PAGE);
-        
+
         $query = QueryBuilder::for(Student::class)
-            ->allowedFields(...['id','user_id','roll_no','name','adminssion_number','parent_id',
-                'class_id','session_id','dob','doa','b_form','gender',
-                'is_orphan','cast','previous_school','monthly_fee','sibling','religion',
-                'pef_admission','nadra_pending','action_required','action_details','status',
-                'parents.id','parents.name','parent.phone','stdclasses.id','stdclasses.name'])
+            ->allowedFields(...['id', 'user_id', 'roll_no', 'name', 'adminssion_number', 'parent_id',
+                'class_id', 'session_id', 'dob', 'doa', 'b_form', 'gender',
+                'is_orphan', 'cast', 'previous_school', 'monthly_fee', 'sibling', 'religion',
+                'pef_admission', 'nadra_pending', 'action_required', 'action_details', 'status',
+                'parents.id', 'parents.name', 'parent.phone', 'stdclasses.id', 'stdclasses.name'])
             ->with('parents', 'stdclasses', 'section', 'class_session')
             ->allowedFilters(...[
                 AllowedFilter::exact('id'),
@@ -45,13 +47,13 @@ class StudentService implements StudentServiceInterface
                 AllowedFilter::callback('all', function ($query, $value) {
                     $query->where(function ($q) use ($value) {
                         $q->where('name', 'LIKE', "%{$value}%")
-                          ->orWhere('adminssion_number', 'LIKE', "%{$value}%")
-                          ->orWhere('roll_no', 'LIKE', "%{$value}%")
-                          ->orWhere('b_form', 'LIKE', "%{$value}%")
-                          ->orWhereHas('parents', function ($parentQuery) use ($value) {
-                              $parentQuery->where('name', 'LIKE', "%{$value}%")
-                                          ->orWhere('phone', 'LIKE', "%{$value}%");
-                          });
+                            ->orWhere('adminssion_number', 'LIKE', "%{$value}%")
+                            ->orWhere('roll_no', 'LIKE', "%{$value}%")
+                            ->orWhere('b_form', 'LIKE', "%{$value}%")
+                            ->orWhereHas('parents', function ($parentQuery) use ($value) {
+                                $parentQuery->where('name', 'LIKE', "%{$value}%")
+                                    ->orWhere('phone', 'LIKE', "%{$value}%");
+                            });
                     });
                 }),
                 // Add custom age filter
@@ -73,19 +75,19 @@ class StudentService implements StudentServiceInterface
                     if ($value === 'No') {
                         $query->where(function ($q) {
                             $q->whereNull('b_form')
-                              ->orWhere('b_form', '')
-                              ->orWhere('b_form', 'N/A');
+                                ->orWhere('b_form', '')
+                                ->orWhere('b_form', 'N/A');
                         });
                     } else {
                         $query->where('b_form', '!=', '')
-                              ->whereNotNull('b_form')
-                              ->where('b_form', '!=', 'N/A');
+                            ->whereNotNull('b_form')
+                            ->where('b_form', '!=', 'N/A');
                     }
-                })
+                }),
             ]);
 
         // Add default status filter if no status filter is provided
-        if (!request()->has('filter.status')) {
+        if (! request()->has('filter.status')) {
             $query->where('status', 'enable');
         }
 
@@ -101,23 +103,23 @@ class StudentService implements StudentServiceInterface
         // Convert the flat filter parameters to nested format that QueryBuilder expects
         $requestData = $request->all();
         $filterData = [];
-        
+
         foreach ($requestData as $key => $value) {
             if (preg_match('/^filter\[(.+)\]$/', $key, $matches)) {
                 $filterData[$matches[1]] = $value;
             }
         }
-        
+
         // Create a properly formatted request for QueryBuilder
         $formattedRequest = new Request(['filter' => $filterData]);
-        
+
         // Create QueryBuilder with the formatted request
         $query = QueryBuilder::for(Student::class, $formattedRequest)
-            ->allowedFields(...['id','user_id','roll_no','name','adminssion_number','parent_id',
-                'class_id','session_id','dob','doa','b_form','gender',
-                'is_orphan','cast','previous_school','monthly_fee','sibling','religion',
-                'pef_admission','nadra_pending','action_required','action_details','status',
-                'parents.id','parents.name','parent.phone','stdclasses.id','stdclasses.name'])
+            ->allowedFields(...['id', 'user_id', 'roll_no', 'name', 'adminssion_number', 'parent_id',
+                'class_id', 'session_id', 'dob', 'doa', 'b_form', 'gender',
+                'is_orphan', 'cast', 'previous_school', 'monthly_fee', 'sibling', 'religion',
+                'pef_admission', 'nadra_pending', 'action_required', 'action_details', 'status',
+                'parents.id', 'parents.name', 'parent.phone', 'stdclasses.id', 'stdclasses.name'])
             ->with('parents', 'stdclasses', 'section', 'class_session')
             ->allowedFilters(...[
                 AllowedFilter::exact('id'),
@@ -134,13 +136,13 @@ class StudentService implements StudentServiceInterface
                 AllowedFilter::callback('all', function ($query, $value) {
                     $query->where(function ($q) use ($value) {
                         $q->where('name', 'LIKE', "%{$value}%")
-                          ->orWhere('adminssion_number', 'LIKE', "%{$value}%")
-                          ->orWhere('roll_no', 'LIKE', "%{$value}%")
-                          ->orWhere('b_form', 'LIKE', "%{$value}%")
-                          ->orWhereHas('parents', function ($parentQuery) use ($value) {
-                              $parentQuery->where('name', 'LIKE', "%{$value}%")
-                                          ->orWhere('phone', 'LIKE', "%{$value}%");
-                          });
+                            ->orWhere('adminssion_number', 'LIKE', "%{$value}%")
+                            ->orWhere('roll_no', 'LIKE', "%{$value}%")
+                            ->orWhere('b_form', 'LIKE', "%{$value}%")
+                            ->orWhereHas('parents', function ($parentQuery) use ($value) {
+                                $parentQuery->where('name', 'LIKE', "%{$value}%")
+                                    ->orWhere('phone', 'LIKE', "%{$value}%");
+                            });
                     });
                 }),
                 // Add custom age filter
@@ -162,19 +164,19 @@ class StudentService implements StudentServiceInterface
                     if ($value === 'No') {
                         $query->where(function ($q) {
                             $q->whereNull('b_form')
-                              ->orWhere('b_form', '')
-                              ->orWhere('b_form', 'N/A');
+                                ->orWhere('b_form', '')
+                                ->orWhere('b_form', 'N/A');
                         });
                     } else {
                         $query->where('b_form', '!=', '')
-                              ->whereNotNull('b_form')
-                              ->where('b_form', '!=', 'N/A');
+                            ->whereNotNull('b_form')
+                            ->where('b_form', '!=', 'N/A');
                     }
-                })
+                }),
             ]);
 
         // Add default status filter if no status filter is provided
-        if (!isset($filterData['status'])) {
+        if (! isset($filterData['status'])) {
             $query->where('status', 'enable');
         }
 
@@ -183,7 +185,7 @@ class StudentService implements StudentServiceInterface
 
     public function storeStudent(array $data)
     {
-        $validator = \Illuminate\Support\Facades\Validator::make($data, [
+        $validator = Validator::make($data, [
             'name' => 'required|string|max:191',
             'b_form' => 'nullable|string|max:191',
             'adminssion_number' => 'nullable|string|max:15',
@@ -191,12 +193,12 @@ class StudentService implements StudentServiceInterface
         ]);
 
         if ($validator->fails()) {
-            throw new \Illuminate\Validation\ValidationException($validator);
+            throw new ValidationException($validator);
         }
 
         try {
             DB::beginTransaction();
-            //commmented as user creation is not required here, user will be created in parent controller
+            // commmented as user creation is not required here, user will be created in parent controller
             // $user['name'] = $data['name'];
             // $user['email'] = $data['name'].rand(10,100).'@idlschool.com';
             // $user['password'] = bcrypt('idl123');
@@ -206,6 +208,7 @@ class StudentService implements StudentServiceInterface
             // $data['user_id'] = $user->id;
             $student = Student::create($data);
             DB::commit();
+
             return $student;
         } catch (\Exception $e) {
             DB::rollback();
@@ -216,6 +219,7 @@ class StudentService implements StudentServiceInterface
     public function updateStudent(Student $student, array $data)
     {
         $student->fill($data)->save();
+
         return $student;
     }
 
@@ -244,22 +248,27 @@ class StudentService implements StudentServiceInterface
 
     public function getSubjectWiseScores($studentId)
     {
+        // Only the current session's tests belong on the report — tests from
+        // previous sessions were showing up alongside the active one.
+        $session = ClassSession::getDefault();
+
         $results = TestResult::where('student_id', $studentId)
-        ->join('tests', 'test_results.test_id', '=', 'tests.id')
-        ->join('subjects', 'tests.subject_id', '=', 'subjects.id')
-        ->select(
-            'subjects.title as subject',
-            'tests.id as test_id',
-            'tests.date as test_date',
-            'tests.total_marks',
-            'test_results.score',
-            DB::raw('(test_results.score / tests.total_marks) * 100 as percentage')
-        )
-        ->get()
-        ->groupBy('subject'); // Group results by subject
+            ->when($session, fn ($query) => $query->where('tests.session_id', $session->id))
+            ->join('tests', 'test_results.test_id', '=', 'tests.id')
+            ->join('subjects', 'tests.subject_id', '=', 'subjects.id')
+            ->select(
+                'subjects.title as subject',
+                'tests.id as test_id',
+                'tests.date as test_date',
+                'tests.total_marks',
+                'test_results.score',
+                DB::raw('(test_results.score / tests.total_marks) * 100 as percentage')
+            )
+            ->get()
+            ->groupBy('subject'); // Group results by subject
 
         // Structure the results
-        $structuredResults = $results->map(function($tests, $subject) {
+        $structuredResults = $results->map(function ($tests, $subject) {
             $totalScore = $tests->sum('score');
             $totalMarks = $tests->sum('total_marks');
             if ($totalMarks == 0) {
@@ -271,7 +280,7 @@ class StudentService implements StudentServiceInterface
             return [
                 'subject' => $subject,
                 'overall_percentage' => $overallPercentage,
-                'tests' => $tests->map(function($test) {
+                'tests' => $tests->map(function ($test) {
                     return [
                         'test_id' => $test->test_id,
                         'test_date' => $test->test_date,
@@ -279,7 +288,7 @@ class StudentService implements StudentServiceInterface
                         'score' => $test->score,
                         'percentage' => $test->percentage,
                     ];
-                })
+                }),
             ];
         });
 

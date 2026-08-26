@@ -1,62 +1,69 @@
 <?php
+
 namespace App\Models;
+
 use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
-class Teacher extends Model {
-
-    
+class Teacher extends Model
+{
     protected $fillable = [
-        'user_id','class_id','name','teacher_special_id','designation', 'father_name','father_cnic', 'doj', 'dob','education', 'experience', 'gender', 
-        'pay', 'cnic', 'address', 'phone', 'profession','active'
+        'user_id', 'class_id', 'name', 'teacher_special_id', 'designation', 'father_name', 'father_cnic', 'doj', 'dob', 'education', 'experience', 'gender',
+        'pay', 'cnic', 'address', 'phone', 'profession', 'active',
     ];
 
-
-    public function attendances() {
+    public function attendances()
+    {
         return $this->hasMany(TeacherAttendance::class);
     }
 
-    public function user(){
-        return $this->belongsTo(User::class,'user_id');
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
     }
 
-    public function calculatePay($month, $year, $allowedLeaves = 1, $salary)
+    public function calculatePay($month, $year, $allowedLeaves, $salary)
     {
         $totalDaysInMonth = '30';
         $workingDays = '30';
 
         $attendedDays = $this->attendances()
-                             ->whereMonth('attendance_date', $month)
-                             ->whereYear('attendance_date', $year)
-                             ->where('status', 'present')
-                             ->count();
+            ->whereMonth('attendance_date', $month)
+            ->whereYear('attendance_date', $year)
+            ->where('status', 'present')
+            ->count();
 
         $absentDays = $workingDays - $attendedDays;
         $payableDays = $workingDays - max(0, $absentDays - $allowedLeaves);
-        
+
         // Calculate the daily salary
         $dailySalary = round($salary / $totalDaysInMonth);
         $previous_balance = 0;
         // Calculate the total pay
-        if($attendedDays > 0)
+        if ($attendedDays > 0) {
             $totalPay = $dailySalary * $payableDays;
-        else
+        } else {
             $totalPay = 0;
+        }
 
-        return array('total_days_month' => $totalDaysInMonth, 
-                     'working_days' => $workingDays,
-                     'present_days' => $attendedDays,
-                     'absent_days' => $absentDays,
-                     'payable_days'=> $payableDays,
-                     'daily_salary' => $dailySalary,
-                     'total_pay' => $totalPay,
-                     'previous_balance' => $previous_balance
-                    );
+        return ['total_days_month' => $totalDaysInMonth,
+            'working_days' => $workingDays,
+            'present_days' => $attendedDays,
+            'absent_days' => $absentDays,
+            'payable_days' => $payableDays,
+            'daily_salary' => $dailySalary,
+            'total_pay' => $totalPay,
+            'previous_balance' => $previous_balance,
+        ];
     }
 
-    public function getTestsWithAverageMarks() {
-        
+    public function getTestsWithAverageMarks()
+    {
+        // Only the current session's tests belong on the profile — tests from
+        // previous sessions were showing up alongside the active one.
+        $session = ClassSession::getDefault();
+
         return DB::table('tests as t')
             ->join('classes as c', 't.class_id', '=', 'c.id')
             ->join('subjects as s', 't.subject_id', '=', 's.id')
@@ -71,6 +78,7 @@ class Teacher extends Model {
             )
             ->where('t.teacher_id', $this->id) // Using $this->id to get the current teacher's ID
             ->where('tr.absent', 'no') // Using $this->id to get the current teacher's ID
+            ->when($session, fn ($query) => $query->where('t.session_id', $session->id))
             ->groupBy('c.id', 's.id', 't.id')
             ->orderBy('c.name')
             ->orderBy('s.title')
@@ -78,16 +86,18 @@ class Teacher extends Model {
             ->get();
     }
 
-    public function alreadyAttDone() {
+    public function alreadyAttDone()
+    {
         $currentDateTime = Carbon::now();
         $alreadydone = $this->attendances()
-                             ->whereDate('attendance_date', $currentDateTime)
-                             ->get()
-                             ->count();
-        if($alreadydone > 0)
+            ->whereDate('attendance_date', $currentDateTime)
+            ->get()
+            ->count();
+        if ($alreadydone > 0) {
             return true;
-        else
+        } else {
             return false;
+        }
     }
 
     /**
@@ -98,14 +108,14 @@ class Teacher extends Model {
         return $this->hasMany(TimetableSlot::class);
     }
 
-    public function setOnlineAttendance() {
+    public function setOnlineAttendance()
+    {
         $currentDateTime = Carbon::now();
 
         // Assuming you have a column named 'attendance_time' in the teachers table
         $this->teacher_id = $this->id;
-        $this->status = "present";
+        $this->status = 'present';
         $this->attendance_date = $currentDateTime;
         $this->save();
     }
-
 }
