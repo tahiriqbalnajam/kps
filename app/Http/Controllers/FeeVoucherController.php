@@ -45,6 +45,12 @@ class FeeVoucherController extends Controller
                 if (! empty($filters['roll_no'])) {
                     $query->where('roll_no', 'LIKE', "{$filters['roll_no']}%");
                 }
+                if (! empty($filters['voucher_number'])) {
+                    $val = $filters['voucher_number'];
+                    $query->whereHas('feeVouchers', function ($q) use ($val) {
+                        $q->where('voucher_number', 'LIKE', "%{$val}%");
+                    });
+                }
 
                 // Generic search
                 if (isset($filters['search']) && ! empty($filters['search'])) {
@@ -281,7 +287,7 @@ class FeeVoucherController extends Controller
                         );
                     }),
                     AllowedFilter::callback('voucher_number', function ($query, $value) {
-                        $query->where('voucher_number', 'LIKE', "{$value}%");
+                        $query->where('voucher_number', 'LIKE', "%{$value}%");
                     }),
                     AllowedFilter::callback('roll_no', function ($query, $value) {
                         $query->whereHas('student', function ($q) use ($value) {
@@ -295,9 +301,9 @@ class FeeVoucherController extends Controller
                                 'MATCH(student_name, parent_name) AGAINST(? IN BOOLEAN MODE)',
                                 ['+'.$value.'*']
                             )
-                                ->orWhere('voucher_number', 'LIKE', "{$value}%")
-                                ->orWhere('admission_number', 'LIKE', "{$value}%")
-                                ->orWhere('parent_phone', 'LIKE', "{$value}%");
+                                ->orWhere('voucher_number', 'LIKE', "%{$value}%")
+                                ->orWhere('admission_number', 'LIKE', "%{$value}%")
+                                ->orWhere('parent_phone', 'LIKE', "%{$value}%");
                         });
                     }),
                     AllowedFilter::callback('overdue_only', function ($query, $value) {
@@ -709,7 +715,7 @@ class FeeVoucherController extends Controller
                         'MATCH(student_name, parent_name) AGAINST(? IN BOOLEAN MODE)',
                         ['+'.$search.'*']
                     )
-                        ->orWhere('voucher_number', 'like', "{$search}%");
+                        ->orWhere('voucher_number', 'like', "%{$search}%");
                 });
             }
 
@@ -723,6 +729,22 @@ class FeeVoucherController extends Controller
             }
 
             $vouchers = $query->orderBy('due_date', 'asc')->get();
+
+            // Skip vouchers that are already included inside another outstanding voucher.
+            // E.g. voucher B was generated including voucher C (C appears in B's fee_breakdown
+            // as a pending_voucher_id). Including both B and C in a new voucher would
+            // double-count C's amount, so only the top-level voucher (B) is returned.
+            $includedPendingIds = [];
+            foreach ($vouchers as $voucher) {
+                foreach ((array) $voucher->fee_breakdown as $item) {
+                    if (! empty($item['pending_voucher_id'])) {
+                        $includedPendingIds[(int) $item['pending_voucher_id']] = true;
+                    }
+                }
+            }
+            $vouchers = $vouchers->reject(function ($voucher) use ($includedPendingIds) {
+                return isset($includedPendingIds[(int) $voucher->id]);
+            })->values();
 
             // Add computed fields for frontend
             $vouchers = $vouchers->map(function ($voucher) {

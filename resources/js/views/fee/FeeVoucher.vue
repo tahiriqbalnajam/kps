@@ -15,6 +15,7 @@
             <el-option label="Parent Name" value="parent_name" />
             <el-option label="Admission #" value="admission_number" />
             <el-option label="Roll No" value="roll_no" />
+            <el-option label="Voucher #" value="voucher_number" />
           </el-select>
 
           <el-input 
