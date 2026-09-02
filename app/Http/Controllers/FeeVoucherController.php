@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ClassSession;
 use App\Models\FeeVoucher;
 use App\Models\Settings;
 use App\Models\Student;
@@ -24,6 +25,19 @@ class FeeVoucherController extends Controller
     {
         try {
             $query = Student::with(['stdclasses', 'parents']);
+
+            // Only active (enabled) students of the current session can be
+            // issued new vouchers — disabled students are excluded here
+            $query->where('status', 'enable');
+            $sessionId = $request->input('filter.session_id');
+            if ($sessionId) {
+                $query->where('session_id', $sessionId);
+            } else {
+                $currentSession = ClassSession::getDefault();
+                if ($currentSession) {
+                    $query->where('session_id', $currentSession->id);
+                }
+            }
 
             // Apply filters
             if ($request->has('filter')) {
@@ -70,16 +84,6 @@ class FeeVoucherController extends Controller
 
                 if (isset($filters['gender'])) {
                     $query->where('gender', $filters['gender']);
-                }
-
-                if (isset($filters['status'])) {
-                    if ($filters['status'] === 'active') {
-                        $query->where(function ($q) {
-                            $q->where('status', 'active')->orWhere('status', 1);
-                        });
-                    } else {
-                        $query->where('status', $filters['status']);
-                    }
                 }
             }
 
@@ -251,6 +255,20 @@ class FeeVoucherController extends Controller
             $limit = $request->input('limit', 15);
 
             $vouchers = QueryBuilder::for(FeeVoucher::class)
+                // Only list vouchers belonging to active (enabled) students of the
+                // current session (or the session requested via filter[session_id]).
+                ->whereHas('student', function ($query) use ($request) {
+                    $query->where('status', 'enable');
+                    $sessionId = $request->input('filter.session_id');
+                    if ($sessionId) {
+                        $query->where('session_id', $sessionId);
+                    } else {
+                        $currentSession = ClassSession::getDefault();
+                        if ($currentSession) {
+                            $query->where('session_id', $currentSession->id);
+                        }
+                    }
+                })
                 ->allowedFilters(...[
                     AllowedFilter::exact('status'),
                     AllowedFilter::partial('class_name'), // Keeping partial for class as it's often short
@@ -306,6 +324,9 @@ class FeeVoucherController extends Controller
                                 ->orWhere('parent_phone', 'LIKE', "%{$value}%");
                         });
                     }),
+                    // Session scoping is applied in the whereHas('student') above —
+                    // registered so Spatie accepts the param instead of rejecting it
+                    AllowedFilter::callback('session_id', function () {}),
                     AllowedFilter::callback('overdue_only', function ($query, $value) {
                         if ($value) {
                             $query->whereIn('status', ['unpaid', 'partially_paid'])

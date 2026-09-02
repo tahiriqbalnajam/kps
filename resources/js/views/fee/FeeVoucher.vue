@@ -573,10 +573,10 @@ export default {
           width: 100,
           align: 'center',
           cellRenderer: ({ rowData }) => h(ElTag, {
-            type: rowData.status === 'active' ? 'success' : 'warning',
+            type: ['enable', 'active'].includes(rowData.status) ? 'success' : 'warning',
             effect: 'light',
             size: 'small'
-          }, { default: () => rowData.status === 'active' ? 'Active' : 'Inactive' })
+          }, { default: () => ['enable', 'active'].includes(rowData.status) ? 'Active' : 'Inactive' })
         }
       ]
     },

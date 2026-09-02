@@ -434,6 +434,7 @@ import {
   sendVoucherReminders
 } from '@/api/fee'
 import Resource from '@/api/resource'
+import { sessionStore } from '@/store/session'
 import FeeVoucherPrint from './component/FeeVoucherPrint.vue'
 import FeeVoucherStatistics from './component/FeeVoucherStatistics.vue'
 
@@ -560,7 +561,17 @@ export default {
           ? `Rs. ${remaining} remaining (incl. Rs. ${this.selectedVoucher.fine_amount} fine)`
           : `Rs. ${this.selectedVoucher.total_with_fine} (incl. Rs. ${this.selectedVoucher.fine_amount} fine)`
       }
-    }
+    },
+    currentSessionId() { return sessionStore().currentSessionId },
+  },
+  watch: {
+    // Refetch when the navbar session switcher changes
+    currentSessionId(newVal) {
+      if (newVal) {
+        this.query.page = 1
+        this.getVouchers()
+      }
+    },
   },
   created() {
     this.getVouchers()
@@ -589,6 +600,10 @@ export default {
       this.loading = true
       try {
         const filters = { ...this.query }
+        // Scope to the session selected in the navbar (defaults to the active session)
+        if (sessionStore().currentSessionId) {
+          filters.session_id = sessionStore().currentSessionId
+        }
         if (filters.search && this.query.searchType) {
           const type = this.query.searchType
           filters[type] = filters.search
