@@ -288,15 +288,17 @@ class SchoolDiaryController extends Controller
             return response()->json(new JsonResponse(['diaries' => []]));
         }
 
+        // Only block when a voucher is OVERDUE (unpaid/partially_paid AND past due date),
+        // not merely pending — a voucher with a future due date must not lock the diary.
         if ($studentId && FeeVoucher::where('student_id', $studentId)
-                ->whereIn('status', ['unpaid', 'partially_paid'])
+                ->overdue()
                 ->exists()
         ) {
             return response()->json(new JsonResponse([
                 'diaries' => [[
                     'subject_id'    => null,
                     'subject_title' => 'Outstanding Dues',
-                    'diary_text'    => 'Your school diary is currently unavailable due to outstanding fee dues. Please clear your dues to regain access. Contact the school administration for further assistance.',
+                    'diary_text'    => 'Your school diary is currently unavailable due to overdue fee dues. Please clear your dues to regain access. Contact the school administration for further assistance.',
                     'diary_date'    => $date,
                 ]],
             ]));
