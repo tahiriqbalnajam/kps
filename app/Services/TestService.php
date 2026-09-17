@@ -22,7 +22,11 @@ class TestService
         $query = QueryBuilder::for(Test::class)
             ->allowedIncludes(...['class', 'subject', 'teacher', 'section', 'testResults', 'testResults.student', 'testResults.student.parents'])
             ->allowedFilters(...[
-                'id', 'class_id', 'subject_id', 'teacher_id', 'title', 'date',
+                'title', 'date',
+                AllowedFilter::exact('id'),
+                AllowedFilter::exact('class_id'),
+                AllowedFilter::exact('subject_id'),
+                AllowedFilter::exact('teacher_id'),
                 AllowedFilter::exact('session_id'),
             ])
             ->orderBy('id', 'desc');
@@ -168,7 +172,10 @@ class TestService
             ->with('student')
             ->allowedIncludes(...['student', 'test', 'test.subject'])
             ->allowedFilters(...[
-                'id', 'test_id', 'student_id', 'absent',
+                'absent',
+                AllowedFilter::exact('id'),
+                AllowedFilter::exact('test_id'),
+                AllowedFilter::exact('student_id'),
             ])
             ->when($activeSession, function ($query) use ($activeSession) {
                 $query->whereHas('test', function ($q) use ($activeSession) {
