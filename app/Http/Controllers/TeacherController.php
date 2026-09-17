@@ -10,6 +10,7 @@ use App\Models\Teacher;
 use App\Models\TeacherAttendance;
 use App\Models\TeacherSalary;
 use App\Models\User;
+use App\Traits\LinksUserAccounts;
 use App\Traits\TransactionTrait;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -20,11 +21,11 @@ use Illuminate\Support\Facades\Validator;
 
 class TeacherController extends Controller
 {
-    use TransactionTrait;
+    use LinksUserAccounts, TransactionTrait;
 
     const ITEM_PER_PAGE = 1000;
 
-    private $column_select = ['id', 'class_id', 'name', 'designation', 'teacher_special_id', 'father_name', 'father_cnic',
+    private $column_select = ['id', 'user_id', 'class_id', 'name', 'designation', 'teacher_special_id', 'father_name', 'father_cnic',
         'doj', 'education', 'experience', 'gender',
         'pay', 'cnic', 'address', 'phone', 'status', 'dob'];
 
@@ -40,6 +41,7 @@ class TeacherController extends Controller
             array_map(fn ($column) => 'teachers.'.$column, $this->column_select),
             ['cl.name as class_name']
         ))
+            ->with('user:id,name,email,phone')
             ->leftJoin('classes as cl', 'cl.id', '=', 'teachers.class_id')
         // Default to active teachers; pass status=inactive or status=all to
         // include inactive ones in the list
@@ -148,9 +150,33 @@ class TeacherController extends Controller
 
     public function destroy($id)
     {
-        User::destroy($id);
+        $teacher = Teacher::findOrFail($id);
+
+        // Keeps the account if this person is also a parent, etc.
+        $this->deleteOrDetachUserAccount($teacher, 'teacher');
+
+        // $id is a teacher id — it must not be used as a user id (the previous
+        // User::destroy($id) deleted whichever unrelated user shared that id).
+        $teacher->delete();
 
         return response()->json(new JsonResponse(['msg' => 'Deleted successfully.']));
+    }
+
+    /**
+     * Create a user account for a teacher that doesn't have one.
+     */
+    public function createAccount(Request $request, $id)
+    {
+        $teacher = Teacher::findOrFail($id);
+
+        // Check the relation rather than the raw column: a teacher whose linked
+        // user row was deleted still has a user_id, and this button is the only
+        // way to repair that from the UI.
+        if ($teacher->user) {
+            return response()->json(['success' => false, 'message' => 'Teacher already has a user account.'], 422);
+        }
+
+        return $this->attachUserAccount($teacher, $request, 'teacher');
     }
 
     public function save_salary(Request $request)

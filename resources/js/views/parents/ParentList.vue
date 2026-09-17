@@ -168,6 +168,20 @@
       </template>
     </el-dialog>
 
+    <el-dialog v-model="linkExistingDialog" title="Account Already Exists" width="400px" :close-on-click-modal="false">
+      <div v-if="existingUser">
+        <p>
+          <strong>{{ existingUser.name }}</strong>
+          <span v-if="existingUser.roles && existingUser.roles.length"> — {{ formatRoles(existingUser.roles) }}</span>
+        </p>
+        <p>Link this parent to that account and add the Parent role? The account keeps its existing roles and password.</p>
+      </div>
+      <template #footer>
+        <el-button @click="linkExistingDialog = false">Cancel</el-button>
+        <el-button type="primary" :loading="createAccountLoading" @click="confirmLinkExisting">Link Account</el-button>
+      </template>
+    </el-dialog>
+
     <el-dialog v-model="bulkCreateAccountsDialog" title="Bulk Generate User Accounts" width="400px" :close-on-click-modal="false">
       <p>This will create user accounts for <strong>all parents</strong> who don't have one yet. Each account will use <code>phone@idlschool.pk</code> as the email.</p>
       <el-form ref="bulkCreateAccountsForm" :model="bulkCreateAccountsForm" :rules="bulkCreateAccountsRules" label-position="top">
@@ -225,6 +239,8 @@ export default {
         email: [{ required: true, type: 'email', message: 'Valid email required', trigger: 'blur' }],
         password: [{ required: true, min: 6, message: 'Minimum 6 characters', trigger: 'blur' }],
       },
+      linkExistingDialog: false,
+      existingUser: null,
       bulkCreateAccountsDialog: false,
       bulkCreateAccountsLoading: false,
       bulkCreateAccountsForm: { password: '' },
@@ -334,27 +350,48 @@ export default {
         });
       }
     },
-    async submitCreateAccount() {
-      try {
-        await this.$refs.createAccountForm.validate();
-      } catch {
-        return;
+    async submitCreateAccount(linkExisting = false) {
+      if (!linkExisting) {
+        try {
+          await this.$refs.createAccountForm.validate();
+        } catch {
+          return;
+        }
       }
       this.createAccountLoading = true;
       try {
-        await axios.post(`/api/parents/${this.createAccountParent.id}/create-account`, this.createAccountForm);
-        this.$message.success('User account created successfully');
+        await axios.post(`/api/parents/${this.createAccountParent.id}/create-account`,
+          { ...this.createAccountForm, link_existing: linkExisting });
+        this.$message.success(linkExisting
+          ? 'Existing account linked and Parent role added'
+          : 'User account created successfully');
         this.createAccountDialog = false;
+        this.linkExistingDialog = false;
         this.getList();
       } catch (error) {
-        const errors = error.response?.data?.errors;
+        const res = error.response?.data;
+        // The email already belongs to a user (often the same person's teacher
+        // account). Ask before touching that account.
+        if (res?.code === 'email_exists') {
+          this.existingUser = res.existing_user;
+          this.linkExistingDialog = true;
+          return;
+        }
+        const errors = res?.errors;
         const msg = (errors && errors.email && errors.email[0])
-          || error.response?.data?.message
+          || res?.message
           || 'Failed to create account';
         this.$message.error(msg);
       } finally {
         this.createAccountLoading = false;
       }
+    },
+    confirmLinkExisting() {
+      this.linkExistingDialog = false;
+      this.submitCreateAccount(true);
+    },
+    formatRoles(roles) {
+      return roles.map(r => r.charAt(0).toUpperCase() + r.slice(1)).join(', ');
     },
     handleBulkCreateAccounts() {
       this.bulkCreateAccountsForm.password = '';

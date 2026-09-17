@@ -37,6 +37,7 @@ Route::post('/teacher/all-teaches-pay', 'TeacherController@calculateAllTeachersP
 Route::post('/teacher/find_save_salary', 'TeacherController@find_already_saved_salary');
 Route::post('save_salary', 'TeacherController@save_salary');
 Route::get('/teacher/{id}/calculate-pay','TeacherController@calculateTeacherPay');
+Route::post('teachers/{id}/create-account', 'TeacherController@createAccount');
 //parents
 Route::apiResource('parents', 'ParentController');
 Route::post('parents/bulk-create-accounts', 'ParentController@bulkCreateAccounts');

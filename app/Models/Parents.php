@@ -38,7 +38,9 @@ class Parents extends Model
                 'password' => Hash::make($plainPassword ?? str_pad($parent->phone, 8, '0')),
             ]);
             $role = Role::findByName('parent');
-            $user->syncRoles($role);
+            // assignRole, not syncRoles: never strip a role this account may
+            // already hold (a teacher can also be a parent).
+            $user->assignRole($role);
             $parent->user_id = $user->id;
         });
 
@@ -47,6 +49,12 @@ class Parents extends Model
 
             $user = User::find($parent->user_id);
             if (!$user) return;
+
+            // An account shared with another role (a teacher who is also a
+            // parent) must not have its identity rewritten from the parent
+            // record — that would change the teacher's login email.
+            $sharedRoles = $user->getRoleNames()->reject(fn ($name) => $name === 'parent');
+            if ($sharedRoles->isNotEmpty()) return;
 
             $email      = !empty($parent->email) ? $parent->email : $parent->phone . '@idlschool.pk';
             $updateData = [
