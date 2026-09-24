@@ -271,11 +271,18 @@ export const WIDE_PRINT_CSS = `
   background: #f0f0f0;
   font-weight: 700;
 }
+/* the table now shares the page with the side panel, so the two mark columns get more room
+   than the full-width version needed */
 .wide-sheet .marks-table .col-sr {
-  width: 8%;
+  width: 7%;
 }
 .wide-sheet .marks-table .col-subject {
-  width: 52%;
+  width: 43%;
+}
+/* even mark columns — auto layout would otherwise size them to their header text */
+.wide-sheet .marks-table .col-total,
+.wide-sheet .marks-table .col-obtained {
+  width: 25%;
 }
 .wide-sheet .marks-table td.subject-cell {
   text-align: left;
@@ -287,31 +294,55 @@ export const WIDE_PRINT_CSS = `
   font-weight: 700;
   background: #f5f5f5;
 }
-.wide-sheet .sheet-footer {
+/* marks table on the left, assessment block on the right — the landscape page has the room */
+.wide-sheet .sheet-body {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 8px 10px;
-  margin-top: 12px;
-  font-size: 15px;
+  align-items: stretch;
+  gap: 8mm;
 }
-/* the six footer items sit on one line: they share the free space, so the fill-in rules
-   stretch instead of the row wrapping to a second line */
-.wide-sheet .sheet-footer .footer-item {
+.wide-sheet .sheet-main {
+  flex: 1 1 58%;
+  min-width: 0;
+}
+.wide-sheet .sheet-side {
+  flex: 1 1 42%;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #333;
+  background: #f9f9f9;
+  padding: 8px 12px;
+}
+.wide-sheet .side-title {
+  font-size: 17px;
+  font-weight: 700;
+  text-align: center;
+  margin: 0 0 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #ccc;
+}
+/* spread the rows down to the table's height so both columns end together */
+.wide-sheet .side-list {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+}
+.wide-sheet .side-item {
   display: flex;
   align-items: baseline;
   gap: 6px;
-  flex: 1 1 auto;
+  font-size: 15px;
 }
-.wide-sheet .sheet-footer .footer-item .label {
+.wide-sheet .side-item .label {
   white-space: nowrap;
 }
-.wide-sheet .sheet-footer .blank {
-  flex: 1 1 0;
-  min-width: 45px;
-}
-.wide-sheet .sheet-footer .value {
+.wide-sheet .side-item .value {
   font-weight: 700;
+}
+.wide-sheet .side-item .blank {
+  flex: 1 1 0;
+  min-width: 90px;
 }
 .wide-sheet .sheet-remarks {
   display: flex;

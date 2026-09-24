@@ -40,60 +40,67 @@
       </div>
     </div>
 
-    <table class="marks-table">
-      <thead>
-        <tr>
-          <th class="col-sr">Sr.#</th>
-          <th class="col-subject">Subject</th>
-          <th colspan="2">{{ exam.title }}</th>
-        </tr>
-        <tr>
-          <th></th>
-          <th></th>
-          <th>Total Marks</th>
-          <th>Obtained Marks</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="(mark, index) in rows" :key="mark.subject">
-          <td>{{ index + 1 }}</td>
-          <td class="subject-cell">{{ mark.subject }}</td>
-          <td>{{ mark.total_marks }}</td>
-          <td>{{ mark.obtained_marks }}</td>
-        </tr>
-        <tr class="total-row">
-          <td colspan="2">Total</td>
-          <td>{{ totalMarks }}</td>
-          <td>{{ obtainedMarks }}</td>
-        </tr>
-      </tbody>
-    </table>
+    <div class="sheet-body">
+      <div class="sheet-main">
+        <table class="marks-table">
+          <thead>
+            <tr>
+              <th class="col-sr">Sr.#</th>
+              <th class="col-subject">Subject</th>
+              <th colspan="2">{{ exam.title }}</th>
+            </tr>
+            <tr>
+              <th></th>
+              <th></th>
+              <th class="col-total">Total Marks</th>
+              <th class="col-obtained">Obtained Marks</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(mark, index) in rows" :key="mark.subject">
+              <td>{{ index + 1 }}</td>
+              <td class="subject-cell">{{ mark.subject }}</td>
+              <td>{{ mark.total_marks }}</td>
+              <td>{{ mark.obtained_marks }}</td>
+            </tr>
+            <tr class="total-row">
+              <td colspan="2">Total</td>
+              <td>{{ totalMarks }}</td>
+              <td>{{ obtainedMarks }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
-    <div class="sheet-footer">
-      <span class="footer-item">
-        <span class="label">{{ exam.title }} Percentage:</span>
-        <span class="value">{{ percentage }}%</span>
-      </span>
-      <span class="footer-item">
-        <span class="label">Grade:</span>
-        <span class="value">{{ grade }}</span>
-      </span>
-      <span class="footer-item">
-        <span class="label">Attendance:</span>
-        <span class="blank"></span>
-      </span>
-      <span class="footer-item">
-        <span class="label">Uniform:</span>
-        <span class="blank"></span>
-      </span>
-      <span class="footer-item">
-        <span class="label">Behavior:</span>
-        <span class="blank"></span>
-      </span>
-      <span class="footer-item">
-        <span class="label">Parent's Signature:</span>
-        <span class="blank"></span>
-      </span>
+      <div class="sheet-side">
+        <h2 class="side-title">Performance Assessment</h2>
+        <div class="side-list">
+          <div class="side-item">
+            <span class="label">{{ exam.title }} Percentage:</span>
+            <span class="value">{{ percentage }}%</span>
+          </div>
+          <div class="side-item">
+            <span class="label">Grade:</span>
+            <span class="value">{{ grade }}</span>
+          </div>
+          <div class="side-item">
+            <span class="label">Attendance:</span>
+            <span class="blank"></span>
+          </div>
+          <div class="side-item">
+            <span class="label">Uniform:</span>
+            <span class="blank"></span>
+          </div>
+          <div class="side-item">
+            <span class="label">Behavior:</span>
+            <span class="blank"></span>
+          </div>
+          <div class="side-item">
+            <span class="label">Parent's Signature:</span>
+            <span class="blank"></span>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="sheet-remarks">
@@ -253,11 +260,18 @@ export default {
   background: #f0f0f0;
   font-weight: 700;
 }
+/* the table now shares the page with the side panel, so the two mark columns get more room
+   than the full-width version needed */
 .marks-table .col-sr {
-  width: 8%;
+  width: 7%;
 }
 .marks-table .col-subject {
-  width: 52%;
+  width: 43%;
+}
+/* even mark columns — auto layout would otherwise size them to their header text */
+.marks-table .col-total,
+.marks-table .col-obtained {
+  width: 25%;
 }
 .marks-table td.subject-cell {
   text-align: left;
@@ -269,31 +283,55 @@ export default {
   font-weight: 700;
   background: #f5f5f5;
 }
-.sheet-footer {
+/* marks table on the left, assessment block on the right — the landscape page has the room */
+.sheet-body {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 8px 10px;
-  margin-top: 12px;
-  font-size: 15px;
+  align-items: stretch;
+  gap: 8mm;
 }
-/* the six footer items sit on one line: they share the free space, so the fill-in rules
-   stretch instead of the row wrapping to a second line */
-.sheet-footer .footer-item {
+.sheet-main {
+  flex: 1 1 58%;
+  min-width: 0;
+}
+.sheet-side {
+  flex: 1 1 42%;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #333;
+  background: #f9f9f9;
+  padding: 8px 12px;
+}
+.side-title {
+  font-size: 17px;
+  font-weight: 700;
+  text-align: center;
+  margin: 0 0 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #ccc;
+}
+/* spread the rows down to the table's height so both columns end together */
+.side-list {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+}
+.side-item {
   display: flex;
   align-items: baseline;
   gap: 6px;
-  flex: 1 1 auto;
+  font-size: 15px;
 }
-.sheet-footer .footer-item .label {
+.side-item .label {
   white-space: nowrap;
 }
-.sheet-footer .blank {
-  flex: 1 1 0;
-  min-width: 45px;
-}
-.sheet-footer .value {
+.side-item .value {
   font-weight: 700;
+}
+.side-item .blank {
+  flex: 1 1 0;
+  min-width: 90px;
 }
 .sheet-remarks {
   display: flex;
