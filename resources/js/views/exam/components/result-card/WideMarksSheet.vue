@@ -1,5 +1,5 @@
 <template>
-  <div class="wide-sheet">
+  <div class="wide-sheet" :class="{ 'wide-sheet--dense': rows.length > 10 }">
     <div class="sheet-header">
       <img v-if="schoolInfo.school_logo" :src="`/${schoolInfo.school_logo}`" alt="School Logo" />
       <div class="header-text">
@@ -105,7 +105,9 @@
 
     <div class="sheet-remarks">
       <span class="label">Remarks:</span>
-      <span class="blank remarks-line"></span>
+      <div class="remarks-lines">
+        <span v-for="line in remarkLines" :key="line" class="remarks-line"></span>
+      </div>
     </div>
 
     <div class="sheet-signatures">
@@ -131,6 +133,11 @@
  *
  * Marks come from the exam; Attendance / Uniform / Behavior / Parent's Signature are left as
  * blank rules for teachers to fill in by hand.
+ *
+ * The sheet is sized to one printed page (`min-height` in the CSS) and the marks table stretches
+ * into whatever height the subject list does not use, so a short exam still fills the sheet with
+ * roomy rows instead of leaving a thin table over a huge remarks block. The remarks block is a
+ * fixed handful of ruled lines at the bottom, and `remarkLines` is exactly how many that is.
  *
  * NOTE: the on-screen styles here mirror the `wide_marks_sheet` printCss string in `layouts.js`.
  * They are two copies on purpose — `printReports()` writes `reportsRef.innerHTML` plus that
@@ -176,14 +183,26 @@ export default {
       default: '',
     },
   },
+  data() {
+    return {
+      // A normal comments block — the marks table, not this, takes the page's leftover height.
+      remarkLines: 4,
+    };
+  },
 };
 </script>
 
 <style scoped>
 .wide-sheet {
   border: 4px double #333;
-  padding: 6mm 7mm;
+  padding: 5mm 7mm;
   box-sizing: border-box;
+  /* one A4 landscape page minus its 8mm top/bottom margins, with slack so a full class never
+     spills onto a second sheet */
+  min-height: 186mm;
+  /* column flex is what lets the marks table below stretch into the page's leftover height */
+  display: flex;
+  flex-direction: column;
   page-break-inside: avoid;
   background: #fff;
 }
@@ -194,10 +213,10 @@ export default {
   gap: 16px;
   text-align: center;
   border-bottom: 2px solid #333;
-  padding-bottom: 8px;
+  padding-bottom: 5px;
 }
 .sheet-header img {
-  height: 62px;
+  height: 46px;
 }
 .school-name {
   font-size: 30px;
@@ -219,16 +238,16 @@ export default {
   align-items: baseline;
   font-size: 20px;
   font-weight: 700;
-  margin: 10px 0 8px;
+  margin: 6px 0;
 }
 .sheet-student {
   font-size: 15px;
-  margin-bottom: 10px;
+  margin-bottom: 5px;
 }
 .sheet-student .info-row {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 6px;
+  margin-bottom: 3px;
 }
 .sheet-student .info-item {
   display: flex;
@@ -248,13 +267,24 @@ export default {
 .marks-table {
   width: 100%;
   border-collapse: collapse;
+  /* rows share out the height sheet-body is stretched to, so a 6-subject exam gets the same
+     full-page table as a 10-subject one instead of a thin strip */
+  height: 100%;
 }
 .marks-table th,
 .marks-table td {
   border: 1px solid #333;
   text-align: center;
-  padding: 6px 8px;
+  padding: 4px 8px;
   font-size: 15px;
+  line-height: 1.25;
+}
+/* a 13-subject exam (a full Class Three list) has to give the rows their height back to stay on
+   one page; every exam in the school today has 10 subjects or fewer and prints roomy */
+.wide-sheet--dense .marks-table th,
+.wide-sheet--dense .marks-table td {
+  padding: 2px 8px;
+  line-height: 1.15;
 }
 .marks-table thead th {
   background: #f0f0f0;
@@ -276,18 +306,18 @@ export default {
 .marks-table td.subject-cell {
   text-align: left;
 }
-.marks-table tbody td {
-  height: 30px;
-}
 .marks-table .total-row {
   font-weight: 700;
   background: #f5f5f5;
 }
-/* marks table on the left, assessment block on the right — the landscape page has the room */
+/* marks table on the left, assessment block on the right — the landscape page has the room.
+   This is the sheet row that grows (flex-grow, never shrinks) to take the page height the
+   subject list leaves over, which is what keeps the rows tall. */
 .sheet-body {
   display: flex;
   align-items: stretch;
   gap: 8mm;
+  flex: 1 0 auto;
 }
 .sheet-main {
   flex: 1 1 58%;
@@ -333,25 +363,34 @@ export default {
   flex: 1 1 0;
   min-width: 90px;
 }
+/* a fixed comments block — the table above already claims the page's spare height */
 .sheet-remarks {
+  flex: 0 0 auto;
   display: flex;
-  align-items: baseline;
-  gap: 6px;
-  margin-top: 14px;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 8px;
   font-size: 15px;
+}
+.remarks-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5mm;
+}
+.remarks-line {
+  display: block;
+  height: 4.5mm;
+  border-bottom: 1px solid #999;
 }
 .blank {
   display: inline-block;
   border-bottom: 1px solid #999;
   min-width: 90px;
 }
-.sheet-remarks .remarks-line {
-  flex: 1;
-}
 .sheet-signatures {
   display: flex;
   justify-content: space-between;
-  margin-top: 34px;
+  margin-top: 12px;
 }
 .sheet-signatures .sig {
   width: 30%;

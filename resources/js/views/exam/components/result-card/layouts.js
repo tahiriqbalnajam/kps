@@ -193,8 +193,14 @@ export const WIDE_PRINT_CSS = `
 }
 .wide-sheet {
   border: 4px double #333;
-  padding: 6mm 7mm;
+  padding: 5mm 7mm;
   box-sizing: border-box;
+  /* one A4 landscape page minus its 8mm top/bottom margins, with slack so a full class never
+     spills onto a second sheet */
+  min-height: 186mm;
+  /* column flex is what lets the marks table below stretch into the page's leftover height */
+  display: flex;
+  flex-direction: column;
   page-break-inside: avoid;
   page-break-after: always;
 }
@@ -205,10 +211,10 @@ export const WIDE_PRINT_CSS = `
   gap: 16px;
   text-align: center;
   border-bottom: 2px solid #333;
-  padding-bottom: 8px;
+  padding-bottom: 5px;
 }
 .wide-sheet .sheet-header img {
-  height: 62px;
+  height: 46px;
 }
 .wide-sheet .school-name {
   font-size: 30px;
@@ -230,16 +236,16 @@ export const WIDE_PRINT_CSS = `
   align-items: baseline;
   font-size: 20px;
   font-weight: 700;
-  margin: 10px 0 8px;
+  margin: 6px 0;
 }
 .wide-sheet .sheet-student {
   font-size: 15px;
-  margin-bottom: 10px;
+  margin-bottom: 5px;
 }
 .wide-sheet .sheet-student .info-row {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 6px;
+  margin-bottom: 3px;
 }
 .wide-sheet .sheet-student .info-item {
   display: flex;
@@ -259,13 +265,24 @@ export const WIDE_PRINT_CSS = `
 .wide-sheet .marks-table {
   width: 100%;
   border-collapse: collapse;
+  /* rows share out the height sheet-body is stretched to, so a 6-subject exam gets the same
+     full-page table as a 10-subject one instead of a thin strip */
+  height: 100%;
 }
 .wide-sheet .marks-table th,
 .wide-sheet .marks-table td {
   border: 1px solid #333;
   text-align: center;
-  padding: 6px 8px;
+  padding: 4px 8px;
   font-size: 15px;
+  line-height: 1.25;
+}
+/* a 13-subject exam (a full Class Three list) has to give the rows their height back to stay on
+   one page; every exam in the school today has 10 subjects or fewer and prints roomy */
+.wide-sheet--dense .marks-table th,
+.wide-sheet--dense .marks-table td {
+  padding: 2px 8px;
+  line-height: 1.15;
 }
 .wide-sheet .marks-table thead th {
   background: #f0f0f0;
@@ -287,18 +304,18 @@ export const WIDE_PRINT_CSS = `
 .wide-sheet .marks-table td.subject-cell {
   text-align: left;
 }
-.wide-sheet .marks-table tbody td {
-  height: 30px;
-}
 .wide-sheet .marks-table .total-row {
   font-weight: 700;
   background: #f5f5f5;
 }
-/* marks table on the left, assessment block on the right — the landscape page has the room */
+/* marks table on the left, assessment block on the right — the landscape page has the room.
+   This is the sheet row that grows (flex-grow, never shrinks) to take the page height the
+   subject list leaves over, which is what keeps the rows tall. */
 .wide-sheet .sheet-body {
   display: flex;
   align-items: stretch;
   gap: 8mm;
+  flex: 1 0 auto;
 }
 .wide-sheet .sheet-main {
   flex: 1 1 58%;
@@ -344,25 +361,34 @@ export const WIDE_PRINT_CSS = `
   flex: 1 1 0;
   min-width: 90px;
 }
+/* a fixed comments block — the table above already claims the page's spare height */
 .wide-sheet .sheet-remarks {
+  flex: 0 0 auto;
   display: flex;
-  align-items: baseline;
-  gap: 6px;
-  margin-top: 14px;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 8px;
   font-size: 15px;
+}
+.wide-sheet .remarks-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5mm;
+}
+.wide-sheet .remarks-line {
+  display: block;
+  height: 4.5mm;
+  border-bottom: 1px solid #999;
 }
 .wide-sheet .blank {
   display: inline-block;
   border-bottom: 1px solid #999;
   min-width: 90px;
 }
-.wide-sheet .sheet-remarks .remarks-line {
-  flex: 1;
-}
 .wide-sheet .sheet-signatures {
   display: flex;
   justify-content: space-between;
-  margin-top: 34px;
+  margin-top: 12px;
 }
 .wide-sheet .sheet-signatures .sig {
   width: 30%;

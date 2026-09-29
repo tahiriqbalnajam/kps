@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\ClassSession;
 use App\Models\Exam;
 use App\Models\Student;
 use App\Models\ExamResult;
@@ -33,8 +34,16 @@ class ExamService implements ExamServiceInterface
                     });
                 }),
                 AllowedFilter::callback('session_id', function ($query, $value) {
-                    $query->whereHas('examResults.student', function ($q) use ($value) {
-                        $q->where('session_id', $value);
+                    $query->where(function ($q) use ($value) {
+                        // the exam's own session, plus exams whose marks belong to students of
+                        // this session. The last clause keeps a freshly added exam in the list —
+                        // it has no exam_results yet, so neither session clause can match it, and
+                        // hiding it is what made "Add Exam" look like it had not saved.
+                        $q->where('session_id', $value)
+                          ->orWhereHas('examResults.student', function ($sub) use ($value) {
+                              $sub->where('session_id', $value);
+                          })
+                          ->orWhereDoesntHave('examResults');
                     });
                 }),
             ])
@@ -55,6 +64,8 @@ class ExamService implements ExamServiceInterface
                 'section_id' => $data['section_id'] ?? null,
                 'start_date' => $data['start_date'] ?? null,
                 'end_date' => $data['end_date'] ?? null,
+                // tag the exam with the session it was created in, like students and tests do
+                'session_id' => $data['session_id'] ?? ClassSession::getDefault()?->id,
             ]);
     
             foreach ($data['subjects'] as $subject) {
