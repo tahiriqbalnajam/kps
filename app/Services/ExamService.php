@@ -245,8 +245,12 @@ class ExamService implements ExamServiceInterface
             $query->where('skip', false);
         }, 'examSubjects.subject'])->findOrFail($examId);
 
-        // Filter students by section_id if it exists, otherwise by class_id
-        $studentsQuery = Student::with('parents')->where('class_id', $exam->class_id);
+        // Filter students by section_id if it exists, otherwise by class_id. Only active
+        // students get a result card — an inactive one has left the school, and the report is
+        // the class/section roster the marks grid uses (see AddMarks.vue).
+        $studentsQuery = Student::with('parents')
+            ->where('class_id', $exam->class_id)
+            ->where('status', 'enable');
         if ($exam->section_id) {
             $studentsQuery->where('section_id', $exam->section_id);
         }

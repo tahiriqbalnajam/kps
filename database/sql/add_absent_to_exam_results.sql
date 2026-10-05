@@ -37,3 +37,18 @@ DEALLOCATE PREPARE stmt;
 --   FROM information_schema.COLUMNS
 --  WHERE TABLE_SCHEMA = DATABASE() AND COLUMN_NAME = 'absent'
 --    AND TABLE_NAME IN ('exam_results', 'test_results');
+
+-- ---------------------------------------------------------------------------
+-- Shared-hosting fallback. If the guarded form above is rejected there (MariaDB refuses
+-- PREPARE in the prepared-statement protocol, or a WAF blocks information_schema/PREPARE
+-- in a POST body), run these plain single statements instead — one database at a time
+-- (phpMyAdmin or the host's SQL console):
+--
+--   ALTER TABLE `exam_results` ADD COLUMN `absent` ENUM('yes','no') NOT NULL DEFAULT 'no' AFTER `student_id`;
+--   ALTER TABLE `test_results`  ADD COLUMN `absent` ENUM('yes','no') NOT NULL DEFAULT 'no' AFTER `student_id`;
+--
+-- Error 1060 "Duplicate column name 'absent'" means that DB is already patched — nothing changed,
+-- nothing to fix. On MariaDB only (SELECT VERSION(); returns "MariaDB"), these are idempotent:
+--
+--   ALTER TABLE `exam_results` ADD COLUMN IF NOT EXISTS `absent` ENUM('yes','no') NOT NULL DEFAULT 'no' AFTER `student_id`;
+--   ALTER TABLE `test_results`  ADD COLUMN IF NOT EXISTS `absent` ENUM('yes','no') NOT NULL DEFAULT 'no' AFTER `student_id`;

@@ -85,6 +85,9 @@ export default {
       absent: {},
       loading: false,
       submitLoading: false,
+      // Set when the grid could not be built — the loaded grid would be incomplete/zeroed,
+      // and submitting it would overwrite the marks already saved for this exam.
+      loadFailed: false,
       query: {
         exam_id: this.exam.id,
         class_id: this.class_id,
@@ -105,34 +108,44 @@ export default {
   methods: {
     async fetchData() {
       this.loading = true;
+      this.loadFailed = false;
       const studentRes = new Resource('students');
 
-      // Update query to include section_id if exam has one, otherwise use class_id
-      if (this.exam.section_id) {
-        this.query.filter.section_id = this.exam.section_id;
-      } else {
-        this.query.filter.stdclass = this.class_id;
+      try {
+        // Update query to include section_id if exam has one, otherwise use class_id
+        if (this.exam.section_id) {
+          this.query.filter.section_id = this.exam.section_id;
+        } else {
+          this.query.filter.stdclass = this.class_id;
+        }
+
+        // The grid is the class/section's students — never the session picked in the navbar.
+        // A student keeps the session they are enrolled in while the exam keeps the session it
+        // was created in, so the two drift apart and a session filter here emptied the grid.
+
+        const { data: studentData } = await studentRes.list(this.query);
+        const { data: subjectData } = await fetchExamSubjects(this.exam.id);
+        this.students = studentData.students.data;
+        this.subjects = subjectData.subjects;
+
+        // Fetch existing marks if any
+        const { data } = await getSubjectsMarksByExamId(this.exam.id);
+        const existingMarks = data.exam;
+        if (existingMarks && existingMarks.length > 0) {
+          this.populateExistingMarks(existingMarks);
+        } else {
+          this.initializeMarks();
+        }
+      } catch (error) {
+        // Leaving the drawer on a spinner here would hide the failure, and the half-built
+        // (all-zero) grid would still be submittable — submitting it overwrites the exam's
+        // saved marks with zeros. Fail loudly instead.
+        console.error('Error loading the exam marks grid:', error);
+        this.loadFailed = true;
+        this.$message.error('Could not load this exam\'s marks. Nothing was changed — close and reopen the drawer.');
+      } finally {
+        this.loading = false;
       }
-
-      // The grid is the class/section's students — never the session picked in the navbar.
-      // A student keeps the session they are enrolled in while the exam keeps the session it
-      // was created in, so the two drift apart and a session filter here emptied the grid.
-
-      const { data: studentData } = await studentRes.list(this.query);
-      const { data: subjectData } = await fetchExamSubjects(this.exam.id);
-      this.students = studentData.students.data;
-      this.subjects = subjectData.subjects;
-
-      // Fetch existing marks if any
-      const { data } = await getSubjectsMarksByExamId(this.exam.id);
-      const existingMarks = data.exam;
-      if (existingMarks && existingMarks.length > 0) {
-        this.populateExistingMarks(existingMarks);
-      } else {
-        this.initializeMarks();
-      }
-
-      this.loading = false;
     },
     initializeMarks() {
       const initialMarks = {};
@@ -151,7 +164,13 @@ export default {
       // Start from a full grid so students/subjects without a saved row still get a cell.
       this.initializeMarks();
       existingMarks.forEach(mark => {
-        this.marks[mark.student_id][mark.exam_subject_id] = mark.obtained_marks;
+        // Saved rows can belong to students who are no longer in this class/section's roster
+        // (promoted, moved, or disabled) or to a subject that is not on this exam. The grid has
+        // no cell for them, and reaching for one used to throw and leave the drawer loading.
+        const row = this.marks[mark.student_id];
+        if (!row || !(mark.exam_subject_id in row)) return;
+
+        row[mark.exam_subject_id] = mark.obtained_marks;
         if (mark.absent === 'yes') {
           this.absent[mark.student_id][mark.exam_subject_id] = true;
         }
@@ -303,6 +322,11 @@ export default {
       });
     },
     async submitMarks() {
+      if (this.loadFailed) {
+        this.$message.error('This exam\'s marks never loaded, so nothing was submitted.');
+        return;
+      }
+
       this.submitLoading = true;
       try {
         const absent = {};
