@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Laravue\JsonResponse;
 use App\Models\TeacherObservation;
 use Illuminate\Http\Request;
-use App\Laravue\JsonResponse;
 use Illuminate\Support\Facades\DB;
 
 class TeacherObservationController extends Controller
@@ -12,13 +12,13 @@ class TeacherObservationController extends Controller
     public function index(Request $request)
     {
         $observations = TeacherObservation::with('teacher')
-            ->when($request->teacher_id, function($query) use ($request) {
+            ->when($request->teacher_id, function ($query) use ($request) {
                 return $query->where('teacher_id', $request->teacher_id);
             })
-            ->when($request->date_from, function($query) use ($request) {
+            ->when($request->date_from, function ($query) use ($request) {
                 return $query->whereDate('observation_date', '>=', $request->date_from);
             })
-            ->when($request->date_to, function($query) use ($request) {
+            ->when($request->date_to, function ($query) use ($request) {
                 return $query->whereDate('observation_date', '<=', $request->date_to);
             })
             ->orderBy('observation_date', 'desc')
@@ -36,20 +36,21 @@ class TeacherObservationController extends Controller
             'tools_usage_score' => 'required|integer|min:1|max:5',
             'homework_check_score' => 'required|integer|min:1|max:5',
             'supervisor_comments' => 'required|string',
-            'observation_date' => 'required|date'
+            'observation_date' => 'required|date',
         ]);
 
         $observation = TeacherObservation::create($request->all());
 
         return response()->json(new JsonResponse([
             'observation' => $observation,
-            'message' => 'Observation report created successfully'
+            'message' => 'Observation report created successfully',
         ]));
     }
 
     public function show($id)
     {
         $observation = TeacherObservation::with('teacher')->findOrFail($id);
+
         return response()->json(new JsonResponse(['observation' => $observation]));
     }
 
@@ -57,7 +58,7 @@ class TeacherObservationController extends Controller
     {
         $year = request('year', date('Y'));
         $months = [];
-        
+
         // Get monthly observation scores
         $observations = TeacherObservation::where('teacher_id', $teacherId)
             ->whereYear('observation_date', $year)
@@ -73,6 +74,7 @@ class TeacherObservationController extends Controller
             ->join('test_results', 'tests.id', '=', 'test_results.test_id')
             ->whereYear('tests.date', $year)
             ->where('tests.teacher_id', $teacherId)
+            ->where('test_results.absent', 'no')   // absentees have no score to average
             ->selectRaw('MONTH(tests.date) as month, AVG(test_results.score) as avg_marks')
             ->groupBy('month')
             ->get()
@@ -84,7 +86,7 @@ class TeacherObservationController extends Controller
             $months[] = [
                 'month' => date('F', mktime(0, 0, 0, $i, 1)),
                 'observation_score' => $observations[$i] ?? 0,
-                'test_score' => $testScores[$i] ?? 0
+                'test_score' => $testScores[$i] ?? 0,
             ];
         }
 

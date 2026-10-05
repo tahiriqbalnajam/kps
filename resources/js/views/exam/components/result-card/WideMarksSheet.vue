@@ -61,7 +61,7 @@
               <td>{{ index + 1 }}</td>
               <td class="subject-cell">{{ mark.subject }}</td>
               <td>{{ mark.total_marks }}</td>
-              <td>{{ mark.obtained_marks }}</td>
+              <td :class="{ 'absent-mark': mark.is_absent }">{{ mark.is_absent ? 'A' : mark.obtained_marks }}</td>
             </tr>
             <tr class="total-row">
               <td colspan="2">Total</td>
@@ -70,6 +70,9 @@
             </tr>
           </tbody>
         </table>
+        <p v-if="rows.some(mark => mark.is_absent)" class="absent-legend">
+          A = Absent — not counted in the total
+        </p>
       </div>
 
       <div class="sheet-side">
@@ -77,7 +80,7 @@
         <div class="side-list">
           <div class="side-item">
             <span class="label">{{ exam.title }} Percentage:</span>
-            <span class="value">{{ percentage }}%</span>
+            <span class="value">{{ percentage === null ? '—' : percentage + '%' }}</span>
           </div>
           <div class="side-item">
             <span class="label">Grade:</span>
@@ -309,6 +312,15 @@ export default {
 .marks-table .total-row {
   font-weight: 700;
   background: #f5f5f5;
+}
+.absent-mark {
+  font-weight: 700;
+  color: #b45309;
+}
+.absent-legend {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: #606266;
 }
 /* marks table on the left, assessment block on the right — the landscape page has the room.
    This is the sheet row that grows (flex-grow, never shrinks) to take the page height the

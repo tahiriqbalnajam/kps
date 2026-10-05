@@ -92,9 +92,6 @@ export default {
     };
   },
   computed: {
-    currentSessionId() {
-      return sessionStore().currentSessionId;
-    },
     sessionName() {
       return sessionStore().sessionName;
     },
@@ -111,10 +108,11 @@ export default {
     async fetchData() {
       try {
         this.loading = true;
-        const params = {};
-        if (this.currentSessionId) params.session_id = this.currentSessionId;
+        // The report roster is the class/section's students, not the navbar's session — the
+        // backend filter on session_id hid students who sat the exam but are now enrolled in
+        // a later session.
         const [reportsData, settingsData] = await Promise.all([
-          getExamReports(this.exam.id, params),
+          getExamReports(this.exam.id),
           this.settingsResource.list()
         ]);
 
@@ -136,34 +134,43 @@ export default {
     },
     getStudentMarks(studentId) {
       return this.subjects.map(subject => {
-        const obtained = this.findMark(studentId, subject.id);
+        const result = this.findMark(studentId, subject.id);
+        const isAbsent = result?.absent === 'yes';
+        const obtained = isAbsent ? 0 : Number(result?.obtained_marks ?? 0);
         return {
           subject: subject.subject?.title || '',
           total_marks: subject.total_marks,
           obtained_marks: obtained,
-          percentage: this.calculatePercentage(obtained, subject.total_marks),
+          is_absent: isAbsent,
+          percentage: isAbsent ? null : this.calculatePercentage(obtained, subject.total_marks),
         };
       });
     },
     findMark(studentId, subjectId) {
-      const result = this.examResults.find(
+      return this.examResults.find(
         r => r.student_id === studentId && r.exam_subject_id === subjectId
-      );
-      return result ? result.obtained_marks : 0;
+      ) || null;
     },
     calculatePercentage(obtained, total) {
       if (!total) return 0;
       return Math.ceil((obtained / total) * 100);
     },
+    // Absent papers drop out of both the obtained and the total, so an absence never reads
+    // as marks lost.
     calculateTotal(field, studentId) {
-      return this.getStudentMarks(studentId).reduce((sum, mark) => sum + mark[field], 0);
+      return this.getStudentMarks(studentId)
+        .filter(mark => !mark.is_absent)
+        .reduce((sum, mark) => sum + mark[field], 0);
     },
     calculateOverallPercentage(studentId) {
       const total = this.calculateTotal('total_marks', studentId);
       const obtained = this.calculateTotal('obtained_marks', studentId);
+      // Every paper absent — there is no percentage to show.
+      if (!total) return null;
       return this.calculatePercentage(obtained, total);
     },
     calculateGrade(percentage) {
+      if (percentage === null) return '—';
       if (percentage >= 90) return 'A+';
       if (percentage >= 80) return 'A';
       if (percentage >= 70) return 'B';

@@ -2,21 +2,22 @@
 
 namespace App\Services;
 
+use App\Laravue\JsonResponse;
 use App\Models\ClassSession;
 use App\Models\Exam;
-use App\Models\Student;
 use App\Models\ExamResult;
 use App\Models\ExamSubject;
-use Illuminate\Support\Arr;
-use App\Laravue\JsonResponse;
-use Illuminate\Support\Facades\DB;
-use Spatie\QueryBuilder\QueryBuilder;
-use Spatie\QueryBuilder\AllowedFilter;
+use App\Models\Student;
 use App\Services\Contracts\ExamServiceInterface;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
+use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\QueryBuilder;
 
 class ExamService implements ExamServiceInterface
 {
     const ITEM_PER_PAGE = 1000;
+
     public function listExams(array $searchParams)
     {
         $limit = Arr::get($searchParams, 'limit', static::ITEM_PER_PAGE);
@@ -30,7 +31,7 @@ class ExamService implements ExamServiceInterface
                 AllowedFilter::callback('end_date', function ($query, $value) {
                     $query->where(function ($q) use ($value) {
                         $q->where('end_date', '>=', $value)
-                          ->orWhereNull('end_date');
+                            ->orWhereNull('end_date');
                     });
                 }),
                 AllowedFilter::callback('session_id', function ($query, $value) {
@@ -40,10 +41,10 @@ class ExamService implements ExamServiceInterface
                         // it has no exam_results yet, so neither session clause can match it, and
                         // hiding it is what made "Add Exam" look like it had not saved.
                         $q->where('session_id', $value)
-                          ->orWhereHas('examResults.student', function ($sub) use ($value) {
-                              $sub->where('session_id', $value);
-                          })
-                          ->orWhereDoesntHave('examResults');
+                            ->orWhereHas('examResults.student', function ($sub) use ($value) {
+                                $sub->where('session_id', $value);
+                            })
+                            ->orWhereDoesntHave('examResults');
                     });
                 }),
             ])
@@ -57,7 +58,7 @@ class ExamService implements ExamServiceInterface
     {
         try {
             DB::beginTransaction();
-    
+
             $exam = Exam::create([
                 'title' => $data['title'],
                 'class_id' => $data['class_id'],
@@ -67,7 +68,7 @@ class ExamService implements ExamServiceInterface
                 // tag the exam with the session it was created in, like students and tests do
                 'session_id' => $data['session_id'] ?? ClassSession::getDefault()?->id,
             ]);
-    
+
             foreach ($data['subjects'] as $subject) {
                 ExamSubject::create([
                     'exam_id' => $exam->id,
@@ -77,11 +78,13 @@ class ExamService implements ExamServiceInterface
                     'exam_date' => $subject['exam_date'] ?? null,
                 ]);
             }
-    
+
             DB::commit();
+
             return response()->json(new JsonResponse(['exam' => $exam]));
         } catch (\Exception $ex) {
             DB::rollBack();
+
             return responseFailed($ex->getMessage());
         }
     }
@@ -98,26 +101,52 @@ class ExamService implements ExamServiceInterface
     {
         try {
             DB::beginTransaction();
-    
-            foreach ($data['marks'] as $studentId => $subjects) {
+
+            $absentMap = $data['absent'] ?? [];
+
+            foreach ($data['marks'] ?? [] as $studentId => $subjects) {
                 foreach ($subjects as $subjectId => $obtained_marks) {
+                    // The absent map wins over whatever the grid posted for that cell.
+                    $isAbsent = filter_var($absentMap[$studentId][$subjectId] ?? false, FILTER_VALIDATE_BOOLEAN);
                     ExamResult::updateOrCreate(
                         [
-                            'exam_id' => $data['exam_id'], 
-                            'student_id' => $studentId, 
-                            'exam_subject_id' => $subjectId
+                            'exam_id' => $data['exam_id'],
+                            'student_id' => $studentId,
+                            'exam_subject_id' => $subjectId,
                         ],
                         [
-                            'obtained_marks' => $obtained_marks
+                            'obtained_marks' => $isAbsent ? 0 : ($obtained_marks ?? 0),
+                            'absent' => $isAbsent ? 'yes' : 'no',
                         ]
                     );
                 }
             }
-    
+
+            // A student absent in every paper posts no marks at all, so record those rows here.
+            foreach ($absentMap as $studentId => $subjects) {
+                foreach ($subjects as $subjectId => $isAbsent) {
+                    if (! filter_var($isAbsent, FILTER_VALIDATE_BOOLEAN)) {
+                        continue;
+                    }
+                    ExamResult::updateOrCreate(
+                        [
+                            'exam_id' => $data['exam_id'],
+                            'student_id' => $studentId,
+                            'exam_subject_id' => $subjectId,
+                        ],
+                        [
+                            'obtained_marks' => 0,
+                            'absent' => 'yes',
+                        ]
+                    );
+                }
+            }
             DB::commit();
+
             return response()->json(new JsonResponse(['message' => 'Marks updated successfully']));
         } catch (\Exception $ex) {
             DB::rollBack();
+
             return responseFailed($ex->getMessage());
         }
     }
@@ -126,7 +155,7 @@ class ExamService implements ExamServiceInterface
     {
         try {
             DB::beginTransaction();
-    
+
             foreach ($data['marks'] as $studentId => $subjects) {
                 foreach ($subjects as $subjectId => $marks) {
                     ExamResult::updateOrCreate(
@@ -135,11 +164,13 @@ class ExamService implements ExamServiceInterface
                     );
                 }
             }
-    
+
             DB::commit();
+
             return response()->json(new JsonResponse(['message' => 'Marks updated successfully']));
         } catch (\Exception $ex) {
             DB::rollBack();
+
             return responseFailed($ex->getMessage());
         }
     }
@@ -169,28 +200,28 @@ class ExamService implements ExamServiceInterface
                 } else {
                     // Brand-new subject immediately marked skip — store it so it re-opens correctly
                     ExamSubject::create([
-                        'exam_id'     => $id,
-                        'subject_id'  => $subject['subject_id'],
+                        'exam_id' => $id,
+                        'subject_id' => $subject['subject_id'],
                         'total_marks' => $subject['total_marks'],
-                        'skip'        => true,
-                        'exam_date'   => $subject['exam_date'] ?? null,
+                        'skip' => true,
+                        'exam_date' => $subject['exam_date'] ?? null,
                     ]);
                 }
             } elseif ($existing) {
                 // Un-skipping or updating an existing subject — preserve its exam_results
                 $existing->update([
                     'total_marks' => $subject['total_marks'],
-                    'skip'        => false,
-                    'exam_date'   => $subject['exam_date'] ?? null,
+                    'skip' => false,
+                    'exam_date' => $subject['exam_date'] ?? null,
                 ]);
             } else {
                 // Genuinely new subject added to the exam
                 ExamSubject::create([
-                    'exam_id'     => $id,
-                    'subject_id'  => $subject['subject_id'],
+                    'exam_id' => $id,
+                    'subject_id' => $subject['subject_id'],
                     'total_marks' => $subject['total_marks'],
-                    'skip'        => false,
-                    'exam_date'   => $subject['exam_date'] ?? null,
+                    'skip' => false,
+                    'exam_date' => $subject['exam_date'] ?? null,
                 ]);
             }
         }
@@ -211,8 +242,8 @@ class ExamService implements ExamServiceInterface
     public function getExamReports(int $examId, $sessionId = null)
     {
         $exam = Exam::with(['classes', 'examSubjects' => function ($query) {
-    $query->where('skip', false);
-}, 'examSubjects.subject'])->findOrFail($examId);
+            $query->where('skip', false);
+        }, 'examSubjects.subject'])->findOrFail($examId);
 
         // Filter students by section_id if it exists, otherwise by class_id
         $studentsQuery = Student::with('parents')->where('class_id', $exam->class_id);
@@ -223,23 +254,23 @@ class ExamService implements ExamServiceInterface
             $studentsQuery->where('session_id', $sessionId);
         }
         $students = $studentsQuery->get();
-        
+
         $results = ExamResult::where('exam_id', $examId)->get();
-        
+
         return [
             'students' => $students,
             'subjects' => $exam->examSubjects,
             'results' => $results,
-            'exam' => $exam
+            'exam' => $exam,
         ];
     }
 
     public function getExamWithSubjects($examId)
     {
-        $exam = Exam::with(['subjects' => function($query) {
+        $exam = Exam::with(['subjects' => function ($query) {
             $query->select('exam_subjects.*', 'subjects.title');
         }])->findOrFail($examId);
-        
+
         return $exam;
     }
 }

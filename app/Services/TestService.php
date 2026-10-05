@@ -50,11 +50,14 @@ class TestService
         $test = Test::create($validatedData);
         $testresult = [];
         foreach ($data['students'] as $student) {
+            $isAbsent = ($student['absent'] ?? 'no') === 'yes';
             $testresult[] = [
                 'test_id' => $test->id,
                 'student_id' => $student['id'],
                 'absent' => $student['absent'] ?? 'no',
-                'score' => ($student['score']) ?? 0,
+                // An absent student scored nothing, so the column stays numeric — `absent` is what
+                // marks the paper, and every reader excludes it rather than reading the 0.
+                'score' => $isAbsent ? 0 : ($student['score'] ?? 0),
             ];
         }
         TestResult::insert($testresult);
@@ -116,15 +119,20 @@ class TestService
             if ($test) {
                 $testresult = [];
                 foreach ($data['students'] as $student) {
+                    $isAbsent = ($student['absent'] ?? 'no') === 'yes';
                     $testresultarray = [
                         'test_id' => $test->id,
                         'student_id' => $student['id'],
-                        'score' => ($student['score']) ?? 0,
+                        'score' => $isAbsent ? 0 : ($student['score'] ?? 0),
                         'absent' => $student['absent'] ?? 'no',
                     ];
-                    $test_result_id = $student['test_result_id'] ?? '0';
-                    $testResult = TestResult::firstOrNew(['id' => $test_result_id]);
-                    $testResult = TestResult::updateOrCreate(['id' => $test_result_id], $testresultarray);
+                    // Key on the test+student pair rather than a submitted row id: a student who
+                    // joined the class after the test was created has no row id yet, and keying on
+                    // the placeholder '0' inserted a fresh duplicate row on every save.
+                    TestResult::updateOrCreate(
+                        ['test_id' => $test->id, 'student_id' => $student['id']],
+                        $testresultarray
+                    );
                 }
             } else {
                 return response()->json([
@@ -222,7 +230,8 @@ class TestService
         return validator($data, [
             'test_id' => 'required|exists:tests,id',
             'student_id' => 'required|exists:students,id',
-            'score' => 'required|numeric',
+            // Absent students carry no score.
+            'score' => 'nullable|numeric',
             'absent' => 'required',
         ])->validate();
     }

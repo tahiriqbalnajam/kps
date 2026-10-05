@@ -11,10 +11,11 @@
     <div class="navigation-helper">
       <el-alert type="info" :closable="false" show-icon>
         <template #title>
-          <strong>Keyboard Navigation:</strong> 
-          Use <kbd>↑</kbd> <kbd>↓</kbd> <kbd>←</kbd> <kbd>→</kbd> arrow keys to navigate | 
-          Press <kbd>Enter</kbd> to move down | 
-          Type numbers directly to replace values
+          <strong>Keyboard Navigation:</strong>
+          Use <kbd>↑</kbd> <kbd>↓</kbd> <kbd>←</kbd> <kbd>→</kbd> arrow keys to navigate |
+          Press <kbd>Enter</kbd> to move down |
+          Type numbers directly to replace values |
+          Type <kbd>A</kbd> to mark the student absent in that subject (<kbd>Backspace</kbd> clears it)
         </template>
       </el-alert>
     </div>
@@ -30,22 +31,29 @@
         </el-table-column>
         <el-table-column v-for="(subject, subjectIndex) in subjects" :key="subject.id" :label="subject.subject.title" width="120">
           <template #default="scope">
-            <el-input 
+            <span
+              v-if="isAbsent(scope.row.id, subject.id)"
               :ref="`input-${scope.$index}-${subjectIndex}`"
-              type="number"
+              class="absent-cell"
+              tabindex="0"
+              title="Absent — press Backspace or type a number to clear"
+              @keydown="handleAbsentKeyDown($event, scope.$index, subjectIndex)"
+            >A</span>
+            <el-input
+              v-else
+              :ref="`input-${scope.$index}-${subjectIndex}`"
+              type="text"
+              inputmode="decimal"
               :model-value="getMarkValue(scope.row.id, subject.id)"
-              @update:model-value="updateMark(scope.row.id, subject.id, $event)"
+              @update:model-value="updateMark(scope.row.id, subject.id, $event, scope.$index, subjectIndex)"
               @keydown="handleKeyDown($event, scope.$index, subjectIndex)"
-              :min="0"
-              :max="subject.total_marks"
-              step="0.5"
               placeholder="0"
             ></el-input>
           </template>
         </el-table-column>
         <el-table-column label="Total Marks" width="120" align="center">
           <template #default="scope">
-            <span>{{ getTotalMarks(scope.row.id) }}/{{ totalPossibleMarks }}</span>
+            <span>{{ getTotalMarks(scope.row.id) }}/{{ getPossibleMarks(scope.row.id) }}</span>
           </template>
         </el-table-column>
       </el-table>
@@ -61,7 +69,6 @@
 <script>
 import Resource from '@/api/resource';
 import { fetchExamSubjects, getSubjectsMarksByExamId, examMarks  } from '@/api/exam';
-import { sessionStore } from '@/store/session';
 export default {
   name: 'AddMarks',
   props: {
@@ -74,6 +81,8 @@ export default {
       students: [],
       subjects: [],
       marks: {},
+      // absent[studentId][examSubjectId] === true when the student missed that paper
+      absent: {},
       loading: false,
       submitLoading: false,
       query: {
@@ -82,16 +91,6 @@ export default {
         filter: {},
       },
     };
-  },
-  computed: {
-    currentSessionId() {
-      return sessionStore().currentSessionId;
-    },
-  },
-  computed: {
-    totalPossibleMarks() {
-      return this.subjects.reduce((sum, subject) => sum + Number(subject.total_marks), 0);
-    },
   },
   watch: {
     addMarksVisible(val) {
@@ -115,7 +114,9 @@ export default {
         this.query.filter.stdclass = this.class_id;
       }
 
-      if (this.currentSessionId) this.query.filter.session_id = this.currentSessionId;
+      // The grid is the class/section's students — never the session picked in the navbar.
+      // A student keeps the session they are enrolled in while the exam keeps the session it
+      // was created in, so the two drift apart and a session filter here emptied the grid.
 
       const { data: studentData } = await studentRes.list(this.query);
       const { data: subjectData } = await fetchExamSubjects(this.exam.id);
@@ -135,26 +136,40 @@ export default {
     },
     initializeMarks() {
       const initialMarks = {};
+      const initialAbsent = {};
       this.students.forEach(student => {
         initialMarks[student.id] = {};
+        initialAbsent[student.id] = {};
         this.subjects.forEach(subject => {
           initialMarks[student.id][subject.id] = 0;
         });
       });
       this.marks = initialMarks;
+      this.absent = initialAbsent;
     },
     populateExistingMarks(existingMarks) {
+      // Start from a full grid so students/subjects without a saved row still get a cell.
+      this.initializeMarks();
       existingMarks.forEach(mark => {
-        if (!this.marks[mark.student_id]) {
-          this.marks[mark.student_id] = {};
-        }
         this.marks[mark.student_id][mark.exam_subject_id] = mark.obtained_marks;
+        if (mark.absent === 'yes') {
+          this.absent[mark.student_id][mark.exam_subject_id] = true;
+        }
       });
     },
     getMarkValue(studentId, subjectId) {
-      return this.marks?.[studentId]?.[subjectId] || 0;
+      return this.marks?.[studentId]?.[subjectId] ?? 0;
     },
-    updateMark(studentId, subjectId, value) {
+    isAbsent(studentId, subjectId) {
+      return !!this.absent?.[studentId]?.[subjectId];
+    },
+    updateMark(studentId, subjectId, value, rowIndex, colIndex) {
+      // Any letter typed in a marks cell marks that paper absent — "A" is the shorthand the
+      // teacher types, but "45a" means the same thing rather than silently staying at 45.
+      if (typeof value === 'string' && /[a-z]/i.test(value)) {
+        this.setAbsent(studentId, subjectId, true, rowIndex, colIndex);
+        return;
+      }
       if (!this.marks[studentId]) {
         this.marks[studentId] = {};
       }
@@ -162,6 +177,45 @@ export default {
       const numericValue = value === '' || value === null ? 0 : parseFloat(value);
       this.marks[studentId][subjectId] = numericValue;
       this.validateMarks(studentId, subjectId, this.subjects.find(s => s.id === subjectId)?.total_marks);
+    },
+    setAbsent(studentId, subjectId, isAbsent, rowIndex, colIndex) {
+      if (!this.absent[studentId]) {
+        this.absent[studentId] = {};
+      }
+      if (!this.marks[studentId]) {
+        this.marks[studentId] = {};
+      }
+      if (isAbsent) {
+        this.absent[studentId][subjectId] = true;
+        this.marks[studentId][subjectId] = 0;
+      } else {
+        delete this.absent[studentId][subjectId];
+      }
+      // The cell swaps between an input and the "A" label, so focus has to be restored.
+      if (rowIndex !== undefined) {
+        this.$nextTick(() => this.focusInput(rowIndex, colIndex));
+      }
+    },
+    /**
+     * Key handling for a cell showing "A": a digit starts a fresh mark, Backspace/Delete just
+     * clears the absence, and the arrow/Enter keys keep navigating the grid as usual.
+     */
+    handleAbsentKeyDown(event, rowIndex, colIndex) {
+      const key = event.key;
+      const studentId = this.students[rowIndex]?.id;
+      const subjectId = this.subjects[colIndex]?.id;
+
+      if (/^[0-9]$/.test(key) || key === 'Backspace' || key === 'Delete') {
+        event.preventDefault();
+        this.setAbsent(studentId, subjectId, false);
+        if (/^[0-9]$/.test(key)) {
+          this.marks[studentId][subjectId] = Number(key);
+        }
+        this.$nextTick(() => this.focusInput(rowIndex, colIndex));
+        return;
+      }
+
+      this.handleKeyDown(event, rowIndex, colIndex);
     },
     validateMarks(studentId, subjectId, totalMarks) {
       if (!this.marks[studentId] || this.marks[studentId][subjectId] === undefined) return;
@@ -185,7 +239,15 @@ export default {
     },
     getTotalMarks(studentId) {
       if (!this.marks[studentId]) return 0;
-      return Object.values(this.marks[studentId]).reduce((sum, mark) => sum + Number(mark || 0), 0);
+      return Object.entries(this.marks[studentId])
+        .filter(([subjectId]) => !this.isAbsent(studentId, subjectId))
+        .reduce((sum, [, mark]) => sum + Number(mark || 0), 0);
+    },
+    /** Marks available to this student — papers they were absent for are taken out of the total. */
+    getPossibleMarks(studentId) {
+      return this.subjects
+        .filter(subject => !this.isAbsent(studentId, subject.id))
+        .reduce((sum, subject) => sum + Number(subject.total_marks || 0), 0);
     },
     handleKeyDown(event, rowIndex, colIndex) {
       const key = event.key;
@@ -243,11 +305,21 @@ export default {
     async submitMarks() {
       this.submitLoading = true;
       try {
+        const absent = {};
+        Object.entries(this.absent).forEach(([studentId, subjects]) => {
+          Object.entries(subjects).forEach(([subjectId, isAbsent]) => {
+            if (isAbsent) {
+              absent[studentId] = absent[studentId] || {};
+              absent[studentId][subjectId] = true;
+            }
+          });
+        });
+
         const data = {
           exam_id: this.exam.id,
           marks: this.marks,
+          absent,
         };
-        console.log(data);
         await examMarks(data);
         this.$message.success('Marks submitted successfully');
         this.handleClose();
@@ -287,6 +359,26 @@ export default {
 
 .el-table :deep(.el-input) {
   width: 80px;
+}
+
+.absent-cell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 24px;
+  font-weight: 600;
+  color: #b45309;
+  background: #fdf6ec;
+  border: 1px solid #f5dab1;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.absent-cell:focus {
+  outline: none;
+  border-color: #409eff;
+  box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.1);
 }
 
 .el-table :deep(.el-input input) {

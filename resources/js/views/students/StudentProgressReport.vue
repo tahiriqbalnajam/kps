@@ -82,13 +82,20 @@
       <div class="section" v-if="report.subjects.length">
         <div class="section-title">Academic Performance — Subject Wise</div>
         <el-table :data="report.subjects" size="small" stripe border class="subject-table">
-          <el-table-column label="Subject" prop="subject" min-width="130" />
+          <el-table-column label="Subject" min-width="130">
+            <template #default="{ row }">
+              <span>{{ row.subject }}</span>
+              <!-- Absent papers are left out of the marks, so say so rather than let them vanish. -->
+              <span v-if="row.absent_count" class="absent-note">({{ row.absent_count }} absent)</span>
+            </template>
+          </el-table-column>
           <el-table-column label="Tests" prop="total_tests" width="70" align="center" />
           <el-table-column label="Total Marks" prop="total_marks" width="105" align="center" />
           <el-table-column label="Obtained" prop="obtained_marks" width="95" align="center" />
-          <el-table-column label="%" prop="percentage" width="70" align="center">
+          <el-table-column label="%" width="70" align="center">
             <template #default="{ row }">
-              <span :class="pctClass(row.percentage)">{{ row.percentage }}%</span>
+              <!-- null = every paper absent, so there is no percentage to show -->
+              <span :class="pctClass(row.percentage)">{{ row.percentage === null ? '—' : row.percentage + '%' }}</span>
             </template>
           </el-table-column>
           <el-table-column label="Grade" width="100" align="center">
@@ -98,7 +105,8 @@
           </el-table-column>
           <el-table-column label="Progress" min-width="130">
             <template #default="{ row }">
-              <el-progress :percentage="Math.min(row.percentage, 100)" :color="progressColor(row.percentage)" :show-text="false" :stroke-width="7" />
+              <el-progress v-if="row.percentage === null" :percentage="0" :color="progressColor(row.percentage)" :show-text="false" :stroke-width="7" />
+              <el-progress v-else :percentage="Math.min(row.percentage, 100)" :color="progressColor(row.percentage)" :show-text="false" :stroke-width="7" />
             </template>
           </el-table-column>
         </el-table>
@@ -256,7 +264,9 @@ export default {
     formatDate(d) {
       return d ? moment(d).format('DD MMM, YYYY') : '-';
     },
+    // pct === null means the subject has no graded work (every paper absent) — no grade to give.
     grade(pct) {
+      if (pct === null || pct === undefined) return '—';
       if (pct >= 80) return 'A+';
       if (pct >= 65) return 'B';
       if (pct >= 50) return 'C';
@@ -264,18 +274,21 @@ export default {
       return 'F';
     },
     gradeTagType(pct) {
+      if (pct === null || pct === undefined) return 'info';
       if (pct >= 80) return 'success';
       if (pct >= 65) return '';
       if (pct >= 50) return 'warning';
       return 'danger';
     },
     pctClass(pct) {
+      if (pct === null || pct === undefined) return 'clr-muted';
       if (pct >= 80) return 'clr-excellent';
       if (pct >= 65) return 'clr-good';
       if (pct >= 50) return 'clr-warn';
       return 'clr-bad';
     },
     progressColor(pct) {
+      if (pct === null || pct === undefined) return '#c0c4cc';
       if (pct >= 80) return '#67c23a';
       if (pct >= 65) return '#409eff';
       if (pct >= 50) return '#e6a23c';
@@ -306,6 +319,7 @@ export default {
         };
 
         const gradeOf = (pct) => {
+          if (pct === null || pct === undefined) return '—';
           if (pct >= 80) return 'A+';
           if (pct >= 65) return 'B';
           if (pct >= 50) return 'C';
@@ -439,11 +453,12 @@ export default {
             margin: { left: margin, right: margin },
             head: [['Subject', 'Tests', 'Total', 'Obtained', '%', 'Grade', 'Progress']],
             body: this.report.subjects.map(s => [
-              String(s.subject),
+              // Absent papers are excluded from the marks — name the count so the exclusion is visible.
+              s.absent_count ? `${s.subject} (${s.absent_count} absent)` : String(s.subject),
               String(s.total_tests),
               String(s.total_marks),
               String(s.obtained_marks),
-              `${s.percentage}%`,
+              s.percentage === null ? '—' : `${s.percentage}%`,
               gradeOf(s.percentage),
               '',
             ]),
@@ -488,7 +503,6 @@ export default {
               if (data.section !== 'body' || data.column.index !== 6) return;
               const subj   = this.report.subjects[data.row.index];
               if (!subj) return;
-              const pct    = Math.min(Math.max(subj.percentage, 0), 100);
               const pad    = 3;
               const bx     = data.cell.x + pad;
               const bw     = data.cell.width - pad * 2;
@@ -497,6 +511,9 @@ export default {
               // Track background
               doc.setFillColor(229, 231, 235);
               doc.roundedRect(bx, by, bw, bh, 1, 1, 'F');
+              // A null percentage (all papers absent) has no bar to fill — the track alone says so.
+              if (subj.percentage === null || subj.percentage === undefined) return;
+              const pct = Math.min(Math.max(subj.percentage, 0), 100);
               // Colored fill
               const fillColor = pct >= 80 ? [103,194,58] : pct >= 65 ? [64,158,255] : pct >= 50 ? [230,162,60] : [245,108,108];
               doc.setFillColor(...fillColor);
@@ -603,6 +620,8 @@ export default {
           .clr-good { color: #409eff; font-weight: 600; }
           .clr-warn { color: #e6a23c; font-weight: 600; }
           .clr-bad { color: #f56c6c; font-weight: 700; }
+          .clr-muted { color: #909399; }
+          .absent-note { color: #909399; font-size: 11px; margin-left: 4px; }
           .section { margin-bottom: 4px; }
         </style></head>
         <body>${content}</body></html>
@@ -715,6 +734,8 @@ export default {
 .clr-good      { color: #409eff; font-weight: 600; }
 .clr-warn      { color: #e6a23c; font-weight: 600; }
 .clr-bad       { color: #f56c6c; font-weight: 700; }
+.clr-muted     { color: #909399; }
+.absent-note   { color: #909399; font-size: 11px; margin-left: 4px; }
 
 .overall-row {
   display: flex; align-items: center; gap: 14px;

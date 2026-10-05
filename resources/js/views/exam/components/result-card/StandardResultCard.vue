@@ -49,17 +49,20 @@
             <tr v-for="mark in rows" :key="mark.subject">
               <td>{{ mark.subject }}</td>
               <td>{{ mark.total_marks }}</td>
-              <td>{{ mark.obtained_marks }}</td>
-              <td>{{ mark.percentage }}%</td>
+              <td :class="{ 'absent-mark': mark.is_absent }">{{ mark.is_absent ? 'A' : mark.obtained_marks }}</td>
+              <td :class="{ 'absent-mark': mark.is_absent }">{{ mark.is_absent ? 'A' : mark.percentage + '%' }}</td>
             </tr>
             <tr class="total-row">
               <td>Total</td>
               <td>{{ totalMarks }}</td>
               <td>{{ obtainedMarks }}</td>
-              <td>{{ percentage }}%</td>
+              <td>{{ percentage === null ? '—' : percentage + '%' }}</td>
             </tr>
           </tbody>
         </table>
+        <p v-if="rows.some(mark => mark.is_absent)" class="absent-legend">
+          A = Absent — not counted in the total
+        </p>
       </div>
     </div>
     <div class="results-section">
@@ -220,6 +223,15 @@ export default {
 .total-row {
   font-weight: bold;
   background: #f5f5f5;
+}
+.absent-mark {
+  font-weight: bold;
+  color: #b45309;
+}
+.absent-legend {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: #909399;
 }
 .footer-section {
   margin-top: 15px;  /* Reduced from 40px */

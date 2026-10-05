@@ -66,6 +66,7 @@
               size="small"
               active-value="yes"
               inactive-value="no"
+              @change="onAbsentChange(scope.row)"
             />
           </template>
         </el-table-column>
@@ -84,7 +85,7 @@
             <el-input v-model="search" size="small" placeholder="Type to search" />
           </template>
           <template #default="scope">
-            {{ (scope.row.score > 0 && test.total_marks > 0) ? ((scope.row.score / test.total_marks) * 100)+"%" : "0%" }}
+            {{ scope.row.absent === 'yes' ? 'A' : ((scope.row.score > 0 && test.total_marks > 0) ? ((scope.row.score / test.total_marks) * 100)+"%" : "0%") }}
           </template>
         </el-table-column>
       </el-table>
@@ -453,6 +454,12 @@ export default {
       
       console.log('close child called');
       this.$emit('popupClosed', 'yes');
+    },
+    /** An absent student has no score — clear whatever was entered so it is not saved as a zero. */
+    onAbsentChange(row) {
+      if (row.absent === 'yes') {
+        row.score = null;
+      }
     },
     validateMarks(obtain, total, student) {
       if (obtain > total || obtain < 0) {
