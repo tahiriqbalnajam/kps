@@ -72,6 +72,7 @@ class Teacher extends Model
                 'c.name as class_name',
                 's.title as subject_title',
                 't.title as test_title',
+                't.date as date',
                 't.total_marks as total_marks',
                 DB::raw('ROUND(AVG(tr.score),2) as average_marks'),
                 DB::raw('ROUND(AVG(tr.score)/t.total_marks * 100, 0) as percent')
@@ -82,7 +83,10 @@ class Teacher extends Model
             ->groupBy('c.id', 's.id', 't.id')
             ->orderBy('c.name')
             ->orderBy('s.title')
-            ->orderBy('t.title')
+            // Oldest first, so the app's sparkline reads left-to-right as a
+            // chronological trend. t.id breaks ties when two tests share a date.
+            ->orderBy('t.date')
+            ->orderBy('t.id')
             ->get();
     }
 

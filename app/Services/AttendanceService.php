@@ -100,8 +100,20 @@ class AttendanceService implements AttendanceServiceInterface
         // group-wise marking doesn't report the whole class as already marked
         if (! empty($request['student_ids'])) {
             $query->whereIn('student_id', $request['student_ids']);
-        } elseif (! empty($request['stdclass'])) {
-            $query->where('class_id', $request['stdclass']);
+        } else {
+            if (! empty($request['stdclass'])) {
+                $query->where('class_id', $request['stdclass']);
+            }
+
+            // section_id lives on the student, not on the attendance row, so a
+            // section filter has to go through the students table. Without this
+            // the parameter was silently ignored and marking one section made
+            // every sibling section of that class look already marked.
+            if (! empty($request['section_id'])) {
+                $query->whereHas('students', function ($q) use ($request) {
+                    $q->where('section_id', $request['section_id']);
+                });
+            }
         }
 
         return $query->get();
