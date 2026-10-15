@@ -10,11 +10,14 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\Request;
 use App\Laravue\JsonResponse;
-use Illuminate\Support\Facades\DB;
 use App\Services\Contracts\ParentServiceInterface;
+use App\Traits\LinksUserAccounts;
+use Illuminate\Support\Facades\DB;
 
 class ParentController extends Controller
 {
+    use LinksUserAccounts;
+
     protected $parentService;
     const ITEM_PER_PAGE = 1000;
 
@@ -177,31 +180,13 @@ class ParentController extends Controller
      */
     public function createAccount(Request $request, $id)
     {
-        $request->validate([
-            'email'    => 'required|email|unique:users,email',
-            'password' => 'required|string|min:6',
-        ]);
-
         $parent = Parents::findOrFail($id);
 
-        if ($parent->user_id) {
+        if ($parent->user) {
             return response()->json(['success' => false, 'message' => 'Parent already has a user account.'], 422);
         }
 
-        $user = User::create([
-            'name'     => $parent->name,
-            'email'    => $request->email,
-            'phone'    => $parent->phone,
-            'password' => Hash::make($request->password),
-        ]);
-
-        $role = Role::findByName('parent');
-        $user->syncRoles($role);
-
-        $parent->user_id = $user->id;
-        $parent->saveQuietly(); // skip boot events to avoid re-triggering user creation
-
-        return response()->json(new JsonResponse(['user' => $user]));
+        return $this->attachUserAccount($parent, $request, 'parent');
     }
 
     /**
@@ -250,7 +235,9 @@ class ParentController extends Controller
                 'password' => Hash::make($request->password),
             ]);
 
-            $user->syncRoles($role);
+            // assignRole, not syncRoles: never strip a role the account
+            // already holds (a teacher can also be a parent).
+            $user->assignRole($role);
 
             $parent->user_id = $user->id;
             $parent->saveQuietly();
@@ -291,9 +278,8 @@ class ParentController extends Controller
             ], 422);
         }
 
-        if ($parent->user_id) {
-            User::destroy($parent->user_id);
-        }
+        // Keeps the account if this person is also a teacher, etc.
+        $this->deleteOrDetachUserAccount($parent, 'parent');
 
         $parent->delete();
         return response()->json(new JsonResponse('Deleted successfully'));

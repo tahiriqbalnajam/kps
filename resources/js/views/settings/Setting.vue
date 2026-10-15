@@ -150,6 +150,19 @@
               <el-tab-pane label="User Settings" name="third">User Settings</el-tab-pane>
               <el-tab-pane label="Exam Settings" name="exam">
                 <el-form :model="form" label-width="120px">
+                  <el-form-item label="Result Card Layout">
+                    <el-select v-model="exam_form.result_card_layout" placeholder="Select Result Card Layout">
+                      <el-option
+                        v-for="layout in resultCardLayouts"
+                        :key="layout.key"
+                        :label="layout.label"
+                        :value="layout.key"
+                      />
+                    </el-select>
+                    <div class="mt-2 text-gray-500 text-sm">
+                      Default layout used when printing assessment exam result cards. It can still be changed on the print screen.
+                    </div>
+                  </el-form-item>
                   <el-form-item label="Result Header">
                     <el-input v-model="exam_form.result_header" type="textarea" :row="6" placeholder="HTML of header" />
                   </el-form-item>
@@ -221,6 +234,11 @@
 import Resource from '@/api/resource';
 import { Plus } from '@element-plus/icons-vue';
 import DOMPurify from 'dompurify';
+import {
+  DEFAULT_RESULT_CARD_LAYOUT,
+  RESULT_CARD_LAYOUTS,
+  getResultCardLayout,
+} from '@/views/exam/components/result-card/layouts';
 
 export default {
   name: 'Setting',
@@ -239,7 +257,9 @@ export default {
       },
       exam_form: {
         result_header: '',
+        result_card_layout: DEFAULT_RESULT_CARD_LAYOUT,
       },
+      resultCardLayouts: RESULT_CARD_LAYOUTS.map(({ key, label }) => ({ key, label })),
       message: {
           message_channel: '',
           absent_sms_template: '',
@@ -303,6 +323,7 @@ export default {
       // Other settings
       this.teacher_form.teacher_leaves_allowed = settings.teacher_leaves_allowed || 0;
       this.exam_form.result_header = settings.result_header || '';
+      this.exam_form.result_card_layout = getResultCardLayout(settings.result_card_layout).key;
       this.student_form.admission_rules = settings.admission_rules || '';
       this.message.message_channel = settings.message_channel || '';
       this.message.absent_sms_template = settings.absent_sms_template || '';
@@ -381,6 +402,7 @@ export default {
       try {
         const formData = new FormData();
         formData.append('result_header', this.exam_form.result_header || '');
+        formData.append('result_card_layout', this.exam_form.result_card_layout || DEFAULT_RESULT_CARD_LAYOUT);
 
         await this.settingResource.store(formData);
         await this.getList();

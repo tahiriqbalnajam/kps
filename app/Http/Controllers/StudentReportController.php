@@ -12,11 +12,15 @@ use Phpml\Classification\KNearestNeighbors;
 
 class StudentReportController extends Controller
 {
-    const EXCELLENT     = 'Excellent';
-    const GOOD          = 'Good';
-    const AVERAGE       = 'Average';
+    const EXCELLENT = 'Excellent';
+
+    const GOOD = 'Good';
+
+    const AVERAGE = 'Average';
+
     const BELOW_AVERAGE = 'Below Average';
-    const AT_RISK       = 'At Risk';
+
+    const AT_RISK = 'At Risk';
 
     public function generateReport($id)
     {
@@ -24,15 +28,17 @@ class StudentReportController extends Controller
             ->findOrFail($id);
 
         // Attendance
-        $totalDays   = StudentAttendance::where('student_id', $id)->count();
+        $totalDays = StudentAttendance::where('student_id', $id)->count();
         $presentDays = StudentAttendance::where('student_id', $id)->where('status', 'present')->count();
-        $absentDays  = StudentAttendance::where('student_id', $id)->where('status', 'absent')->count();
-        $attPct      = $totalDays > 0 ? round(($presentDays / $totalDays) * 100, 1) : 0;
+        $absentDays = StudentAttendance::where('student_id', $id)->where('status', 'absent')->count();
+        $attPct = $totalDays > 0 ? round(($presentDays / $totalDays) * 100, 1) : 0;
 
-        // Test results grouped by subject
+        // Test results grouped by subject. Absent papers are excluded from every figure below —
+        // an absence is not a zero, so it must not count as marks lost or as a failed test.
         $testRows = TestResult::where('test_results.student_id', $id)
-            ->join('tests',    'test_results.test_id',  '=', 'tests.id')
-            ->join('subjects', 'tests.subject_id',      '=', 'subjects.id')
+            ->where('test_results.absent', 'no')
+            ->join('tests', 'test_results.test_id', '=', 'tests.id')
+            ->join('subjects', 'tests.subject_id', '=', 'subjects.id')
             ->select(
                 'subjects.title as subject',
                 DB::raw('COUNT(test_results.id)                                                          as total_tests'),
@@ -43,10 +49,11 @@ class StudentReportController extends Controller
             ->groupBy('subjects.id', 'subjects.title')
             ->get();
 
-        // Exam results grouped by subject
+        // Exam results grouped by subject — absent papers excluded, same as tests.
         $examRows = ExamResult::where('exam_results.student_id', $id)
-            ->join('exam_subjects', 'exam_results.exam_subject_id',  '=', 'exam_subjects.id')
-            ->join('subjects',      'exam_subjects.subject_id',      '=', 'subjects.id')
+            ->where('exam_results.absent', 'no')
+            ->join('exam_subjects', 'exam_results.exam_subject_id', '=', 'exam_subjects.id')
+            ->join('subjects', 'exam_subjects.subject_id', '=', 'subjects.id')
             ->select(
                 'subjects.title as subject',
                 DB::raw('COUNT(exam_results.id)                                                                         as total_tests'),
@@ -61,74 +68,110 @@ class StudentReportController extends Controller
         $map = [];
         foreach ($testRows as $row) {
             $map[$row->subject] = [
-                'subject'        => $row->subject,
-                'total_tests'    => (int)   $row->total_tests,
-                'total_marks'    => (float) $row->total_marks,
+                'subject' => $row->subject,
+                'total_tests' => (int) $row->total_tests,
+                'total_marks' => (float) $row->total_marks,
                 'obtained_marks' => (float) $row->obtained_marks,
-                'failed_tests'   => (int)   $row->failed_tests,
+                'failed_tests' => (int) $row->failed_tests,
             ];
         }
         foreach ($examRows as $row) {
             if (isset($map[$row->subject])) {
-                $map[$row->subject]['total_tests']    += (int)   $row->total_tests;
-                $map[$row->subject]['total_marks']    += (float) $row->total_marks;
+                $map[$row->subject]['total_tests'] += (int) $row->total_tests;
+                $map[$row->subject]['total_marks'] += (float) $row->total_marks;
                 $map[$row->subject]['obtained_marks'] += (float) $row->obtained_marks;
-                $map[$row->subject]['failed_tests']   += (int)   $row->failed_tests;
+                $map[$row->subject]['failed_tests'] += (int) $row->failed_tests;
             } else {
                 $map[$row->subject] = [
-                    'subject'        => $row->subject,
-                    'total_tests'    => (int)   $row->total_tests,
-                    'total_marks'    => (float) $row->total_marks,
+                    'subject' => $row->subject,
+                    'total_tests' => (int) $row->total_tests,
+                    'total_marks' => (float) $row->total_marks,
                     'obtained_marks' => (float) $row->obtained_marks,
-                    'failed_tests'   => (int)   $row->failed_tests,
+                    'failed_tests' => (int) $row->failed_tests,
                 ];
             }
         }
 
+        // Papers the student was absent for, per subject. They are left out of the marks above,
+        // but counted here so a subject does not silently disappear from the report.
+        $absentCounts = [];
+        $absentSources = [
+            TestResult::where('test_results.student_id', $id)
+                ->where('test_results.absent', 'yes')
+                ->join('tests', 'test_results.test_id', '=', 'tests.id')
+                ->join('subjects', 'tests.subject_id', '=', 'subjects.id')
+                ->select('subjects.title as subject', DB::raw('COUNT(test_results.id) as absent_count'))
+                ->groupBy('subjects.id', 'subjects.title')
+                ->get(),
+            ExamResult::where('exam_results.student_id', $id)
+                ->where('exam_results.absent', 'yes')
+                ->join('exam_subjects', 'exam_results.exam_subject_id', '=', 'exam_subjects.id')
+                ->join('subjects', 'exam_subjects.subject_id', '=', 'subjects.id')
+                ->select('subjects.title as subject', DB::raw('COUNT(exam_results.id) as absent_count'))
+                ->groupBy('subjects.id', 'subjects.title')
+                ->get(),
+        ];
+        foreach ($absentSources as $rows) {
+            foreach ($rows as $row) {
+                $absentCounts[$row->subject] = ($absentCounts[$row->subject] ?? 0) + (int) $row->absent_count;
+            }
+        }
         $subjects = [];
-        foreach ($map as $s) {
-            $pct        = $s['total_marks'] > 0 ? round(($s['obtained_marks'] / $s['total_marks']) * 100, 1) : 0;
-            $subjects[] = array_merge($s, ['percentage' => $pct]);
+        foreach (array_unique(array_merge(array_keys($map), array_keys($absentCounts))) as $title) {
+            $s = $map[$title] ?? [];
+            $totalMarks = (float) ($s['total_marks'] ?? 0);
+            $obtained = (float) ($s['obtained_marks'] ?? 0);
+            $subjects[] = [
+                'subject' => $title,
+                'total_tests' => (int) ($s['total_tests'] ?? 0),
+                'total_marks' => $totalMarks,
+                'obtained_marks' => $obtained,
+                'failed_tests' => (int) ($s['failed_tests'] ?? 0),
+                'absent_count' => $absentCounts[$title] ?? 0,
+                // Every paper absent means there is no percentage to report; the UI shows "A".
+                'percentage' => $totalMarks > 0 ? round(($obtained / $totalMarks) * 100, 1) : null,
+            ];
         }
 
         // Overall stats for ML features
         $overallObtained = array_sum(array_column($subjects, 'obtained_marks'));
-        $overallTotal    = array_sum(array_column($subjects, 'total_marks'));
-        $overallPct      = $overallTotal > 0 ? round(($overallObtained / $overallTotal) * 100, 1) : 0;
-        $totalTests      = array_sum(array_column($subjects, 'total_tests'));
-        $failedTests     = array_sum(array_column($subjects, 'failed_tests'));
-        $failRate        = $totalTests > 0 ? round(($failedTests / $totalTests) * 100, 1) : 0;
-        $subjectCount    = count($subjects);
-        $weakCount       = count(array_filter($subjects, fn($s) => $s['percentage'] < 50));
+        $overallTotal = array_sum(array_column($subjects, 'total_marks'));
+        $overallPct = $overallTotal > 0 ? round(($overallObtained / $overallTotal) * 100, 1) : 0;
+        $totalTests = array_sum(array_column($subjects, 'total_tests'));
+        $failedTests = array_sum(array_column($subjects, 'failed_tests'));
+        $failRate = $totalTests > 0 ? round(($failedTests / $totalTests) * 100, 1) : 0;
+        $subjectCount = count($subjects);
+        // A subject with no graded work (all papers absent) has no percentage and is not "weak".
+        $weakCount = count(array_filter($subjects, fn ($s) => $s['percentage'] !== null && $s['percentage'] < 50));
 
-        $features  = [(float)$attPct, (float)$overallPct, (float)$failRate, (float)$subjectCount, (float)$weakCount];
-        $mlLabel   = $this->getMLClassification((int)$id, $features);
+        $features = [(float) $attPct, (float) $overallPct, (float) $failRate, (float) $subjectCount, (float) $weakCount];
+        $mlLabel = $this->getMLClassification((int) $id, $features);
 
         return response()->json(new JsonResponse([
             'student' => [
-                'id'               => $student->id,
-                'name'             => $student->name,
+                'id' => $student->id,
+                'name' => $student->name,
                 'admission_number' => $student->adminssion_number,
-                'roll_no'          => $student->roll_no,
-                'class'            => optional($student->stdclasses)->name   ?? '-',
-                'section'          => optional($student->section)->name      ?? '-',
-                'gender'           => $student->gender,
-                'dob'              => $student->dob,
-                'parent_name'      => optional($student->parents)->name     ?? '-',
-                'parent_phone'     => optional($student->parents)->phone    ?? '-',
-                'session'          => optional($student->class_session)->name ?? '-',
+                'roll_no' => $student->roll_no,
+                'class' => optional($student->stdclasses)->name ?? '-',
+                'section' => optional($student->section)->name ?? '-',
+                'gender' => $student->gender,
+                'dob' => $student->dob,
+                'parent_name' => optional($student->parents)->name ?? '-',
+                'parent_phone' => optional($student->parents)->phone ?? '-',
+                'session' => optional($student->class_session)->name ?? '-',
             ],
             'attendance' => [
                 'total_working_days' => $totalDays,
-                'present'            => $presentDays,
-                'absent'             => $absentDays,
+                'present' => $presentDays,
+                'absent' => $absentDays,
                 'attendance_percent' => $attPct,
             ],
-            'subjects'           => array_values($subjects),
+            'subjects' => array_values($subjects),
             'overall_percentage' => $overallPct,
-            'ml_classification'  => $mlLabel,
-            'narrative_en'       => $this->buildNarrative($student, $attPct, $subjects, $overallPct, $mlLabel),
-            'narrative_ur'       => $this->buildNarrativeUrdu($student, $attPct, $subjects, $overallPct, $mlLabel),
+            'ml_classification' => $mlLabel,
+            'narrative_en' => $this->buildNarrative($student, $attPct, $subjects, $overallPct, $mlLabel),
+            'narrative_ur' => $this->buildNarrativeUrdu($student, $attPct, $subjects, $overallPct, $mlLabel),
         ]));
     }
 
@@ -161,6 +204,7 @@ class StudentReportController extends Controller
                     SUM(CASE WHEN (tr.score / NULLIF(t.total_marks,0)) < 0.50 THEN 1 ELSE 0 END) AS weak_cnt
                 FROM test_results tr
                 JOIN tests t ON tr.test_id = t.id
+                WHERE tr.absent = 'no'
                 GROUP BY tr.student_id
             ) tr ON tr.student_id = s.id
             WHERE s.id != ? AND s.status = 'enable'
@@ -168,31 +212,41 @@ class StudentReportController extends Controller
         ", [$excludeId]);
 
         if (count($rows) < 5) {
-            return $this->ruleClassify((float)$features[1], (float)$features[0], (float)$features[2]);
+            return $this->ruleClassify((float) $features[1], (float) $features[0], (float) $features[2]);
         }
 
         $samples = [];
-        $labels  = [];
+        $labels = [];
         foreach ($rows as $row) {
-            $samples[] = [(float)$row->att_pct, (float)$row->avg_pct, (float)$row->fail_rate, (float)$row->subj_cnt, (float)$row->weak_cnt];
-            $labels[]  = $this->ruleClassify((float)$row->avg_pct, (float)$row->att_pct, (float)$row->fail_rate);
+            $samples[] = [(float) $row->att_pct, (float) $row->avg_pct, (float) $row->fail_rate, (float) $row->subj_cnt, (float) $row->weak_cnt];
+            $labels[] = $this->ruleClassify((float) $row->avg_pct, (float) $row->att_pct, (float) $row->fail_rate);
         }
 
         try {
             $knn = new KNearestNeighbors(7);
             $knn->train($samples, $labels);
+
             return $knn->predict($features);
         } catch (\Throwable $e) {
-            return $this->ruleClassify((float)$features[1], (float)$features[0], (float)$features[2]);
+            return $this->ruleClassify((float) $features[1], (float) $features[0], (float) $features[2]);
         }
     }
 
     private function ruleClassify(float $avgPct, float $attPct = 75, float $failRate = 0): string
     {
-        if ($avgPct < 33 || ($attPct < 50 && $avgPct < 50) || $failRate > 60) return self::AT_RISK;
-        if ($avgPct < 50)  return self::BELOW_AVERAGE;
-        if ($avgPct < 65)  return self::AVERAGE;
-        if ($avgPct < 80)  return self::GOOD;
+        if ($avgPct < 33 || ($attPct < 50 && $avgPct < 50) || $failRate > 60) {
+            return self::AT_RISK;
+        }
+        if ($avgPct < 50) {
+            return self::BELOW_AVERAGE;
+        }
+        if ($avgPct < 65) {
+            return self::AVERAGE;
+        }
+        if ($avgPct < 80) {
+            return self::GOOD;
+        }
+
         return self::EXCELLENT;
     }
 
@@ -200,28 +254,28 @@ class StudentReportController extends Controller
 
     private function buildNarrative(Student $student, float $attPct, array $subjects, float $overallPct, string $label): string
     {
-        $name     = $student->name;
-        $female   = strtolower($student->gender ?? '') === 'female';
-        $he       = $female ? 'She'    : 'He';
-        $his      = $female ? 'Her'    : 'His';
-        $him      = $female ? 'her'    : 'him';
-        $himself  = $female ? 'herself': 'himself';
+        $name = $student->name;
+        $female = strtolower($student->gender ?? '') === 'female';
+        $he = $female ? 'She' : 'He';
+        $his = $female ? 'Her' : 'His';
+        $him = $female ? 'her' : 'him';
+        $himself = $female ? 'herself' : 'himself';
 
         // ── Opening ──────────────────────────────────────────────────────────────
         $openings = [
-            self::EXCELLENT     => [
+            self::EXCELLENT => [
                 "{$name} has delivered an outstanding academic performance this term.",
                 "It is a pleasure to report that {$name} has performed exceptionally well across all areas.",
                 "{$name} continues to be among the top-performing students with impressive results this session.",
                 "This report reflects an exemplary performance by {$name}, who has excelled in both academics and attendance.",
             ],
-            self::GOOD          => [
+            self::GOOD => [
                 "{$name} has shown commendable progress and consistent effort this term.",
                 "This progress report reflects a solid performance by {$name} across academics and attendance.",
                 "{$name} has demonstrated steady improvement and a positive learning attitude throughout this session.",
                 "A review of {$name}'s performance reveals encouraging progress and growing confidence in academics.",
             ],
-            self::AVERAGE       => [
+            self::AVERAGE => [
                 "{$name} has performed at an average level this term, with clear room for improvement.",
                 "This report highlights {$name}'s current academic standing along with areas that need focused attention.",
                 "{$name} has shown adequate performance this term but has significant potential yet to be fully realized.",
@@ -233,7 +287,7 @@ class StudentReportController extends Controller
                 "{$name}'s performance this term indicates the need for targeted improvement strategies and greater effort.",
                 "A careful review of {$name}'s results reveals concerning patterns that require immediate corrective action.",
             ],
-            self::AT_RISK       => [
+            self::AT_RISK => [
                 "{$name} is currently at academic risk and requires urgent attention from all stakeholders.",
                 "This report raises serious concerns about {$name}'s academic standing and overall attendance record.",
                 "{$name} requires immediate intervention to prevent further academic decline this session.",
@@ -281,18 +335,23 @@ class StudentReportController extends Controller
         $attLine = $attPool[array_rand($attPool)];
 
         // ── Per-Subject Lines ─────────────────────────────────────────────────────
-        $subjectLines    = [];
-        $strongSubjects  = [];
-        $weakSubjects    = [];
+        $subjectLines = [];
+        $strongSubjects = [];
+        $weakSubjects = [];
         $criticalSubjects = [];
 
         foreach ($subjects as $s) {
-            $subj     = $s['subject'];
-            $pct      = $s['percentage'];
+            $subj = $s['subject'];
+            $pct = $s['percentage'];
             $obtained = $s['obtained_marks'];
-            $total    = $s['total_marks'];
-            $tests    = $s['total_tests'];
+            $total = $s['total_marks'];
+            $tests = $s['total_tests'];
 
+            // Nothing graded in this subject (every paper absent) — the table reports it as "A",
+            // and there is no performance to narrate.
+            if ($pct === null) {
+                continue;
+            }
             if ($pct >= 80) {
                 $strongSubjects[] = $subj;
                 $pool = [
@@ -329,7 +388,7 @@ class StudentReportController extends Controller
                 ];
             } else {
                 $criticalSubjects[] = $subj;
-                $weakSubjects[]     = $subj;
+                $weakSubjects[] = $subj;
                 $pool = [
                     "{$name} has failed in {$subj} with only {$obtained}/{$total} marks ({$pct}%). Immediate remedial classes are required.",
                     "In {$subj}, {$he} scored critically low — {$pct}% ({$obtained} out of {$total}). This requires urgent and sustained intervention.",
@@ -343,7 +402,7 @@ class StudentReportController extends Controller
 
         // ── Strength / Weakness Summary ───────────────────────────────────────────
         $summaryParts = [];
-        if (!empty($strongSubjects)) {
+        if (! empty($strongSubjects)) {
             $list = implode(', ', $strongSubjects);
             $pool = [
                 "{$he} demonstrates particular strength in {$list}, where {$his} performance stands out as truly noteworthy.",
@@ -353,7 +412,7 @@ class StudentReportController extends Controller
             ];
             $summaryParts[] = $pool[array_rand($pool)];
         }
-        if (!empty($weakSubjects)) {
+        if (! empty($weakSubjects)) {
             $list = implode(', ', $weakSubjects);
             $pool = [
                 "Additional support and regular practice in {$list} are strongly recommended to bring performance up to an acceptable level.",
@@ -363,26 +422,26 @@ class StudentReportController extends Controller
             ];
             $summaryParts[] = $pool[array_rand($pool)];
         }
-        if (!empty($criticalSubjects)) {
+        if (! empty($criticalSubjects)) {
             $list = implode(', ', $criticalSubjects);
             $summaryParts[] = "The failing grades in {$list} are a serious concern — remedial classes should begin without delay.";
         }
 
         // ── ML-Driven Closing / Prediction ────────────────────────────────────────
         $closings = [
-            self::EXCELLENT     => [
+            self::EXCELLENT => [
                 "Based on an outstanding overall performance of {$overallPct}%, {$name} is on a strong trajectory for exceptional academic success. Keep up this excellent work!",
                 "With an overall score of {$overallPct}%, {$name} is performing brilliantly. Continued dedication will ensure {$he} reaches the highest academic levels.",
                 "The analysis strongly suggests {$name} will continue to excel. An overall average of {$overallPct}% places {$him} among the school's top performers this session.",
                 "At {$overallPct}% overall, {$name} has set a high benchmark for {$himself}. Sustaining this momentum will open excellent academic and career opportunities.",
             ],
-            self::GOOD          => [
+            self::GOOD => [
                 "With an overall average of {$overallPct}%, {$name} is progressing well. Sustained effort and focused improvement in weaker areas can push {$him} to the excellent category.",
                 "Overall performance at {$overallPct}% is solid and encouraging. With targeted focus on weaker subjects, {$name} has every potential to reach the top tier.",
                 "{$name}'s overall {$overallPct}% indicates good progress this term. A little more push and consistency in revision could make a significant difference in the next assessment.",
                 "At {$overallPct}% overall, {$name} shows real promise. Addressing the identified weak areas will be the key to unlocking even better results going forward.",
             ],
-            self::AVERAGE       => [
+            self::AVERAGE => [
                 "An overall average of {$overallPct}% shows {$name} is passing, but significantly more consistent effort is needed to progress toward better academic outcomes.",
                 "With {$overallPct}% overall, {$name} has room to grow considerably. Regular study habits, teacher guidance, and parental encouragement will be the key drivers.",
                 "The current {$overallPct}% average is a foundation to build upon. With discipline, structured study, and targeted support, {$name} can improve substantially.",
@@ -394,7 +453,7 @@ class StudentReportController extends Controller
                 "At {$overallPct}% overall, {$name} needs an urgent change in study habits and consistent academic support to get back on a positive track.",
                 "A {$overallPct}% overall average signals that {$name} is struggling significantly. An individualized improvement plan developed with teachers and parents is essential.",
             ],
-            self::AT_RISK       => [
+            self::AT_RISK => [
                 "With an overall performance of only {$overallPct}%, {$name} is at serious academic risk. Immediate and sustained intervention from all stakeholders is critical.",
                 "The combination of low attendance and a {$overallPct}% academic average places {$name} at high risk. Emergency academic support should begin without further delay.",
                 "{$name}'s overall {$overallPct}% performance, paired with attendance concerns, requires an urgent meeting between parents, the student, and school management.",
@@ -403,14 +462,14 @@ class StudentReportController extends Controller
         ];
 
         $closingPool = $closings[$label] ?? $closings[self::AVERAGE];
-        $closing     = $closingPool[array_rand($closingPool)];
+        $closing = $closingPool[array_rand($closingPool)];
 
         // ── Compose ───────────────────────────────────────────────────────────────
         $parts = [$opening, $attLine];
-        if (!empty($subjectLines)) {
+        if (! empty($subjectLines)) {
             $parts[] = implode(' ', $subjectLines);
         }
-        if (!empty($summaryParts)) {
+        if (! empty($summaryParts)) {
             $parts[] = implode(' ', $summaryParts);
         }
         $parts[] = $closing;
@@ -422,32 +481,32 @@ class StudentReportController extends Controller
 
     private function buildNarrativeUrdu(Student $student, float $attPct, array $subjects, float $overallPct, string $label): string
     {
-        $name   = $student->name;
+        $name = $student->name;
         $female = strtolower($student->gender ?? '') === 'female';
         // Urdu gender helpers (verb suffixes)
-        $raha   = $female ? 'رہی'    : 'رہا';
-        $kiya   = $female ? 'کی'     : 'کیا';
-        $karta  = $female ? 'کرتی'   : 'کرتا';
-        $sakta  = $female ? 'سکتی'   : 'سکتا';
-        $wala   = $female ? 'والی'   : 'والا';
-        $his    = 'اس کی';
-        $he     = 'وہ';
+        $raha = $female ? 'رہی' : 'رہا';
+        $kiya = $female ? 'کی' : 'کیا';
+        $karta = $female ? 'کرتی' : 'کرتا';
+        $sakta = $female ? 'سکتی' : 'سکتا';
+        $wala = $female ? 'والی' : 'والا';
+        $his = 'اس کی';
+        $he = 'وہ';
 
         // ── Opening ──────────────────────────────────────────────────────────────
         $openings = [
-            self::EXCELLENT     => [
+            self::EXCELLENT => [
                 "{$name} نے اس سمسٹر میں ایک شاندار تعلیمی کارکردگی کا مظاہرہ {$kiya} ہے۔",
                 "یہ جان کر بے حد خوشی ہوئی کہ {$name} نے تمام شعبوں میں بہترین کارکردگی دکھائی ہے۔",
                 "{$name} مسلسل اعلیٰ نتائج کے ساتھ ممتاز طلبہ میں شامل ہے اور اس سمسٹر میں بھی اپنی بہترین صلاحیتوں کا اظہار {$kiya}۔",
                 "یہ رپورٹ {$name} کی مثالی کارکردگی کی عکاسی کرتی ہے جو تعلیم اور حاضری دونوں میں نمایاں {$raha}۔",
             ],
-            self::GOOD          => [
+            self::GOOD => [
                 "{$name} نے اس سمسٹر میں قابل تعریف ترقی اور مستقل محنت کا مظاہرہ {$kiya} ہے۔",
                 "یہ رپورٹ {$name} کی تعلیمی اور حاضری کے حوالے سے ایک مضبوط کارکردگی کی عکاسی کرتی ہے۔",
                 "{$name} نے اس سمسٹر میں مسلسل بہتری اور مثبت سیکھنے کا رویہ اپنایا ہے۔",
                 "{$name} کی کارکردگی کا جائزہ حوصلہ افزا ترقی اور تعلیمی اعتماد میں اضافے کو ظاہر کرتا ہے۔",
             ],
-            self::AVERAGE       => [
+            self::AVERAGE => [
                 "{$name} نے اس سمسٹر میں اوسط سطح پر کارکردگی دکھائی ہے اور بہتری کی واضح گنجائش موجود ہے۔",
                 "یہ رپورٹ {$name} کی موجودہ تعلیمی صورتحال اور توجہ طلب شعبوں کو اجاگر کرتی ہے۔",
                 "{$name} نے قابل قبول کارکردگی دکھائی ہے لیکن ابھی ان کی پوری صلاحیت سامنے نہیں آئی۔",
@@ -459,7 +518,7 @@ class StudentReportController extends Controller
                 "{$name} کی کارکردگی مخصوص بہتری کی حکمت عملیوں اور زیادہ محنت کی ضرورت ظاہر کرتی ہے۔",
                 "{$name} کے نتائج کا جائزہ تشویشناک نمونوں کو ظاہر کرتا ہے جن کے لیے فوری اصلاحی اقدامات ضروری ہیں۔",
             ],
-            self::AT_RISK       => [
+            self::AT_RISK => [
                 "{$name} اس وقت تعلیمی خطرے میں ہے اور تمام متعلقہ افراد کی فوری توجہ ضروری ہے۔",
                 "یہ رپورٹ {$name} کی تعلیمی صورتحال اور حاضری کے ریکارڈ کے بارے میں سنگین خدشات اٹھاتی ہے۔",
                 "{$name} کو مزید تعلیمی تنزلی روکنے کے لیے فوری مداخلت کی ضرورت ہے۔",
@@ -507,18 +566,22 @@ class StudentReportController extends Controller
         $attLine = $attPool[array_rand($attPool)];
 
         // ── Per-Subject Lines ─────────────────────────────────────────────────────
-        $subjectLines     = [];
-        $strongSubjects   = [];
-        $weakSubjects     = [];
+        $subjectLines = [];
+        $strongSubjects = [];
+        $weakSubjects = [];
         $criticalSubjects = [];
 
         foreach ($subjects as $s) {
-            $subj     = $s['subject'];
-            $pct      = $s['percentage'];
+            $subj = $s['subject'];
+            $pct = $s['percentage'];
             $obtained = $s['obtained_marks'];
-            $total    = $s['total_marks'];
-            $tests    = $s['total_tests'];
+            $total = $s['total_marks'];
+            $tests = $s['total_tests'];
 
+            // No graded work in this subject (all papers absent) — nothing to narrate.
+            if ($pct === null) {
+                continue;
+            }
             if ($pct >= 80) {
                 $strongSubjects[] = $subj;
                 $pool = [
@@ -555,7 +618,7 @@ class StudentReportController extends Controller
                 ];
             } else {
                 $criticalSubjects[] = $subj;
-                $weakSubjects[]     = $subj;
+                $weakSubjects[] = $subj;
                 $pool = [
                     "{$name} {$subj} میں ناکام {$raha} — صرف {$obtained}/{$total} ({$pct}%)۔ فوری تدارکی اقدامات ناگزیر ہیں۔",
                     "{$subj} میں {$he} نے انتہائی کم اسکور کیا — {$pct}% ({$obtained}/{$total})۔ فوری اور مستقل توجہ درکار ہے۔",
@@ -569,7 +632,7 @@ class StudentReportController extends Controller
 
         // ── Summary ───────────────────────────────────────────────────────────────
         $summaryParts = [];
-        if (!empty($strongSubjects)) {
+        if (! empty($strongSubjects)) {
             $list = implode('، ', $strongSubjects);
             $pool = [
                 "{$he} خاص طور پر {$list} میں نمایاں قوت دکھاتا/دکھاتی ہے جہاں {$his} کارکردگی قابل ذکر ہے۔",
@@ -579,7 +642,7 @@ class StudentReportController extends Controller
             ];
             $summaryParts[] = $pool[array_rand($pool)];
         }
-        if (!empty($weakSubjects)) {
+        if (! empty($weakSubjects)) {
             $list = implode('، ', $weakSubjects);
             $pool = [
                 "{$list} میں اضافی مدد اور باقاعدہ مشق کی سخت ضرورت ہے تاکہ کارکردگی قابل قبول سطح تک بہتر ہو۔",
@@ -589,26 +652,26 @@ class StudentReportController extends Controller
             ];
             $summaryParts[] = $pool[array_rand($pool)];
         }
-        if (!empty($criticalSubjects)) {
+        if (! empty($criticalSubjects)) {
             $list = implode('، ', $criticalSubjects);
             $summaryParts[] = "{$list} میں فیل ہونا سنگین تشویش ہے — بغیر تاخیر کے تدارکی کلاسیں شروع ہونی چاہئیں۔";
         }
 
         // ── Closing ───────────────────────────────────────────────────────────────
         $closings = [
-            self::EXCELLENT     => [
+            self::EXCELLENT => [
                 "{$overallPct}% کی شاندار مجموعی کارکردگی کی بنیاد پر {$name} غیر معمولی تعلیمی کامیابی کی راہ پر گامزن ہے۔ یہ شاندار کام جاری رہے!",
                 "{$overallPct}% مجموعی اسکور کے ساتھ {$name} بہترین کارکردگی دکھا {$raha} ہے۔ مستقل لگن سے {$he} اعلیٰ ترین تعلیمی سطح تک پہنچے گا۔",
                 "ڈیٹا سے واضح ہے کہ {$name} کا تعلیمی سفر مزید بلندیوں کی طرف جائے گا۔ {$overallPct}% مجموعی اوسط اسے ممتاز طلبہ میں رکھتی ہے۔",
                 "{$overallPct}% مجموعی پر {$name} نے اپنے لیے اعلیٰ معیار قائم کیا ہے۔ اس رفتار کو برقرار رکھنا شاندار مستقبل کی ضمانت دے گا۔",
             ],
-            self::GOOD          => [
+            self::GOOD => [
                 "{$overallPct}% مجموعی اوسط کے ساتھ {$name} اچھی ترقی کر {$raha} ہے۔ کمزور شعبوں پر توجہ سے ممتاز طبقے میں شامل ہو {$sakta} ہے۔",
                 "{$overallPct}% کی مجموعی کارکردگی مضبوط اور حوصلہ افزا ہے۔ کمزور مضامین پر توجہ سے {$name} اعلیٰ درجے تک پہنچنے کی صلاحیت رکھتا/رکھتی ہے۔",
                 "{$name} کا {$overallPct}% مجموعی نتیجہ اچھی ترقی کو ظاہر کرتا ہے۔ کمزور مضامین میں تھوڑی زیادہ محنت اگلے امتحان میں نمایاں فرق پیدا کرے گی۔",
                 "{$overallPct}% مجموعی پر {$name} حقیقی صلاحیت دکھا {$raha} ہے۔ شناخت شدہ کمزور شعبوں کو دور کرنا مزید بہترین نتائج کی کلید ہے۔",
             ],
-            self::AVERAGE       => [
+            self::AVERAGE => [
                 "{$overallPct}% مجموعی اوسط سے پتہ چلتا ہے کہ {$name} پاس ہے لیکن آگے بڑھنے کے لیے زیادہ مستقل کوشش ضروری ہے۔",
                 "{$overallPct}% مجموعی کے ساتھ {$name} میں کافی ترقی کی گنجائش ہے۔ باقاعدہ مطالعہ اور رہنمائی اہم کردار ادا کریں گے۔",
                 "موجودہ {$overallPct}% اوسط ایک بنیاد ہے جس پر آگے بڑھا جا {$sakta} ہے۔ نظم و ضبط اور توجہ سے {$name} کافی بہتری کر {$sakta} ہے۔",
@@ -620,7 +683,7 @@ class StudentReportController extends Controller
                 "{$overallPct}% مجموعی پر {$name} کو مطالعہ کی عادات میں فوری تبدیلی اور مستقل مدد کی ضرورت ہے تاکہ مثبت راستے پر آ سکے۔",
                 "{$overallPct}% مجموعی اوسط ظاہر کرتی ہے کہ {$name} شدید جدوجہد کر {$raha} ہے۔ اساتذہ اور والدین کے ساتھ مل کر انفرادی بہتری کا منصوبہ ضروری ہے۔",
             ],
-            self::AT_RISK       => [
+            self::AT_RISK => [
                 "صرف {$overallPct}% مجموعی کارکردگی کے ساتھ {$name} تعلیمی خطرے میں ہے۔ تمام متعلقہ افراد کی فوری مداخلت ضروری ہے۔",
                 "کم حاضری اور {$overallPct}% تعلیمی اوسط کا مجموعہ {$name} کو اعلیٰ خطرے میں ڈالتا ہے۔ ہنگامی تعلیمی مدد بغیر تاخیر کے شروع ہونی چاہیے۔",
                 "{$name} کی {$overallPct}% مجموعی کارکردگی اور حاضری کے خدشات کو دیکھتے ہوئے والدین، طالب علم اور اسکول انتظامیہ کی فوری ملاقات ضروری ہے۔",
@@ -628,12 +691,16 @@ class StudentReportController extends Controller
             ],
         ];
         $closingPool = $closings[$label] ?? $closings[self::AVERAGE];
-        $closing     = $closingPool[array_rand($closingPool)];
+        $closing = $closingPool[array_rand($closingPool)];
 
         // ── Compose ───────────────────────────────────────────────────────────────
         $parts = ["{$name} کی پیش رفت رپورٹ", $opening, $attLine];
-        if (!empty($subjectLines)) $parts[] = implode(' ', $subjectLines);
-        if (!empty($summaryParts)) $parts[] = implode(' ', $summaryParts);
+        if (! empty($subjectLines)) {
+            $parts[] = implode(' ', $subjectLines);
+        }
+        if (! empty($summaryParts)) {
+            $parts[] = implode(' ', $summaryParts);
+        }
         $parts[] = $closing;
 
         return implode("\n\n", $parts);

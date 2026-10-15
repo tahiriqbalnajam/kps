@@ -1,5 +1,39 @@
 <template>
     <el-dialog v-model="rdata.dialogVisible" title="School Leaving Certificate" width="850px" top="5vh" custom-class="certificate-dialog" @close="closeDialog">
+        <!-- Editable certificate details (not printed) -->
+        <div class="certificate-options">
+            <el-form label-position="top" size="default">
+                <el-row :gutter="20">
+                    <el-col :span="12">
+                        <el-form-item label="Date of Leaving School">
+                            <el-date-picker
+                                v-model="rdata.leaving.date"
+                                type="date"
+                                placeholder="Select leaving date"
+                                format="DD/MM/YYYY"
+                                value-format="YYYY-MM-DD"
+                                style="width: 100%"
+                            />
+                        </el-form-item>
+                    </el-col>
+                    <el-col :span="12">
+                        <el-form-item label="Reason for Leaving">
+                            <el-select
+                                v-model="rdata.leaving.reason"
+                                placeholder="Select or type a reason"
+                                filterable
+                                allow-create
+                                default-first-option
+                                style="width: 100%"
+                            >
+                                <el-option v-for="reason in reasonOptions" :key="reason" :label="reason" :value="reason" />
+                            </el-select>
+                        </el-form-item>
+                    </el-col>
+                </el-row>
+            </el-form>
+        </div>
+
         <!-- Print Button -->
         <div class="print-actions">
             <el-button type="primary" size="large" @click="printCertificate" plain>
@@ -68,11 +102,11 @@
                             </div>
                             <div class="info-item">
                                 <span class="label">Date of Leaving School</span>
-                                <span class="value">{{ getCurrentDate() }}</span>
+                                <span class="value">{{ leavingDateDisplay }}</span>
                             </div>
                             <div class="info-item">
                                 <span class="label">Reason for Leaving</span>
-                                <span class="value">On Parent's Request</span>
+                                <span class="value">{{ rdata.leaving.reason }}</span>
                             </div>
                         </div>
 
@@ -123,12 +157,28 @@ export default {
             dialogVisible: false,
             student: {},
             settings: {},
+            // Editable certificate details. Defaults keep the previous output.
+            leaving: {
+                date: moment().format('YYYY-MM-DD'),
+                reason: "On Parent's Request",
+            },
             query: {
                 page: 1,
                 per_page: 10,
                 filter: {},
             }
         });
+
+        const reasonOptions = [
+            "On Parent's Request",
+            'Transfer to Another School',
+            'Migration / Relocation',
+            'Higher Studies',
+            'Completed Education',
+            'Financial Reasons',
+            'Illness',
+            'Other',
+        ];
 
         onMounted(() => {
             rdata.dialogVisible = showschoolleavingcertificate.value;
@@ -161,6 +211,10 @@ export default {
         const getCurrentDate = () => {
             return moment().format('DD MMMM, YYYY');
         };
+
+        const leavingDateDisplay = computed(() => {
+            return rdata.leaving.date ? moment(rdata.leaving.date).format('DD MMMM, YYYY') : getCurrentDate();
+        });
         
         const convertDateToWords = (date) => {
                 if (!date) 
@@ -252,6 +306,8 @@ export default {
 
         return {
             rdata,
+            reasonOptions,
+            leavingDateDisplay,
             getStudent,
             convertDate,
             convertDateToWords,
@@ -259,7 +315,7 @@ export default {
             hasContactInfo,
             isMeaningfulValue,
             printCertificate,
-            getCurrentDate,  // Add this line
+            getCurrentDate,
             closeDialog,
         };
     },
@@ -275,6 +331,25 @@ export default {
     justify-content: center;
     padding: 0 0 20px 0;
     background: transparent;
+}
+
+/* Editable certificate details */
+.certificate-options {
+    background: #f7f4ea;
+    border: 1px solid #e0d8c3;
+    border-radius: 4px;
+    padding: 15px 20px 0 20px;
+    margin-bottom: 15px;
+}
+
+.certificate-options :deep(.el-form-item) {
+    margin-bottom: 15px;
+}
+
+.certificate-options :deep(.el-form-item__label) {
+    font-weight: 600;
+    color: #7a6520;
+    padding-bottom: 2px;
 }
 
 /* Print Actions */
@@ -523,7 +598,7 @@ export default {
         box-sizing: border-box;
     }
 
-    .print-actions, :deep(.el-dialog__header), :deep(.el-dialog__close), :deep(.el-dialog__headerbtn) {
+    .print-actions, .certificate-options, :deep(.el-dialog__header), :deep(.el-dialog__close), :deep(.el-dialog__headerbtn) {
         display: none !important;
     }
 }

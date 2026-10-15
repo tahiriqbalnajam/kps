@@ -16,12 +16,12 @@
             <div
               class="tab-label"
               :style="{
-                '--score-color': scoreColor(subject.overall_percentage),
-                '--score-soft': scoreSoft(subject.overall_percentage)
+                '--score-color': subjectColor(subject),
+                '--score-soft': subjectSoft(subject)
               }"
             >
               <span class="tab-name">{{ subject.subject }}</span>
-              <span class="tab-pct">{{ Math.round(subject.overall_percentage || 0) }}%</span>
+              <span class="tab-pct">{{ subject.has_graded_work === false ? 'A' : Math.round(subject.overall_percentage || 0) + '%' }}</span>
             </div>
           </template>
 
@@ -40,10 +40,15 @@
                   </template>
                 </el-table-column>
                 <el-table-column label="Total Marks" prop="total_marks" align="center" width="90" />
-                <el-table-column label="Obtained" prop="score" align="center" width="80" />
+                <el-table-column label="Obtained" align="center" width="80">
+                  <template #default="scope">
+                    {{ scope.row.absent === 'yes' ? 'A' : scope.row.score }}
+                  </template>
+                </el-table-column>
                 <el-table-column label="%" align="center" width="70">
                   <template #default="scope">
-                    <span class="score-pct">{{ Math.round(scope.row.percentage) }}%</span>
+                    <span v-if="scope.row.absent === 'yes'" class="absent-mark">A</span>
+                    <span v-else class="score-pct">{{ Math.round(scope.row.percentage) }}%</span>
                   </template>
                 </el-table-column>
               </el-table>
@@ -52,12 +57,12 @@
             <div class="score-side">
               <el-progress
                 type="dashboard"
-                :percentage="Math.round(subject.overall_percentage || 0)"
+                :percentage="subject.has_graded_work === false ? 0 : Math.round(subject.overall_percentage || 0)"
                 :width="84"
-                :color="scoreColor(subject.overall_percentage)"
+                :color="subjectColor(subject)"
               >
                 <template #default="{ percentage }">
-                  <span class="percentage-value">{{ percentage }}%</span>
+                  <span class="percentage-value">{{ subject.has_graded_work === false ? 'A' : percentage + '%' }}</span>
                   <span class="percentage-label">Overall</span>
                 </template>
               </el-progress>
@@ -155,11 +160,21 @@ export default {
       // 10% alpha tint of the score color — always matches its solid version
       return this.scoreColor(percentage) + '1a'
     },
+    // A subject whose every test was absent has no score to colour by — grey, and the ring
+    // shows "A" instead of 0%.
+    subjectColor(subject) {
+      if (!subject || subject.has_graded_work === false) return '#c0c4cc'
+      return this.scoreColor(subject.overall_percentage)
+    },
+    subjectSoft(subject) {
+      return this.subjectColor(subject) + '1a'
+    },
     // ── Sparkline ────────────────────────────────────────────────
     // Per-test percentages in chronological order (missing percentage
     // falls back to score/total_marks).
     sparkData(subject) {
-      const tests = (subject.tests || []).slice()
+      // Absent tests carry no score — plotting them would draw a false dip in the trend.
+      const tests = (subject.tests || []).filter((t) => t.absent !== 'yes').slice()
       tests.sort((a, b) =>
         String(a.test_date || '').localeCompare(String(b.test_date || ''))
       )
@@ -343,5 +358,9 @@ export default {
 .score-pct {
   font-weight: 600;
   color: #4f46e5;
+}
+.absent-mark {
+  font-weight: 600;
+  color: #b45309;
 }
 </style>

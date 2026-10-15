@@ -10,11 +10,13 @@
             <el-input v-model="user.email" :disabled="disabled"/>
           </el-form-item>
           <el-form-item :label="t('user.role')">
-            <el-select v-model="user.roles[0]" :disabled="disabled">
+            <el-select v-model="user.roles" multiple :disabled="disabled">
               <el-option v-for="item in roleOptions" :key="item" :label="item" :value="item"/>
             </el-select>
           </el-form-item>
-          <el-form-item v-if="user.roles && user.roles[0] === 'parent'" label="Phone">
+          <!-- A user can hold several roles (a teacher can also be a parent),
+               so test for membership rather than checking the first entry. -->
+          <el-form-item v-if="user.roles && user.roles.includes('parent')" label="Phone">
             <el-input v-model="user.phone" :disabled="disabled" placeholder="Phone number"/>
           </el-form-item>
           
@@ -131,7 +133,14 @@ const onSubmit = () => {
   if (passwordForm.password && !validatePassword()) {
     return
   }
-  
+
+  // The backend ignores an empty role list, and login rejects a user with no
+  // roles, so say so here rather than appearing to save and silently not.
+  if (!props.user.roles || props.user.roles.length === 0) {
+    ElMessage.error('Please select at least one role')
+    return
+  }
+
   resData.updating = true
   let params = {
     name: props.user.name,

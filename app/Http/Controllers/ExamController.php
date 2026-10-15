@@ -1,24 +1,28 @@
 <?php
+
 namespace App\Http\Controllers;
-use App\Models\Exam;
-use App\Models\ExamSubject;
-use Illuminate\Support\Arr;
-use Illuminate\Http\Request;
+
 use App\Laravue\JsonResponse;
-use Illuminate\Support\Facades\DB;
+use App\Models\Exam;
+use App\Models\Student;
 use App\Services\Contracts\ExamServiceInterface;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
 use Spatie\QueryBuilder\QueryBuilder;
 
 class ExamController extends Controller
 {
     protected $examService;
+
     const ITEM_PER_PAGE = 1000;
+
     /**
      * Display a listing of the resource.
      *
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
-
     public function __construct(ExamServiceInterface $examService)
     {
         $this->examService = $examService;
@@ -29,14 +33,14 @@ class ExamController extends Controller
         $searchParams = $request->all();
         $limit = Arr::get($searchParams, 'limit', static::ITEM_PER_PAGE);
         $exams = $this->examService->listExams($searchParams);
+
         return response()->json(new JsonResponse(['exams' => $exams]));
     }
 
     /**
      * Store a newly created resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public function store(Request $request)
     {
@@ -50,6 +54,7 @@ class ExamController extends Controller
 
         $params = $request->all();
         $exam = $this->examService->storeExam($params);
+
         return response()->json(new JsonResponse(['exam' => $exam]));
     }
 
@@ -57,7 +62,7 @@ class ExamController extends Controller
      * Display the specified resource.
      *
      * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public function show($id)
     {
@@ -65,18 +70,18 @@ class ExamController extends Controller
             ->with('examSubjects.subject')
             ->allowedIncludes(...['examResults.student'])
             ->findOrFail($id);
-        
+
         return response()->json(new JsonResponse(['exam' => $exam]));
     }
 
     /**
      * Update the specified resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
-    public function update(Request $request, $id){
+    public function update(Request $request, $id)
+    {
         $request->validate([
             'title' => 'required|string',
             'class_id' => 'required|exists:classes,id',
@@ -87,6 +92,7 @@ class ExamController extends Controller
 
         $params = $request->all();
         $exam = $this->examService->updateExam($id, $params);
+
         return response()->json(new JsonResponse(['exam' => $exam]));
     }
     // public function update(Request $request, $id){
@@ -109,13 +115,18 @@ class ExamController extends Controller
     {
         $request->validate([
             'exam_id' => 'required|exists:exams,id',
-            'marks' => 'required|array',
-            'marks.*' => 'required|array',
-            'marks.*.*' => 'required|numeric|min:0',
+            // A student absent in every paper contributes no marks, so `marks` may be empty.
+            'marks' => 'present|array',
+            'marks.*' => 'nullable|array',
+            'marks.*.*' => 'nullable|numeric|min:0',
+            'absent' => 'nullable|array',
+            'absent.*' => 'nullable|array',
+            'absent.*.*' => 'nullable|boolean',
         ]);
 
         $params = $request->all();
         $exam = $this->examService->addExamMarks($params);
+
         return response()->json(new JsonResponse(['exam' => $exam]));
     }
 
@@ -123,7 +134,7 @@ class ExamController extends Controller
      * Remove the specified resource from storage.
      *
      * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public function destroy($id)
     {
@@ -131,34 +142,35 @@ class ExamController extends Controller
         $exam->examResults()->delete();
         $exam->examSubjects()->delete();
         $exam->delete();
+
         return response()->json(new JsonResponse(['msg' => 'Deleted successfully.']));
-        //return response()->json(new JsonResponse(['msg' => 'Deleted successfully.']));
+        // return response()->json(new JsonResponse(['msg' => 'Deleted successfully.']));
 
-        //$exam_id = $exam->id;
-       // echo $id;
-        //echo $exam_id;
-        //echo $student_id;
-      //  echo $class_id;
-       // echo $total_marks;
-      //  echo $obtained_marks;
-      //  $stuents_array = array();
-     //   foreach($students as $student) 
-     //       $stuents_array[] = array('exam_id' => $exam_id, 'student_id' => $student_id, 'class_id' => $class_id, 'total_marks' => $total_marks, 'obtained_marks' => $obtained_marks );
-    //    $result_exam_student= ExamResult::insert($stuents_array);
-      //  return response()->json(new JsonResponse(['examsreult' => $stuents_array]));
+        // $exam_id = $exam->id;
+        // echo $id;
+        // echo $exam_id;
+        // echo $student_id;
+        //  echo $class_id;
+        // echo $total_marks;
+        //  echo $obtained_marks;
+        //  $stuents_array = array();
+        //   foreach($students as $student)
+        //       $stuents_array[] = array('exam_id' => $exam_id, 'student_id' => $student_id, 'class_id' => $class_id, 'total_marks' => $total_marks, 'obtained_marks' => $obtained_marks );
+        //    $result_exam_student= ExamResult::insert($stuents_array);
+        //  return response()->json(new JsonResponse(['examsreult' => $stuents_array]));
     }
-
-
 
     public function getExamSubjects($examId)
     {
         $subjects = $this->examService->getExamSubjects($examId);
+
         return response()->json(new JsonResponse(['subjects' => $subjects]));
     }
 
     public function getExamById($examId)
     {
         $exam = $this->examService->getExamById($examId);
+
         return response()->json(new JsonResponse(['exam' => $exam]));
     }
 
@@ -166,6 +178,7 @@ class ExamController extends Controller
     {
         $sessionId = $request->get('session_id');
         $reportData = $this->examService->getExamReports($examId, $sessionId);
+
         return response()->json(new JsonResponse($reportData));
     }
 
@@ -189,7 +202,7 @@ class ExamController extends Controller
             $exam = Exam::with(['classes', 'examSubjects.subject'])->findOrFail($examId);
 
             // Get students for this exam's class/section
-            $studentsQuery = \App\Models\Student::with('parents')
+            $studentsQuery = Student::with('parents')
                 ->where('class_id', $exam->class_id)
                 ->where('status', 'enable');
 
@@ -212,13 +225,13 @@ class ExamController extends Controller
             return response()->json(new JsonResponse([
                 'exam' => $exam,
                 'students' => $students,
-                'totalPossibleMarks' => $totalPossibleMarks
+                'totalPossibleMarks' => $totalPossibleMarks,
             ]));
-            
+
         } catch (\Exception $e) {
             return response()->json([
                 'error' => 'Failed to get award list data',
-                'message' => $e->getMessage()
+                'message' => $e->getMessage(),
             ], 500);
         }
     }

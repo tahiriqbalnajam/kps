@@ -15,7 +15,7 @@ class LowPerformanceStudentController extends Controller
         $sessionId = $request->query('session_id');
         $threshold = (float) $request->query('threshold', 50);
 
-        // Single optimized query: aggregate at DB level, 
+        // Single optimized query: aggregate at DB level,
         // only select the columns we need, guard against division-by-zero
         $query = DB::table('test_results')
             ->join('tests', 'test_results.test_id', '=', 'tests.id')
@@ -33,6 +33,7 @@ class LowPerformanceStudentController extends Controller
                 DB::raw('ROUND(AVG(CASE WHEN tests.total_marks > 0 THEN (test_results.score / tests.total_marks) * 100 ELSE 0 END), 2) as average_score')
             )
             ->whereNotNull('test_results.score')
+            ->where('test_results.absent', 'no')          // an absence is not a low score
             ->where('students.status', 'enable')         // only active students
             ->where('tests.total_marks', '>', 0)          // skip tests with 0 total marks
             ->groupBy('students.id', 'students.name', 'students.roll_no', 'classes.id', 'classes.name', 'subjects.id', 'subjects.title')
@@ -61,21 +62,21 @@ class LowPerformanceStudentController extends Controller
             $className = $row->class_name;
             $studentId = $row->student_id;
 
-            if (!isset($grouped[$className])) {
+            if (! isset($grouped[$className])) {
                 $grouped[$className] = [];
             }
 
-            if (!isset($grouped[$className][$studentId])) {
+            if (! isset($grouped[$className][$studentId])) {
                 $grouped[$className][$studentId] = [
-                    'student_id'   => $row->student_id,
+                    'student_id' => $row->student_id,
                     'student_name' => $row->student_name,
-                    'class_name'   => $row->class_name,
-                    'subjects'     => [],
+                    'class_name' => $row->class_name,
+                    'subjects' => [],
                 ];
             }
 
             $grouped[$className][$studentId]['subjects'][] = [
-                'subject_name'  => $row->subject_name,
+                'subject_name' => $row->subject_name,
                 'average_score' => (float) $row->average_score,
             ];
         }
@@ -88,7 +89,7 @@ class LowPerformanceStudentController extends Controller
 
         return response()->json([
             'success' => true,
-            'data'    => $output,
+            'data' => $output,
         ]);
     }
 }

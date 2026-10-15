@@ -52,13 +52,13 @@
           :label="subject.subject.title"
         >
           <template #default="scope">
-            {{ scope.row.marks[subject.id] || 0 }}
+            {{ scope.row.absent[subject.id] ? 'A' : (scope.row.marks[subject.id] ?? 0) }}
           </template>
         </el-table-column>
         <el-table-column prop="total_obtained" label="Total" />
         <el-table-column prop="percentage" label="Percentage">
           <template #default="scope">
-            {{ scope.row.percentage }}%
+            {{ scope.row.percentage === null ? '—' : scope.row.percentage + '%' }}
           </template>
         </el-table-column>
         <el-table-column prop="grade" label="Grade" />
@@ -80,7 +80,6 @@
 import Resource from '@/api/resource';
 import moment from 'moment';
 import { fetchExamSubjects, getSubjectsMarksByExamId } from '@/api/exam';
-import { sessionStore } from '@/store/session';
 
 const studentRes = new Resource('students');
 const settingsResource = new Resource('settings');
@@ -114,11 +113,6 @@ export default {
         filter: {},
       },
     }
-  },
-  computed: {
-    currentSessionId() {
-      return sessionStore().currentSessionId;
-    },
   },
   watch: {
     viewMarksListVisible(val) {
@@ -155,11 +149,13 @@ export default {
       this.query = {
         exam_id: this.exam.id,
         class_id: this.exam.class_id,
+        // No session filter: the roster is the class/section's students. Students carry the
+        // session they are enrolled in while the exam carries the session it was created in,
+        // so filtering by the navbar's session hid students who sat the exam.
         filter: this.exam.section_id
           ? { section_id: this.exam.section_id }
           : { stdclass: this.exam.class_id },
       };
-      if (this.currentSessionId) this.query.filter.session_id = this.currentSessionId;
     },
     async fetchData() {
       try {
@@ -176,17 +172,25 @@ export default {
         // Process student marks data
         this.studentMarks = studentData.students.data.map(student => {
           const studentMarks = marksData.exam.filter(mark => mark.student_id === student.id);
-          const total_obtained = studentMarks.reduce((sum, mark) => sum + Number(mark.obtained_marks || 0), 0);
-          const total_marks = this.subjects.reduce((sum, subject) => sum + Number(subject.total_marks), 0);
-          const percentage = ((total_obtained / total_marks) * 100).toFixed(2);
+          const absent = this.processStudentAbsences(studentMarks);
+          // Papers the student was absent for are left out of both sides of the percentage.
+          const total_obtained = studentMarks
+            .filter(mark => mark.absent !== 'yes')
+            .reduce((sum, mark) => sum + Number(mark.obtained_marks || 0), 0);
+          const total_marks = this.subjects
+            .filter(subject => !absent[subject.id])
+            .reduce((sum, subject) => sum + Number(subject.total_marks), 0);
+          const percentage = total_marks > 0 ? ((total_obtained / total_marks) * 100).toFixed(2) : null;
 
           return {
             student_name: student.name,
             father_name: student.father_name,
             marks: this.processStudentMarks(studentMarks),
+            absent: absent,
             total_obtained: `${total_obtained}/${total_marks}`,
             percentage: percentage,
-            grade: this.calculateGrade(percentage)
+            // Nothing graded at all (absent in every paper) — no grade to report.
+            grade: percentage === null ? '—' : this.calculateGrade(percentage)
           };
         });
 
@@ -204,6 +208,15 @@ export default {
       });
       return marksMap;
     },
+    processStudentAbsences(studentMarks) {
+      const absentMap = {};
+      studentMarks.forEach(mark => {
+        if (mark.absent === 'yes') {
+          absentMap[mark.exam_subject_id] = true;
+        }
+      });
+      return absentMap;
+    },
     calculatePercentage(mark) {
       // Implement percentage calculation logic
       return ((mark.total_obtained / mark.total_marks) * 100).toFixed(2);
@@ -219,6 +232,8 @@ export default {
     },
     calculateTopPositions() {
       this.topPositions = [...this.studentMarks]
+        // A student absent in every paper has no percentage to rank.
+        .filter(student => student.percentage !== null)
         .sort((a, b) => parseFloat(b.percentage) - parseFloat(a.percentage))
         .slice(0, 4);
     },

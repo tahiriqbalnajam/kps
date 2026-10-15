@@ -76,6 +76,23 @@
       </el-table-column>
       <el-table-column label="CNIC" prop="cnic" />
       <el-table-column label="Phone" prop="phone" />
+      <el-table-column label="User Account">
+        <template #default="scope">
+          <router-link
+            v-if="scope.row.user"
+            :to="`/administrator/users/edit/${scope.row.user.id}`"
+            class="user-account-link"
+          >
+            {{ scope.row.user.email }}
+          </router-link>
+          <el-button
+            v-else
+            size="small"
+            type="warning"
+            @click="handleCreateAccount(scope.row)"
+          >Create Account</el-button>
+        </template>
+      </el-table-column>
       <el-table-column label="Gender" align="center" width="70">
         <template #default="scope">
           {{ genderShort(scope.row.gender) }}
@@ -285,6 +302,38 @@
         <canvas id="canvas"></canvas>
       </div>
     </el-drawer>
+    <el-dialog v-model="createAccountDialog" title="Create User Account" width="400px" :close-on-click-modal="false">
+      <div v-if="createAccountTeacher">
+        <p>Creating account for <strong>{{ createAccountTeacher.name }}</strong></p>
+        <el-form ref="createAccountForm" :model="createAccountForm" :rules="createAccountRules" label-position="top">
+          <el-form-item label="Email" prop="email">
+            <el-input v-model="createAccountForm.email" placeholder="Email" />
+          </el-form-item>
+          <el-form-item label="Password" prop="password">
+            <el-input v-model="createAccountForm.password" type="password" placeholder="Password" show-password />
+          </el-form-item>
+        </el-form>
+      </div>
+      <template #footer>
+        <el-button @click="createAccountDialog = false">Cancel</el-button>
+        <el-button type="primary" :loading="createAccountLoading" @click="submitCreateAccount">Create</el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog v-model="linkExistingDialog" title="Account Already Exists" width="400px" :close-on-click-modal="false">
+      <div v-if="existingUser">
+        <p>
+          <strong>{{ existingUser.name }}</strong>
+          <span v-if="existingUser.roles && existingUser.roles.length"> — {{ formatRoles(existingUser.roles) }}</span>
+        </p>
+        <p>Link this teacher to that account and add the Teacher role? The account keeps its existing roles and password.</p>
+      </div>
+      <template #footer>
+        <el-button @click="linkExistingDialog = false">Cancel</el-button>
+        <el-button type="primary" :loading="createAccountLoading" @click="confirmLinkExisting">Link Account</el-button>
+      </template>
+    </el-dialog>
+
     <!-- Add the TeacherIDCard component at the end of template -->
     <teacher-idcard
       v-if="showIDCard"
@@ -299,6 +348,7 @@ import TeacherIdcard from '@/views/teachers/components/TeacherIdcard.vue';
 import Pagination from '@/components/Pagination/index.vue';
 //import AddStudent from '@/views/students/AddStudent.vue';
 import Resource from '@/api/resource';
+import axios from 'axios';
 var stdClass = new Resource('classes');
 import { debounce } from 'lodash';
 const resourcePro = new Resource('teachers');
@@ -407,6 +457,16 @@ export default {
       },
       showIDCard: false,
       selectedTeacher: {},
+      createAccountDialog: false,
+      createAccountLoading: false,
+      createAccountTeacher: null,
+      createAccountForm: { email: '', password: '' },
+      createAccountRules: {
+        email: [{ required: true, type: 'email', message: 'Valid email required', trigger: 'blur' }],
+        password: [{ required: true, min: 6, message: 'Minimum 6 characters', trigger: 'blur' }],
+      },
+      linkExistingDialog: false,
+      existingUser: null,
     };
   },
   computed: {
@@ -477,6 +537,70 @@ export default {
           message: name+' Delete successfully',
         });
       });
+    },
+    handleCreateAccount(teacher) {
+      this.createAccountTeacher = teacher;
+      const phone = (teacher.phone || '').replace(/[^0-9]/g, '');
+      const suggestedEmail = phone ? phone + '@idlschool.pk' : '';
+      // Check if any other teacher in the loaded list already uses this email
+      const emailTaken = this.list.some(
+        t => t.id !== teacher.id && t.user && t.user.email === suggestedEmail
+      );
+      this.createAccountForm.email = (!suggestedEmail || emailTaken) ? '' : suggestedEmail;
+      this.createAccountForm.password = '';
+      this.createAccountDialog = true;
+      if (!phone) {
+        this.$nextTick(() => {
+          this.$message.warning('This teacher has no phone number, so no email could be suggested. Please enter one.');
+        });
+      } else if (emailTaken) {
+        this.$nextTick(() => {
+          this.$message.warning(`Email "${suggestedEmail}" is already in use. Please enter a different email.`);
+        });
+      }
+    },
+    async submitCreateAccount(linkExisting = false) {
+      if (!linkExisting) {
+        try {
+          await this.$refs.createAccountForm.validate();
+        } catch {
+          return;
+        }
+      }
+      this.createAccountLoading = true;
+      try {
+        await axios.post(`/api/teachers/${this.createAccountTeacher.id}/create-account`,
+          { ...this.createAccountForm, link_existing: linkExisting });
+        this.$message.success(linkExisting
+          ? 'Existing account linked and Teacher role added'
+          : 'User account created successfully');
+        this.createAccountDialog = false;
+        this.linkExistingDialog = false;
+        this.getList();
+      } catch (error) {
+        const res = error.response?.data;
+        // The email already belongs to a user (often the same person's parent
+        // account). Ask before touching that account.
+        if (res?.code === 'email_exists') {
+          this.existingUser = res.existing_user;
+          this.linkExistingDialog = true;
+          return;
+        }
+        const errors = res?.errors;
+        const msg = (errors && errors.email && errors.email[0])
+          || res?.message
+          || 'Failed to create account';
+        this.$message.error(msg);
+      } finally {
+        this.createAccountLoading = false;
+      }
+    },
+    confirmLinkExisting() {
+      this.linkExistingDialog = false;
+      this.submitCreateAccount(true);
+    },
+    formatRoles(roles) {
+      return roles.map(r => r.charAt(0).toUpperCase() + r.slice(1)).join(', ');
     },
     async onSubmit( formName) {
       this.loading = true;
@@ -553,6 +677,14 @@ export default {
 <style  scoped>
   .no-avg {
     color: #a0aec0;
+  }
+  .user-account-link {
+    color: #409eff;
+    text-decoration: none;
+    font-weight: 500;
+  }
+  .user-account-link:hover {
+    text-decoration: underline;
   }
   .el-drawer__body {
     flex: 1;

@@ -174,22 +174,11 @@
           sums[index] = ''
         }
         if (index === 3) {
-          const abst = data.reduce((total, item) => {
-                                if (item.absent === 'yes') {
-                                  return total + 1;
-                                } else {
-                                  return total;
-                                }
-                              }, 0);
-            const values = data.reduce((total, item) => {
-                                if (item.absent === 'no') {
-                                  return total + Number(item[column.property])
-                                } else {
-                                  return total;
-                                }
-                              }, 0);
+          // Absent students carry no score, so the average is over the students who sat the test.
+          const graded = data.filter((item) => item.absent === 'no');
+          const values = graded.reduce((total, item) => total + Number(item[column.property] || 0), 0);
           sums[index] = h('div', { style: { fontSize: '18px' } }, [
-          'Average:'+ (values/ (data.length - abst)).toFixed(2),
+          graded.length ? 'Average:' + (values / graded.length).toFixed(2) : 'Average: —',
           ])
           return;
         } else {
@@ -386,7 +375,7 @@
                 <el-table-column label="Absent" prop="absent" sortable />
                 <el-table-column label="Obtained Marks" prop="score" sortable >
                   <template #default="scope">
-                    <span v-show="!edit">{{scope.row.score}}</span>
+                    <span v-show="!edit">{{ scope.row.absent === 'yes' ? 'A' : scope.row.score }}</span>
                     <el-input v-model="scope.row.score" size="mini" style="width: 50px" v-show="edit"/>
                   </template>
                 </el-table-column>

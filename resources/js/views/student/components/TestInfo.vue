@@ -9,18 +9,23 @@
             <el-table :data="subject.tests" border stripe size="small">
               <el-table-column label="Date" prop="test_date"/>
               <el-table-column label="Total Marks" prop="total_marks"/>
-              <el-table-column label="Obtained" prop="score"/>
-              <el-table-column label="%" prop="percentage">
+              <el-table-column label="Obtained">
                 <template #default="scope">
-                  {{ Math.round(scope.row.percentage) }}
+                  {{ scope.row.absent === 'yes' ? 'A' : scope.row.score }}
+                </template>
+              </el-table-column>
+              <el-table-column label="%">
+                <template #default="scope">
+                  {{ scope.row.absent === 'yes' ? 'A' : Math.round(scope.row.percentage) }}
                 </template>
                 </el-table-column>
             </el-table>
           </el-col>
           <el-col :span="8">
-            <el-progress type="dashboard" :percentage="subject.overall_percentage" :width="90">
+            <el-progress type="dashboard" :percentage="subject.has_graded_work === false ? 0 : Math.round(subject.overall_percentage || 0)" :width="90">
               <template #default="{ percentage }">
-                <span class="percentage-value">{{ Math.round(percentage) }}%</span>
+                <!-- Every test in this subject was absent — there is no average, so show "A". -->
+                <span class="percentage-value">{{ subject.has_graded_work === false ? 'A' : Math.round(percentage) + '%' }}</span>
               </template>
             </el-progress>
           </el-col>

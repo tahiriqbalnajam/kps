@@ -51,9 +51,9 @@
       </div>
 
       <div class="action-section">
-        <el-button 
-          type="primary" 
-          @click="showVoucherDialog = true"
+        <el-button
+          type="primary"
+          @click="openVoucherDialog"
           :disabled="selectedStudents.length === 0"
           size="default"
           class="generate-btn"
@@ -755,6 +755,15 @@ export default {
       this.resetVoucherForm()
     },
 
+    openVoucherDialog() {
+      this.showVoucherDialog = true
+      // Refresh the pending list whenever the dialog opens so vouchers
+      // cancelled since the last fetch (e.g. from Manage) are never bundled.
+      if (this.voucherForm.includePending && this.selectedStudents.length > 0) {
+        this.fetchPendingVouchers()
+      }
+    },
+
     resetVoucherForm() {
       this.voucherForm = {
         dueDate: null,
@@ -814,7 +823,9 @@ export default {
 
         // The response interceptor already unwraps response.data
         if (data && data.success && data.vouchers) {
-          this.pendingVouchers = data.vouchers
+          // Never bundle vouchers that are no longer owed (defense in depth —
+          // the API already excludes these, but a stale response must not slip through)
+          this.pendingVouchers = data.vouchers.filter(v => !['paid', 'cancelled'].includes(v.status))
         } else {
           this.pendingVouchers = []
         }
@@ -1073,8 +1084,10 @@ export default {
 
           // Include pending vouchers in fee breakdown if enabled
           if (this.voucherForm.includePending) {
-            // Filter pending vouchers for this student
-            const studentPendingVouchers = this.pendingVouchers.filter(pv => pv.student_id === student.id)
+            // Filter pending vouchers for this student (never cancelled/paid ones)
+            const studentPendingVouchers = this.pendingVouchers.filter(pv =>
+              pv.student_id === student.id && !['paid', 'cancelled'].includes(pv.status)
+            )
             studentPendingVouchers.forEach(pv => {
               const pendingAmount = this.getPendingVoucherAmount(pv)
               baseFee += parseFloat(pendingAmount) // Add to base fee

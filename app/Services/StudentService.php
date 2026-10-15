@@ -262,6 +262,7 @@ class StudentService implements StudentServiceInterface
                 'tests.date as test_date',
                 'tests.total_marks',
                 'test_results.score',
+                'test_results.absent',
                 DB::raw('(test_results.score / tests.total_marks) * 100 as percentage')
             )
             ->get()
@@ -269,8 +270,11 @@ class StudentService implements StudentServiceInterface
 
         // Structure the results
         $structuredResults = $results->map(function ($tests, $subject) {
-            $totalScore = $tests->sum('score');
-            $totalMarks = $tests->sum('total_marks');
+            // Absent tests stay in the list (the UI shows "A" for them) but are kept out of the
+            // subject average, so missing a test does not read as scoring zero.
+            $graded = $tests->where('absent', 'no');
+            $totalScore = $graded->sum('score');
+            $totalMarks = $graded->sum('total_marks');
             if ($totalMarks == 0) {
                 $overallPercentage = 0;
             } else {
@@ -285,10 +289,16 @@ class StudentService implements StudentServiceInterface
                         'test_id' => $test->test_id,
                         'test_date' => $test->test_date,
                         'total_marks' => $test->total_marks,
+                        // This endpoint also serves the mobile app (/api/v1), which reads these as
+                        // numbers — so the values stay numeric and `absent` is what marks the paper.
                         'score' => $test->score,
+                        'absent' => $test->absent,
                         'percentage' => $test->percentage,
                     ];
                 }),
+                // False when no paper was sat: `overall_percentage` is 0 only because there is
+                // nothing to average, so the UI shows "A" rather than a 0% ring.
+                'has_graded_work' => $graded->isNotEmpty(),
             ];
         });
 
