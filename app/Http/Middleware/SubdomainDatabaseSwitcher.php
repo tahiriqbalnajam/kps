@@ -18,6 +18,12 @@ class SubdomainDatabaseSwitcher
         }
 
         $host = $request->getHost();
+
+        // Hosts that are separate apps, not school tenants (e.g. papermaker.idlbridge.com)
+        if ($this->isExcludedHost($host)) {
+            return $next($request);
+        }
+
         $subdomain = explode('.', $host)[0];
 
         try {
@@ -29,17 +35,17 @@ class SubdomainDatabaseSwitcher
 
             if ($details) {
                 Config::set('database.connections.dynamic', [
-                    'driver'    => 'mysql',
-                    'host'      => env('DB_HOST', '127.0.0.1'),
-                    'port'      => env('DB_PORT', '3306'),
-                    'database'  => $details->db,
-                    'username'  => $details->username,
-                    'password'  => $details->password,
-                    'charset'   => 'utf8mb4',
+                    'driver' => 'mysql',
+                    'host' => env('DB_HOST', '127.0.0.1'),
+                    'port' => env('DB_PORT', '3306'),
+                    'database' => $details->db,
+                    'username' => $details->username,
+                    'password' => $details->password,
+                    'charset' => 'utf8mb4',
                     'collation' => 'utf8mb4_unicode_ci',
-                    'prefix'    => '',
-                    'strict'    => true,
-                    'engine'    => null,
+                    'prefix' => '',
+                    'strict' => true,
+                    'engine' => null,
                 ]);
 
                 Config::set('database.default', 'dynamic');
@@ -56,5 +62,21 @@ class SubdomainDatabaseSwitcher
             // Handle DB connection issues
             return response()->view('errors.db', [], 500);
         }
+    }
+
+    /**
+     * Determine whether the host should bypass tenant database switching.
+     */
+    protected function isExcludedHost(string $host): bool
+    {
+        $host = strtolower($host);
+
+        foreach (config('tenancy.excluded_hosts', []) as $excluded) {
+            if ($host === strtolower($excluded)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
